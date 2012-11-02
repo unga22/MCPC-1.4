@@ -16,10 +16,12 @@ namespace ChangedMCClasses
         static string bukkitSource = @"D:\Git\CraftBukkit\src\main\java\net\minecraft\server"; // From Bukkit Github
         static string secondBukkitSource = @"D:\Git\MCP 7 - clean\src\minecraft_server\net\minecraft\server"; // Decompiled forge from 6.0 universal using Bukkit mappings
         static string forgeSource = @"D:\Git\MCP 7 - clean\src\minecraft_server\net\minecraft\server";
+        static string oldFilesSource = @"D:\Git\craftbukkit-1.2.5-R5.0-MCPC-SNAPSHOT-183.src\net\minecraft\server";
 
         static string workFolder = @"D:\Git\MCPC-1.4\net\minecraft\server"; // Copy bukkit files here which need to be changed (e.g. theres a forge patch for it)
         static string targetPatches = @"D:\Git\MCPC-1.4\patches_to_bukkit"; // Copy patches with bukkit class names here
         static string forgeFilesDest = @"D:\Git\MCPC-1.4\patches_to_bukkit";
+        static string oldFilesDest = @"D:\Git\MCPC-1.4\patches_to_bukkit";
 
         static List<Mapping> mappings = new List<Mapping>();
         static List<Mapping> done_mappings = new List<Mapping>();
@@ -30,6 +32,8 @@ namespace ChangedMCClasses
             ListPatchesInBukkit();
             //RemoveComments();
 
+            Console.WriteLine();
+            Console.WriteLine("Press to exit");
             Console.Read();
         }
 
@@ -63,35 +67,6 @@ namespace ChangedMCClasses
         static string cleanPacket(string f)
         {
             return f.Substring(f.LastIndexOf('/') + 1);
-        }
-
-        static void RemoveComments()
-        {
-            string dir = @"D:\Git\Bukkit-MCPC-1.4\net\minecraft\server";
-
-            foreach (string f in Directory.GetFiles(dir, "*.java"))
-            {
-                string[] cont = File.ReadAllLines(f);
-
-                if (cont.Length > 3 && cont[cont.Length - 2].Contains("JD-Core Version:"))
-                {
-                    List<string> ret = new List<string>();
-
-                    foreach(string l in cont)
-                    {
-                        string o = l;
-                        if (l.Trim().StartsWith("/*") && l.Contains("*/ "))
-                            o = l.Substring(l.IndexOf("*/ ") + 3);
-                        else if (l.StartsWith("/* Location:") || l.StartsWith(" * JD-Core Version:") || l.StartsWith(" * Qualified Name:") || l == " */")
-                            o = null;
-
-                        if (o != null)
-                            ret.Add(o);
-                    }
-
-                    File.WriteAllLines(f, ret.ToArray());
-                }
-            }
         }
 
         static void HandlePatch(string patchFile, Mapping map)
@@ -130,6 +105,10 @@ namespace ChangedMCClasses
 
             string forgeFile = Path.Combine(forgeSource, cleanPacket(map.Bukkit) + ".java");
             File.Copy(forgeFile, Path.Combine(forgeFilesDest, formatIfForge(cleanPacket(map.Bukkit), isBukkitChanged) + ".forge.java"));
+
+            string oldFile = Path.Combine(oldFilesSource, cleanPacket(map.Bukkit) + ".java");
+            if (File.Exists(oldFile))
+                File.Copy(forgeFile, Path.Combine(oldFilesDest, formatIfForge(cleanPacket(map.Bukkit), isBukkitChanged) + ".old.java"));
 
             File.Copy(bukkitSourceFile, destinationSourceFile, true);
 
@@ -176,6 +155,35 @@ namespace ChangedMCClasses
                 map.MCP = val;
             else
                 map.Bukkit = val;
+        }
+
+        static void RemoveComments()
+        {
+            string dir = @"D:\Git\craftbukkit-1.2.5-R5.0-MCPC-SNAPSHOT-183.src";
+
+            foreach (string f in Directory.GetFiles(dir, "*.java", SearchOption.AllDirectories))
+            {
+                string[] cont = File.ReadAllLines(f);
+
+                if (cont.Length > 3 && cont[cont.Length - 2].Contains("JD-Core Version:"))
+                {
+                    List<string> ret = new List<string>();
+
+                    foreach (string l in cont)
+                    {
+                        string o = l;
+                        if (l.Trim().StartsWith("/*") && l.Contains("*/ "))
+                            o = l.Substring(l.IndexOf("*/ ") + 3);
+                        else if (l.StartsWith("/* Location:") || l.StartsWith(" * JD-Core Version:") || l.StartsWith(" * Qualified Name:") || l == " */")
+                            o = null;
+
+                        if (o != null)
+                            ret.Add(o);
+                    }
+
+                    File.WriteAllLines(f, ret.ToArray());
+                }
+            }
         }
     }
 
