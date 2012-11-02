@@ -6,341 +6,252 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.List;
+import java.util.UUID;
 import java.util.logging.Logger;
+import org.bukkit.craftbukkit.entity.CraftPlayer;
 
-public class WorldNBTStorage implements IDataManager, PlayerFileData
+public class WorldNBTStorage
+  implements PlayerFileData, IDataManager
 {
-    /** Reference to the logger. */
-    private static final Logger log = Logger.getLogger("Minecraft");
+  private static final Logger log = Logger.getLogger("Minecraft");
+  private final File baseDir;
+  private final File playerDir;
+  private final File dataDir;
+  private final long sessionId = System.currentTimeMillis();
+  private final String f;
+  private UUID uuid = null;
 
-    /** The directory in which to save world data. */
-    private final File baseDir;
-
-    /** The directory in which to save player data. */
-    private final File playerDir;
-    private final File dataDir;
-
-    /**
-     * The time in milliseconds when this field was initialized. Stored in the session lock file.
-     */
-    private final long sessionId = System.currentTimeMillis();
-
-    /** The directory name of the world */
-    private final String f;
-
-    public WorldNBTStorage(File var1, String var2, boolean var3)
-    {
-        this.baseDir = new File(var1, var2);
-        this.baseDir.mkdirs();
-        this.playerDir = new File(this.baseDir, "players");
-        this.dataDir = new File(this.baseDir, "data");
-        this.dataDir.mkdirs();
-        this.f = var2;
-
-        if (var3)
-        {
-            this.playerDir.mkdirs();
-        }
-
-        this.h();
+  public WorldNBTStorage(File file1, String s, boolean flag) {
+    this.baseDir = new File(file1, s);
+    this.baseDir.mkdirs();
+    this.playerDir = new File(this.baseDir, "players");
+    this.dataDir = new File(this.baseDir, "data");
+    this.dataDir.mkdirs();
+    this.f = s;
+    if (flag) {
+      this.playerDir.mkdirs();
     }
 
-    /**
-     * Creates a session lock file for this process
-     */
-    private void h()
-    {
-        try
-        {
-            File var1 = new File(this.baseDir, "session.lock");
-            DataOutputStream var2 = new DataOutputStream(new FileOutputStream(var1));
+    f();
+  }
 
-            try
-            {
-                var2.writeLong(this.sessionId);
-            }
-            finally
-            {
-                var2.close();
-            }
-        }
-        catch (IOException var7)
-        {
-            var7.printStackTrace();
-            throw new RuntimeException("Failed to check session lock, aborting");
-        }
+  private void f() {
+    try {
+      File file1 = new File(this.baseDir, "session.lock");
+      DataOutputStream dataoutputstream = new DataOutputStream(new FileOutputStream(file1));
+      try
+      {
+        dataoutputstream.writeLong(this.sessionId);
+      } finally {
+        dataoutputstream.close();
+      }
+    } catch (IOException ioexception) {
+      ioexception.printStackTrace();
+      throw new RuntimeException("Failed to check session lock, aborting");
+    }
+  }
+
+  public File getDirectory() {
+    return this.baseDir;
+  }
+
+  public void checkSession() {
+    try {
+      File file1 = new File(this.baseDir, "session.lock");
+      DataInputStream datainputstream = new DataInputStream(new FileInputStream(file1));
+      try
+      {
+        if (datainputstream.readLong() != this.sessionId)
+          throw new WorldConlictException("The save is being accessed from another location, aborting");
+      }
+      finally {
+        datainputstream.close();
+      }
+    } catch (IOException ioexception) {
+      throw new WorldConlictException("Failed to check session lock, aborting");
+    }
+  }
+
+  public IChunkLoader createChunkLoader(WorldProvider worldprovider) {
+    throw new RuntimeException("Old Chunk Storage is no longer supported.");
+  }
+
+  public WorldData getWorldData() {
+    File file1 = new File(this.baseDir, "level.dat");
+    NBTTagCompound nbttagcompound;
+    NBTTagCompound nbttagcompound1;
+    if (file1.exists()) {
+      try {
+        nbttagcompound = NBTCompressedStreamTools.a(new FileInputStream(file1));
+        nbttagcompound1 = nbttagcompound.getCompound("Data");
+        return new WorldData(nbttagcompound1);
+      } catch (Exception exception) {
+        exception.printStackTrace();
+      }
     }
 
-    /**
-     * Gets the File object corresponding to the base directory of this world.
-     */
-    protected File getDirectory()
-    {
-        return this.baseDir;
+    file1 = new File(this.baseDir, "level.dat_old");
+    if (file1.exists()) {
+      try {
+        nbttagcompound = NBTCompressedStreamTools.a(new FileInputStream(file1));
+        nbttagcompound1 = nbttagcompound.getCompound("Data");
+        return new WorldData(nbttagcompound1);
+      } catch (Exception exception1) {
+        exception1.printStackTrace();
+      }
     }
 
-    /**
-     * Checks the session lock to prevent save collisions
-     */
-    public void checkSession()
-    {
-        try
-        {
-            File var1 = new File(this.baseDir, "session.lock");
-            DataInputStream var2 = new DataInputStream(new FileInputStream(var1));
+    return null;
+  }
 
-            try
-            {
-                if (var2.readLong() != this.sessionId)
-                {
-                    throw new ExceptionWorldConflict("The save is being accessed from another location, aborting");
-                }
-            }
-            finally
-            {
-                var2.close();
-            }
-        }
-        catch (IOException var7)
-        {
-            throw new ExceptionWorldConflict("Failed to check session lock, aborting");
-        }
+  public void saveWorldData(WorldData worlddata, List list) {
+    NBTTagCompound nbttagcompound = worlddata.a(list);
+    NBTTagCompound nbttagcompound1 = new NBTTagCompound();
+
+    nbttagcompound1.set("Data", nbttagcompound);
+    try
+    {
+      File file1 = new File(this.baseDir, "level.dat_new");
+      File file2 = new File(this.baseDir, "level.dat_old");
+      File file3 = new File(this.baseDir, "level.dat");
+
+      NBTCompressedStreamTools.a(nbttagcompound1, new FileOutputStream(file1));
+      if (file2.exists()) {
+        file2.delete();
+      }
+
+      file3.renameTo(file2);
+      if (file3.exists()) {
+        file3.delete();
+      }
+
+      file1.renameTo(file3);
+      if (file1.exists())
+        file1.delete();
+    }
+    catch (Exception exception) {
+      exception.printStackTrace();
+    }
+  }
+
+  public void saveWorldData(WorldData worlddata) {
+    NBTTagCompound nbttagcompound = worlddata.a();
+    NBTTagCompound nbttagcompound1 = new NBTTagCompound();
+
+    nbttagcompound1.set("Data", nbttagcompound);
+    try
+    {
+      File file1 = new File(this.baseDir, "level.dat_new");
+      File file2 = new File(this.baseDir, "level.dat_old");
+      File file3 = new File(this.baseDir, "level.dat");
+
+      NBTCompressedStreamTools.a(nbttagcompound1, new FileOutputStream(file1));
+      if (file2.exists()) {
+        file2.delete();
+      }
+
+      file3.renameTo(file2);
+      if (file3.exists()) {
+        file3.delete();
+      }
+
+      file1.renameTo(file3);
+      if (file1.exists())
+        file1.delete();
+    }
+    catch (Exception exception) {
+      exception.printStackTrace();
+    }
+  }
+
+  public void save(EntityHuman entityhuman) {
+    try {
+      NBTTagCompound nbttagcompound = new NBTTagCompound();
+
+      entityhuman.d(nbttagcompound);
+      File file1 = new File(this.playerDir, entityhuman.name + ".dat~");
+      File file2 = new File(this.playerDir, entityhuman.name + ".dat");
+
+      NBTCompressedStreamTools.a(nbttagcompound, new FileOutputStream(file1));
+      if (file2.exists()) {
+        file2.delete();
+      }
+
+      file1.renameTo(file2);
+    } catch (Exception exception) {
+      log.warning("Failed to save player data for " + entityhuman.name);
+    }
+  }
+
+  public void load(EntityHuman entityhuman) {
+    NBTTagCompound nbttagcompound = getPlayerData(entityhuman.name);
+
+    if (nbttagcompound != null)
+    {
+      if ((entityhuman instanceof EntityPlayer)) {
+        CraftPlayer player = (CraftPlayer)entityhuman.bukkitEntity;
+        player.setFirstPlayed(new File(this.playerDir, entityhuman.name + ".dat").lastModified());
+      }
+
+      entityhuman.e(nbttagcompound);
+    }
+  }
+
+  public NBTTagCompound getPlayerData(String s) {
+    try {
+      File file1 = new File(this.playerDir, s + ".dat");
+
+      if (file1.exists())
+        return NBTCompressedStreamTools.a(new FileInputStream(file1));
+    }
+    catch (Exception exception) {
+      log.warning("Failed to load player data for " + s);
     }
 
-    /**
-     * initializes and returns the chunk loader for the specified world provider
-     */
-    public IChunkLoader createChunkLoader(WorldProvider var1)
+    return null;
+  }
+
+  public PlayerFileData getPlayerFileData() {
+    return this;
+  }
+
+  public String[] getSeenPlayers() {
+    return this.playerDir.list();
+  }
+  public void e() {
+  }
+
+  public File getDataFile(String s) {
+    return new File(this.dataDir, s + ".dat");
+  }
+
+  public UUID getUUID()
+  {
+    if (this.uuid != null) return this.uuid; try
     {
-        throw new RuntimeException("Old Chunk Storage is no longer supported.");
+      File file1 = new File(this.baseDir, "uid.dat");
+      if (!file1.exists()) {
+        DataOutputStream dos = new DataOutputStream(new FileOutputStream(file1));
+        this.uuid = UUID.randomUUID();
+        dos.writeLong(this.uuid.getMostSignificantBits());
+        dos.writeLong(this.uuid.getLeastSignificantBits());
+        dos.close();
+      }
+      else {
+        DataInputStream dis = new DataInputStream(new FileInputStream(file1));
+        this.uuid = new UUID(dis.readLong(), dis.readLong());
+        dis.close();
+      }
+      return this.uuid;
+    } catch (IOException ex) {
     }
+    return null;
+  }
 
-    /**
-     * Loads and returns the world info
-     */
-    public WorldData getWorldData()
-    {
-        File var1 = new File(this.baseDir, "level.dat");
-        NBTTagCompound var2;
-        NBTTagCompound var3;
-
-        if (var1.exists())
-        {
-            try
-            {
-                var2 = NBTCompressedStreamTools.a(new FileInputStream(var1));
-                var3 = var2.getCompound("Data");
-                return new WorldData(var3);
-            }
-            catch (Exception var5)
-            {
-                var5.printStackTrace();
-            }
-        }
-
-        var1 = new File(this.baseDir, "level.dat_old");
-
-        if (var1.exists())
-        {
-            try
-            {
-                var2 = NBTCompressedStreamTools.a(new FileInputStream(var1));
-                var3 = var2.getCompound("Data");
-                return new WorldData(var3);
-            }
-            catch (Exception var4)
-            {
-                var4.printStackTrace();
-            }
-        }
-
-        return null;
-    }
-
-    /**
-     * Saves the given World Info with the given NBTTagCompound as the Player.
-     */
-    public void saveWorldData(WorldData var1, NBTTagCompound var2)
-    {
-        NBTTagCompound var3 = var1.a(var2);
-        NBTTagCompound var4 = new NBTTagCompound();
-        var4.set("Data", var3);
-
-        try
-        {
-            File var5 = new File(this.baseDir, "level.dat_new");
-            File var6 = new File(this.baseDir, "level.dat_old");
-            File var7 = new File(this.baseDir, "level.dat");
-            NBTCompressedStreamTools.a(var4, new FileOutputStream(var5));
-
-            if (var6.exists())
-            {
-                var6.delete();
-            }
-
-            var7.renameTo(var6);
-
-            if (var7.exists())
-            {
-                var7.delete();
-            }
-
-            var5.renameTo(var7);
-
-            if (var5.exists())
-            {
-                var5.delete();
-            }
-        }
-        catch (Exception var8)
-        {
-            var8.printStackTrace();
-        }
-    }
-
-    /**
-     * used to update level.dat from old format to MCRegion format
-     */
-    public void saveWorldData(WorldData var1)
-    {
-        NBTTagCompound var2 = var1.a();
-        NBTTagCompound var3 = new NBTTagCompound();
-        var3.set("Data", var2);
-
-        try
-        {
-            File var4 = new File(this.baseDir, "level.dat_new");
-            File var5 = new File(this.baseDir, "level.dat_old");
-            File var6 = new File(this.baseDir, "level.dat");
-            NBTCompressedStreamTools.a(var3, new FileOutputStream(var4));
-
-            if (var5.exists())
-            {
-                var5.delete();
-            }
-
-            var6.renameTo(var5);
-
-            if (var6.exists())
-            {
-                var6.delete();
-            }
-
-            var4.renameTo(var6);
-
-            if (var4.exists())
-            {
-                var4.delete();
-            }
-        }
-        catch (Exception var7)
-        {
-            var7.printStackTrace();
-        }
-    }
-
-    /**
-     * Writes the player data to disk from the specified PlayerEntityMP.
-     */
-    public void save(EntityHuman var1)
-    {
-        try
-        {
-            NBTTagCompound var2 = new NBTTagCompound();
-            var1.d(var2);
-            File var3 = new File(this.playerDir, var1.name + ".dat.tmp");
-            File var4 = new File(this.playerDir, var1.name + ".dat");
-            NBTCompressedStreamTools.a(var2, new FileOutputStream(var3));
-
-            if (var4.exists())
-            {
-                var4.delete();
-            }
-
-            var3.renameTo(var4);
-        }
-        catch (Exception var5)
-        {
-            log.warning("Failed to save player data for " + var1.name);
-        }
-    }
-
-    /**
-     * Reads the player data from disk into the specified PlayerEntityMP.
-     */
-    public void load(EntityHuman var1)
-    {
-        NBTTagCompound var2 = this.getPlayerData(var1.name);
-
-        if (var2 != null)
-        {
-            var1.e(var2);
-        }
-    }
-
-    /**
-     * Gets the player data for the given playername as a NBTTagCompound.
-     */
-    public NBTTagCompound getPlayerData(String var1)
-    {
-        try
-        {
-            File var2 = new File(this.playerDir, var1 + ".dat");
-
-            if (var2.exists())
-            {
-                return NBTCompressedStreamTools.a(new FileInputStream(var2));
-            }
-        }
-        catch (Exception var3)
-        {
-            log.warning("Failed to load player data for " + var1);
-        }
-
-        return null;
-    }
-
-    public PlayerFileData getPlayerFileData()
-    {
-        return this;
-    }
-
-    /**
-     * Returns an array of usernames for which player.dat exists for.
-     */
-    public String[] getSeenPlayers()
-    {
-        String[] var1 = this.playerDir.list();
-
-        for (int var2 = 0; var2 < var1.length; ++var2)
-        {
-            if (var1[var2].endsWith(".dat"))
-            {
-                var1[var2] = var1[var2].substring(0, var1[var2].length() - 4);
-            }
-        }
-
-        return var1;
-    }
-
-    /**
-     * Called to flush all changes to disk, waiting for them to complete.
-     */
-    public void a() {}
-
-    /**
-     * Gets the file location of the given map
-     */
-    public File getDataFile(String var1)
-    {
-        return new File(this.dataDir, var1 + ".dat");
-    }
-
-    /**
-     * Returns the name of the directory where world information is saved.
-     */
-    public String g()
-    {
-        return this.f;
-    }
+  public File getPlayerDir()
+  {
+    return this.playerDir;
+  }
 }
+

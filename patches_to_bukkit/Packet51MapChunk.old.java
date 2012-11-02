@@ -4,246 +4,171 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.zip.DataFormatException;
-import java.util.zip.Deflater;
 import java.util.zip.Inflater;
 
 public class Packet51MapChunk extends Packet
 {
-    /** The x-position of the transmitted chunk, in chunk coordinates. */
-    public int a;
+  public int a;
+  public int b;
+  public int c;
+  public int d;
+  public byte[] buffer;
+  public boolean f;
+  public int size;
+  private int h;
+  public byte[] rawData = new byte[0];
 
-    /** The z-position of the transmitted chunk, in chunk coordinates. */
-    public int b;
+  public Packet51MapChunk() {
+    this.lowPriority = true;
+  }
 
-    /**
-     * The y-position of the lowest chunk Section in the transmitted chunk, in chunk coordinates.
-     */
-    public int c;
-
-    /**
-     * The y-position of the highest chunk Section in the transmitted chunk, in chunk coordinates.
-     */
-    public int d;
-
-    /** The transmitted chunk data, decompressed. */
-    private byte[] buffer;
-    private byte[] field_73596_g;
-
-    /**
-     * Whether to initialize the Chunk before applying the effect of the Packet51MapChunk.
-     */
-    public boolean e;
-
-    /** The length of the compressed chunk data byte array. */
-    private int size;
-
-    /** A temporary storage for the compressed chunk data byte array. */
-    private static byte[] buildBuffer = new byte[196864];
-
-    public Packet51MapChunk()
-    {
-        this.lowPriority = true;
+  public Packet51MapChunk(Chunk chunk, boolean flag, int i) {
+    this.lowPriority = true;
+    this.a = chunk.x;
+    this.b = chunk.z;
+    this.f = flag;
+    if (flag) {
+      i = 65535;
+      chunk.seenByPlayer = true;
     }
 
-    public Packet51MapChunk(Chunk var1, boolean var2, int var3)
-    {
-        this.lowPriority = true;
-        this.a = var1.x;
-        this.b = var1.z;
-        this.e = var2;
-        ChunkMap var4 = a(var1, var2, var3);
-        Deflater var5 = new Deflater(-1);
-        this.d = var4.field_74581_c;
-        this.c = var4.field_74580_b;
+    ChunkSection[] achunksection = chunk.h();
+    int j = 0;
+    int k = 0;
 
-        try
-        {
-            this.field_73596_g = var4.field_74582_a;
-            var5.setInput(var4.field_74582_a, 0, var4.field_74582_a.length);
-            var5.finish();
-            this.buffer = new byte[var4.field_74582_a.length];
-            this.size = var5.deflate(this.buffer);
+    for (int l = 0; l < achunksection.length; l++) {
+      if ((achunksection[l] != null) && ((!flag) || (!achunksection[l].a())) && ((i & 1 << l) != 0)) {
+        this.c |= 1 << l;
+        j++;
+        if (achunksection[l].h() != null) {
+          this.d |= 1 << l;
+          k++;
         }
-        finally
-        {
-            var5.end();
-        }
+      }
     }
 
-    /**
-     * Abstract. Reads the raw packet data from the data stream.
-     */
-    public void a(DataInputStream var1)
-    {
-        this.a = var1.readInt();
-        this.b = var1.readInt();
-        this.e = var1.readBoolean();
-        this.c = var1.readShort();
-        this.d = var1.readShort();
-        this.size = var1.readInt();
-
-        if (buildBuffer.length < this.size)
-        {
-            buildBuffer = new byte[this.size];
-        }
-
-        var1.readFully(buildBuffer, 0, this.size);
-        int var2 = 0;
-        int var3;
-
-        for (var3 = 0; var3 < 16; ++var3)
-        {
-            var2 += this.c >> var3 & 1;
-        }
-
-        var3 = 12288 * var2;
-
-        if (this.e)
-        {
-            var3 += 256;
-        }
-
-        this.field_73596_g = new byte[var3];
-        Inflater var4 = new Inflater();
-        var4.setInput(buildBuffer, 0, this.size);
-
-        try
-        {
-            var4.inflate(this.field_73596_g);
-        }
-        catch (DataFormatException var9)
-        {
-            throw new IOException("Bad compressed data format");
-        }
-        finally
-        {
-            var4.end();
-        }
+    l = 2048 * (5 * j + k);
+    if (flag) {
+      l += 256;
     }
 
-    /**
-     * Abstract. Writes the raw packet data to the data stream.
-     */
-    public void a(DataOutputStream var1)
-    {
-        var1.writeInt(this.a);
-        var1.writeInt(this.b);
-        var1.writeBoolean(this.e);
-        var1.writeShort((short)(this.c & 65535));
-        var1.writeShort((short)(this.d & 65535));
-        var1.writeInt(this.size);
-        var1.write(this.buffer, 0, this.size);
+    if (this.rawData.length < l) {
+      this.rawData = new byte[l];
     }
 
-    /**
-     * Passes this Packet on to the NetHandler for processing.
-     */
-    public void handle(NetHandler var1)
-    {
-        var1.a(this);
+    byte[] abyte = this.rawData;
+    int i1 = 0;
+
+    for (int j1 = 0; j1 < achunksection.length; j1++) {
+      if ((achunksection[j1] != null) && ((!flag) || (!achunksection[j1].a())) && ((i & 1 << j1) != 0)) {
+        byte[] abyte1 = achunksection[j1].g();
+
+        System.arraycopy(abyte1, 0, abyte, i1, abyte1.length);
+        i1 += abyte1.length;
+      }
+
     }
 
-    /**
-     * Abstract. Return the size of the packet (not counting the header).
-     */
-    public int a()
-    {
-        return 17 + this.size;
+    for (j1 = 0; j1 < achunksection.length; j1++) {
+      if ((achunksection[j1] != null) && ((!flag) || (!achunksection[j1].a())) && ((i & 1 << j1) != 0)) {
+        NibbleArray nibblearray = achunksection[j1].i();
+        System.arraycopy(nibblearray.a, 0, abyte, i1, nibblearray.a.length);
+        i1 += nibblearray.a.length;
+      }
     }
 
-    public static ChunkMap a(Chunk var0, boolean var1, int var2)
-    {
-        int var3 = 0;
-        ChunkSection[] var4 = var0.i();
-        int var5 = 0;
-        ChunkMap var6 = new ChunkMap();
-        byte[] var7 = buildBuffer;
-
-        if (var1)
-        {
-            var0.seenByPlayer = true;
-        }
-
-        int var8;
-
-        for (var8 = 0; var8 < var4.length; ++var8)
-        {
-            if (var4[var8] != null && (!var1 || !var4[var8].a()) && (var2 & 1 << var8) != 0)
-            {
-                var6.field_74580_b |= 1 << var8;
-
-                if (var4[var8].i() != null)
-                {
-                    var6.field_74581_c |= 1 << var8;
-                    ++var5;
-                }
-            }
-        }
-
-        for (var8 = 0; var8 < var4.length; ++var8)
-        {
-            if (var4[var8] != null && (!var1 || !var4[var8].a()) && (var2 & 1 << var8) != 0)
-            {
-                byte[] var9 = var4[var8].g();
-                System.arraycopy(var9, 0, var7, var3, var9.length);
-                var3 += var9.length;
-            }
-        }
-
-        NibbleArray var10;
-
-        for (var8 = 0; var8 < var4.length; ++var8)
-        {
-            if (var4[var8] != null && (!var1 || !var4[var8].a()) && (var2 & 1 << var8) != 0)
-            {
-                var10 = var4[var8].j();
-                System.arraycopy(var10.a, 0, var7, var3, var10.a.length);
-                var3 += var10.a.length;
-            }
-        }
-
-        for (var8 = 0; var8 < var4.length; ++var8)
-        {
-            if (var4[var8] != null && (!var1 || !var4[var8].a()) && (var2 & 1 << var8) != 0)
-            {
-                var10 = var4[var8].k();
-                System.arraycopy(var10.a, 0, var7, var3, var10.a.length);
-                var3 += var10.a.length;
-            }
-        }
-
-        for (var8 = 0; var8 < var4.length; ++var8)
-        {
-            if (var4[var8] != null && (!var1 || !var4[var8].a()) && (var2 & 1 << var8) != 0)
-            {
-                var10 = var4[var8].l();
-                System.arraycopy(var10.a, 0, var7, var3, var10.a.length);
-                var3 += var10.a.length;
-            }
-        }
-
-        if (var5 > 0)
-        {
-            for (var8 = 0; var8 < var4.length; ++var8)
-            {
-                if (var4[var8] != null && (!var1 || !var4[var8].a()) && var4[var8].i() != null && (var2 & 1 << var8) != 0)
-                {
-                    var10 = var4[var8].i();
-                    System.arraycopy(var10.a, 0, var7, var3, var10.a.length);
-                    var3 += var10.a.length;
-                }
-            }
-        }
-
-        if (var1)
-        {
-            byte[] var11 = var0.m();
-            System.arraycopy(var11, 0, var7, var3, var11.length);
-            var3 += var11.length;
-        }
-
-        var6.field_74582_a = new byte[var3];
-        System.arraycopy(var7, 0, var6.field_74582_a, 0, var3);
-        return var6;
+    for (j1 = 0; j1 < achunksection.length; j1++) {
+      if ((achunksection[j1] != null) && ((!flag) || (!achunksection[j1].a())) && ((i & 1 << j1) != 0)) {
+        NibbleArray nibblearray = achunksection[j1].j();
+        System.arraycopy(nibblearray.a, 0, abyte, i1, nibblearray.a.length);
+        i1 += nibblearray.a.length;
+      }
     }
+
+    for (j1 = 0; j1 < achunksection.length; j1++) {
+      if ((achunksection[j1] != null) && ((!flag) || (!achunksection[j1].a())) && ((i & 1 << j1) != 0)) {
+        NibbleArray nibblearray = achunksection[j1].k();
+        System.arraycopy(nibblearray.a, 0, abyte, i1, nibblearray.a.length);
+        i1 += nibblearray.a.length;
+      }
+    }
+
+    if (k > 0) {
+      for (j1 = 0; j1 < achunksection.length; j1++) {
+        if ((achunksection[j1] != null) && ((!flag) || (!achunksection[j1].a())) && (achunksection[j1].h() != null) && ((i & 1 << j1) != 0)) {
+          NibbleArray nibblearray = achunksection[j1].h();
+          System.arraycopy(nibblearray.a, 0, abyte, i1, nibblearray.a.length);
+          i1 += nibblearray.a.length;
+        }
+      }
+    }
+
+    if (flag) {
+      byte[] abyte2 = chunk.l();
+
+      System.arraycopy(abyte2, 0, abyte, i1, abyte2.length);
+      i1 += abyte2.length;
+    }
+
+    this.rawData = abyte;
+  }
+
+  public void a(DataInputStream datainputstream) throws IOException
+  {
+    this.a = datainputstream.readInt();
+    this.b = datainputstream.readInt();
+    this.f = datainputstream.readBoolean();
+    this.c = datainputstream.readShort();
+    this.d = datainputstream.readShort();
+    this.size = datainputstream.readInt();
+    this.h = datainputstream.readInt();
+    if (this.rawData.length < this.size) {
+      this.rawData = new byte[this.size];
+    }
+
+    datainputstream.readFully(this.rawData, 0, this.size);
+    int i = 0;
+
+    for (int j = 0; j < 16; j++) {
+      i += (this.c >> j & 0x1);
+    }
+
+    j = 12288 * i;
+    if (this.f) {
+      j += 256;
+    }
+
+    this.buffer = new byte[j];
+    Inflater inflater = new Inflater();
+
+    inflater.setInput(this.rawData, 0, this.size);
+    try
+    {
+      inflater.inflate(this.buffer);
+    } catch (DataFormatException dataformatexception) {
+      throw new IOException("Bad compressed data format");
+    } finally {
+      inflater.end();
+    }
+  }
+
+  public void a(DataOutputStream dataoutputstream) throws IOException {
+    dataoutputstream.writeInt(this.a);
+    dataoutputstream.writeInt(this.b);
+    dataoutputstream.writeBoolean(this.f);
+    dataoutputstream.writeShort((short)(this.c & 0xFFFF));
+    dataoutputstream.writeShort((short)(this.d & 0xFFFF));
+    dataoutputstream.writeInt(this.size);
+    dataoutputstream.writeInt(this.h);
+    dataoutputstream.write(this.buffer, 0, this.size);
+  }
+
+  public void handle(NetHandler nethandler) {
+    nethandler.a(this);
+  }
+
+  public int a() {
+    return 17 + this.size;
+  }
 }
+

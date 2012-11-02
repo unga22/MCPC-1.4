@@ -1,58 +1,53 @@
 package net.minecraft.server;
 
+import forge.ForgeHooks;
+import org.bukkit.craftbukkit.block.CraftBlockState;
+import org.bukkit.craftbukkit.event.CraftEventFactory;
+import org.bukkit.event.block.BlockPlaceEvent;
+
 public class ItemHoe extends Item
 {
-    protected EnumToolMaterial a;
+  public ItemHoe(int i, EnumToolMaterial enumtoolmaterial)
+  {
+    super(i);
+    this.maxStackSize = 1;
+    setMaxDurability(enumtoolmaterial.a());
+  }
 
-    public ItemHoe(int var1, EnumToolMaterial var2)
+  public boolean interactWith(ItemStack itemstack, EntityHuman entityhuman, World world, int i, int j, int k, int l) {
+    if (!entityhuman.d(i, j, k)) {
+      return false;
+    }
+    if (ForgeHooks.onUseHoe(itemstack, entityhuman, world, i, j, k))
     {
-        super(var1);
-        this.a = var2;
-        this.maxStackSize = 1;
-        this.setMaxDurability(var2.a());
-        this.a(CreativeModeTab.i);
+      itemstack.damage(1, entityhuman);
+      return true;
+    }
+    int i1 = world.getTypeId(i, j, k);
+    int j1 = world.getTypeId(i, j + 1, k);
+
+    if (((l == 0) || (j1 != 0) || (i1 != Block.GRASS.id)) && (i1 != Block.DIRT.id)) {
+      return false;
+    }
+    Block block = Block.SOIL;
+
+    world.makeSound(i + 0.5F, j + 0.5F, k + 0.5F, block.stepSound.getName(), (block.stepSound.getVolume1() + 1.0F) / 2.0F, block.stepSound.getVolume2() * 0.8F);
+    if (world.isStatic) {
+      return true;
+    }
+    CraftBlockState blockState = CraftBlockState.getBlockState(world, i, j, k);
+
+    world.setTypeId(i, j, k, block.id);
+
+    BlockPlaceEvent event = CraftEventFactory.callBlockPlaceEvent(world, entityhuman, blockState, i, j, k);
+
+    if ((event.isCancelled()) || (!event.canBuild())) {
+      event.getBlockPlaced().setTypeId(blockState.getTypeId());
+      return false;
     }
 
-    /**
-     * Callback for item usage. If the item does something special on right clicking, he will have one of those. Return
-     * True if something happen and false if it don't. This is for ITEMS, not BLOCKS
-     */
-    public boolean interactWith(ItemStack var1, EntityHuman var2, World var3, int var4, int var5, int var6, int var7, float var8, float var9, float var10)
-    {
-        if (!var2.func_82247_a(var4, var5, var6, var7, var1))
-        {
-            return false;
-        }
-        else
-        {
-            int var11 = var3.getTypeId(var4, var5, var6);
-            int var12 = var3.getTypeId(var4, var5 + 1, var6);
-
-            if ((var7 == 0 || var12 != 0 || var11 != Block.GRASS.id) && var11 != Block.DIRT.id)
-            {
-                return false;
-            }
-            else
-            {
-                Block var13 = Block.SOIL;
-                var3.makeSound((double)((float)var4 + 0.5F), (double)((float)var5 + 0.5F), (double)((float)var6 + 0.5F), var13.stepSound.getName(), (var13.stepSound.getVolume1() + 1.0F) / 2.0F, var13.stepSound.getVolume2() * 0.8F);
-
-                if (var3.isStatic)
-                {
-                    return true;
-                }
-                else
-                {
-                    var3.setTypeId(var4, var5, var6, var13.id);
-                    var1.damage(1, var2);
-                    return true;
-                }
-            }
-        }
-    }
-
-    public String func_77842_f()
-    {
-        return this.a.toString();
-    }
+    itemstack.damage(1, entityhuman);
+    return true;
+  }
 }
+

@@ -2,238 +2,195 @@ package net.minecraft.server;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
+import org.bukkit.Bukkit;
+import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.CraftWorld;
+import org.bukkit.craftbukkit.map.CraftMapView;
 
 public class WorldMap extends WorldMapBase
 {
-    public int centerX;
-    public int centerZ;
-    public byte map;
-    public byte scale;
+  public int centerX;
+  public int centerZ;
+  public byte map;
+  public byte scale;
+  public byte[] colors = new byte[16384];
+  public int g;
+  public List h = new ArrayList();
+  private Map j = new HashMap();
+  public List decorations = new ArrayList();
+  public final CraftMapView mapView;
+  private CraftServer server;
+  private UUID uniqueId = null;
 
-    /** colours */
-    public byte[] colors = new byte[16384];
+  public WorldMap(String s)
+  {
+    super(s);
 
-    /**
-     * Holds a reference to the MapInfo of the players who own a copy of the map
-     */
-    public List f = new ArrayList();
+    this.mapView = new CraftMapView(this);
+    this.server = ((CraftServer)Bukkit.getServer());
+  }
 
-    /**
-     * Holds a reference to the players who own a copy of the map and a reference to their MapInfo
-     */
-    private Map i = new HashMap();
-    public Map g = new LinkedHashMap();
+  public void a(NBTTagCompound nbttagcompound)
+  {
+    byte dimension = nbttagcompound.getByte("dimension");
 
-    public WorldMap(String var1)
-    {
-        super(var1);
+    if (dimension >= 10) {
+      long least = nbttagcompound.getLong("UUIDLeast");
+      long most = nbttagcompound.getLong("UUIDMost");
+
+      if ((least != 0L) && (most != 0L)) {
+        this.uniqueId = new UUID(most, least);
+
+        CraftWorld world = (CraftWorld)this.server.getWorld(this.uniqueId);
+
+        if (world == null)
+        {
+          dimension = 127;
+        }
+        else dimension = (byte)world.getHandle().dimension;
+      }
+
     }
 
-    /**
-     * reads in data from the NBTTagCompound into this MapDataBase
-     */
-    public void a(NBTTagCompound var1)
-    {
-        this.map = var1.getByte("dimension");
-        this.centerX = var1.getInt("xCenter");
-        this.centerZ = var1.getInt("zCenter");
-        this.scale = var1.getByte("scale");
+    this.map = dimension;
 
-        if (this.scale < 0)
-        {
-            this.scale = 0;
-        }
-
-        if (this.scale > 4)
-        {
-            this.scale = 4;
-        }
-
-        short var2 = var1.getShort("width");
-        short var3 = var1.getShort("height");
-
-        if (var2 == 128 && var3 == 128)
-        {
-            this.colors = var1.getByteArray("colors");
-        }
-        else
-        {
-            byte[] var4 = var1.getByteArray("colors");
-            this.colors = new byte[16384];
-            int var5 = (128 - var2) / 2;
-            int var6 = (128 - var3) / 2;
-
-            for (int var7 = 0; var7 < var3; ++var7)
-            {
-                int var8 = var7 + var6;
-
-                if (var8 >= 0 || var8 < 128)
-                {
-                    for (int var9 = 0; var9 < var2; ++var9)
-                    {
-                        int var10 = var9 + var5;
-
-                        if (var10 >= 0 || var10 < 128)
-                        {
-                            this.colors[var10 + var8 * 128] = var4[var9 + var7 * var2];
-                        }
-                    }
-                }
-            }
-        }
+    this.centerX = nbttagcompound.getInt("xCenter");
+    this.centerZ = nbttagcompound.getInt("zCenter");
+    this.scale = nbttagcompound.getByte("scale");
+    if (this.scale < 0) {
+      this.scale = 0;
     }
 
-    /**
-     * write data to NBTTagCompound from this MapDataBase, similar to Entities and TileEntities
-     */
-    public void b(NBTTagCompound var1)
-    {
-        var1.setByte("dimension", this.map);
-        var1.setInt("xCenter", this.centerX);
-        var1.setInt("zCenter", this.centerZ);
-        var1.setByte("scale", this.scale);
-        var1.setShort("width", (short)128);
-        var1.setShort("height", (short)128);
-        var1.setByteArray("colors", this.colors);
+    if (this.scale > 4) {
+      this.scale = 4;
     }
 
-    /**
-     * Adds the player passed to the list of visible players and checks to see which players are visible
-     */
-    public void a(EntityHuman var1, ItemStack var2)
-    {
-        if (!this.i.containsKey(var1))
-        {
-            WorldMapHumanTracker var3 = new WorldMapHumanTracker(this, var1);
-            this.i.put(var1, var3);
-            this.f.add(var3);
+    short short1 = nbttagcompound.getShort("width");
+    short short2 = nbttagcompound.getShort("height");
+
+    if ((short1 == 128) && (short2 == 128)) {
+      this.colors = nbttagcompound.getByteArray("colors");
+    } else {
+      byte[] abyte = nbttagcompound.getByteArray("colors");
+
+      this.colors = new byte[16384];
+      int i = (128 - short1) / 2;
+      int j = (128 - short2) / 2;
+
+      for (int k = 0; k < short2; k++) {
+        int l = k + j;
+
+        if ((l >= 0) || (l < 128))
+          for (int i1 = 0; i1 < short1; i1++) {
+            int j1 = i1 + i;
+
+            if ((j1 >= 0) || (j1 < 128))
+              this.colors[(j1 + l * 128)] = abyte[(i1 + k * short1)];
+          }
+      }
+    }
+  }
+
+  public void b(NBTTagCompound nbttagcompound)
+  {
+    if (this.map >= 10) {
+      if (this.uniqueId == null) {
+        for (org.bukkit.World world : this.server.getWorlds()) {
+          CraftWorld cWorld = (CraftWorld)world;
+          if (cWorld.getHandle().dimension == this.map) {
+            this.uniqueId = cWorld.getUID();
+            break;
+          }
         }
 
-        if (!var1.inventory.c(var2))
-        {
-            this.g.remove(var1.getName());
-        }
+      }
 
-        for (int var5 = 0; var5 < this.f.size(); ++var5)
-        {
-            WorldMapHumanTracker var4 = (WorldMapHumanTracker)this.f.get(var5);
-
-            if (!var4.trackee.dead && (var4.trackee.inventory.c(var2) || var2.y()))
-            {
-                if (!var2.y() && var4.trackee.dimension == this.map)
-                {
-                    this.func_82567_a(0, var4.trackee.world, var4.trackee.getName(), var4.trackee.locX, var4.trackee.locZ, (double)var4.trackee.yaw);
-                }
-            }
-            else
-            {
-                this.i.remove(var4.trackee);
-                this.f.remove(var4);
-            }
-        }
-
-        if (var2.y())
-        {
-            this.func_82567_a(1, var1.world, "frame-" + var2.z().id, (double)var2.z().x, (double)var2.z().z, (double)(var2.z().field_82332_a * 90));
-        }
+      if (this.uniqueId != null) {
+        nbttagcompound.setLong("UUIDLeast", this.uniqueId.getLeastSignificantBits());
+        nbttagcompound.setLong("UUIDMost", this.uniqueId.getMostSignificantBits());
+      }
     }
 
-    private void func_82567_a(int var1, World var2, String var3, double var4, double var6, double var8)
-    {
-        int var10 = 1 << this.scale;
-        float var11 = (float)(var4 - (double)this.centerX) / (float)var10;
-        float var12 = (float)(var6 - (double)this.centerZ) / (float)var10;
-        byte var13 = (byte)((int)((double)(var11 * 2.0F) + 0.5D));
-        byte var14 = (byte)((int)((double)(var12 * 2.0F) + 0.5D));
-        byte var16 = 63;
-        byte var15;
+    nbttagcompound.setByte("dimension", this.map);
+    nbttagcompound.setInt("xCenter", this.centerX);
+    nbttagcompound.setInt("zCenter", this.centerZ);
+    nbttagcompound.setByte("scale", this.scale);
+    nbttagcompound.setShort("width", (short)128);
+    nbttagcompound.setShort("height", (short)128);
+    nbttagcompound.setByteArray("colors", this.colors);
+  }
 
-        if (var11 >= (float)(-var16) && var12 >= (float)(-var16) && var11 <= (float)var16 && var12 <= (float)var16)
-        {
-            var8 += var8 < 0.0D ? -8.0D : 8.0D;
-            var15 = (byte)((int)(var8 * 16.0D / 360.0D));
+  public void a(EntityHuman entityhuman, ItemStack itemstack) {
+    if (!this.j.containsKey(entityhuman)) {
+      WorldMapHumanTracker worldmaphumantracker = new WorldMapHumanTracker(this, entityhuman);
 
-            if (this.map < 0)
-            {
-                int var17 = (int)(var2.getWorldData().g() / 10L);
-                var15 = (byte)(var17 * var17 * 34187121 + var17 * 121 >> 15 & 15);
-            }
-        }
-        else
-        {
-            if (Math.abs(var11) >= 320.0F || Math.abs(var12) >= 320.0F)
-            {
-                this.g.remove(var3);
-                return;
-            }
-
-            var1 = 6;
-            var15 = 0;
-
-            if (var11 <= (float)(-var16))
-            {
-                var13 = (byte)((int)((double)(var16 * 2) + 2.5D));
-            }
-
-            if (var12 <= (float)(-var16))
-            {
-                var14 = (byte)((int)((double)(var16 * 2) + 2.5D));
-            }
-
-            if (var11 >= (float)var16)
-            {
-                var13 = (byte)(var16 * 2 + 1);
-            }
-
-            if (var12 >= (float)var16)
-            {
-                var14 = (byte)(var16 * 2 + 1);
-            }
-        }
-
-        this.g.put(var3, new WorldMapDecoration(this, (byte)var1, var13, var14, var15));
+      this.j.put(entityhuman, worldmaphumantracker);
+      this.h.add(worldmaphumantracker);
     }
 
-    public byte[] func_76193_a(ItemStack var1, World var2, EntityHuman var3)
-    {
-        WorldMapHumanTracker var4 = (WorldMapHumanTracker)this.i.get(var3);
-        return var4 == null ? null : var4.a(var1);
-    }
+    this.decorations.clear();
 
-    public void func_76194_a(int var1, int var2, int var3)
-    {
-        super.c();
+    for (int i = 0; i < this.h.size(); i++) {
+      WorldMapHumanTracker worldmaphumantracker1 = (WorldMapHumanTracker)this.h.get(i);
 
-        for (int var4 = 0; var4 < this.f.size(); ++var4)
-        {
-            WorldMapHumanTracker var5 = (WorldMapHumanTracker)this.f.get(var4);
+      if ((!worldmaphumantracker1.trackee.dead) && (worldmaphumantracker1.trackee.inventory.c(itemstack))) {
+        float f = (float)(worldmaphumantracker1.trackee.locX - this.centerX) / 1 << this.scale;
+        float f1 = (float)(worldmaphumantracker1.trackee.locZ - this.centerZ) / 1 << this.scale;
+        byte b0 = 64;
+        byte b1 = 64;
 
-            if (var5.field_76209_b[var1] < 0 || var5.field_76209_b[var1] > var2)
-            {
-                var5.field_76209_b[var1] = var2;
-            }
+        if ((f >= -b0) && (f1 >= -b1) && (f <= b0) && (f1 <= b1)) {
+          byte b2 = 0;
+          byte b3 = (byte)(int)(f * 2.0F + 0.5D);
+          byte b4 = (byte)(int)(f1 * 2.0F + 0.5D);
 
-            if (var5.field_76210_c[var1] < 0 || var5.field_76210_c[var1] < var3)
-            {
-                var5.field_76210_c[var1] = var3;
-            }
+          byte b5 = (byte)(int)(worldmaphumantracker1.trackee.yaw * 16.0F / 360.0F + 0.5D);
+
+          if (this.map < 0) {
+            int j = this.g / 10;
+
+            b5 = (byte)(j * j * 34187121 + j * 121 >> 15 & 0xF);
+          }
+
+          if (worldmaphumantracker1.trackee.dimension == this.map)
+            this.decorations.add(new WorldMapDecoration(this, b2, b3, b4, b5));
         }
+      }
+      else {
+        this.j.remove(worldmaphumantracker1.trackee);
+        this.h.remove(worldmaphumantracker1);
+      }
     }
+  }
 
-    public WorldMapHumanTracker func_82568_a(EntityHuman var1)
-    {
-        WorldMapHumanTracker var2 = (WorldMapHumanTracker)this.i.get(var1);
+  public byte[] getUpdatePacket(ItemStack itemstack, World world, EntityHuman entityhuman) {
+    WorldMapHumanTracker worldmaphumantracker = (WorldMapHumanTracker)this.j.get(entityhuman);
 
-        if (var2 == null)
-        {
-            var2 = new WorldMapHumanTracker(this, var1);
-            this.i.put(var1, var2);
-            this.f.add(var2);
-        }
-
-        return var2;
+    if (worldmaphumantracker == null) {
+      return null;
     }
+    byte[] abyte = worldmaphumantracker.a(itemstack);
+
+    return abyte;
+  }
+
+  public void flagDirty(int i, int j, int k)
+  {
+    super.a();
+
+    for (int l = 0; l < this.h.size(); l++) {
+      WorldMapHumanTracker worldmaphumantracker = (WorldMapHumanTracker)this.h.get(l);
+
+      if ((worldmaphumantracker.b[i] < 0) || (worldmaphumantracker.b[i] > j)) {
+        worldmaphumantracker.b[i] = j;
+      }
+
+      if ((worldmaphumantracker.c[i] < 0) || (worldmaphumantracker.c[i] < k))
+        worldmaphumantracker.c[i] = k;
+    }
+  }
 }
+

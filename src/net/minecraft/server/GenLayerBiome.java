@@ -8,13 +8,8 @@ public class GenLayerBiome extends GenLayer
     public GenLayerBiome(long var1, GenLayer var3, WorldType var4)
     {
         super(var1);
-        this.b = new BiomeBase[] {BiomeBase.DESERT, BiomeBase.FOREST, BiomeBase.EXTREME_HILLS, BiomeBase.SWAMPLAND, BiomeBase.PLAINS, BiomeBase.TAIGA, BiomeBase.JUNGLE};
+        this.b = var4.getBiomesForWorldType();
         this.a = var3;
-
-        if (var4 == WorldType.NORMAL_1_1)
-        {
-            this.b = new BiomeBase[] {BiomeBase.DESERT, BiomeBase.FOREST, BiomeBase.EXTREME_HILLS, BiomeBase.SWAMPLAND, BiomeBase.PLAINS, BiomeBase.TAIGA};
-        }
     }
 
     /**

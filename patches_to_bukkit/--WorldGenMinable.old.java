@@ -4,70 +4,61 @@ import java.util.Random;
 
 public class WorldGenMinable extends WorldGenerator
 {
-    /** The block ID of the ore to be placed using this generator. */
-    private int a;
+  private int a;
+  private int b;
 
-    /** The number of blocks to generate. */
-    private int b;
+  public WorldGenMinable(int i, int j)
+  {
+    this.a = i;
+    this.b = j;
+  }
 
-    public WorldGenMinable(int var1, int var2)
-    {
-        this.a = var1;
-        this.b = var2;
-    }
+  public boolean a(World world, Random random, int i, int j, int k) {
+    float f = random.nextFloat() * 3.141593F;
+    double d0 = i + 8 + MathHelper.sin(f) * this.b / 8.0F;
+    double d1 = i + 8 - MathHelper.sin(f) * this.b / 8.0F;
+    double d2 = k + 8 + MathHelper.cos(f) * this.b / 8.0F;
+    double d3 = k + 8 - MathHelper.cos(f) * this.b / 8.0F;
+    double d4 = j + random.nextInt(3) - 2;
+    double d5 = j + random.nextInt(3) - 2;
 
-    public boolean a(World var1, Random var2, int var3, int var4, int var5)
-    {
-        float var6 = var2.nextFloat() * (float)Math.PI;
-        double var7 = (double)((float)(var3 + 8) + MathHelper.sin(var6) * (float)this.b / 8.0F);
-        double var9 = (double)((float)(var3 + 8) - MathHelper.sin(var6) * (float)this.b / 8.0F);
-        double var11 = (double)((float)(var5 + 8) + MathHelper.cos(var6) * (float)this.b / 8.0F);
-        double var13 = (double)((float)(var5 + 8) - MathHelper.cos(var6) * (float)this.b / 8.0F);
-        double var15 = (double)(var4 + var2.nextInt(3) - 2);
-        double var17 = (double)(var4 + var2.nextInt(3) - 2);
+    for (int l = 0; l <= this.b; l++) {
+      double d6 = d0 + (d1 - d0) * l / this.b;
+      double d7 = d4 + (d5 - d4) * l / this.b;
+      double d8 = d2 + (d3 - d2) * l / this.b;
+      double d9 = random.nextDouble() * this.b / 16.0D;
+      double d10 = MathHelper.sin(l * 3.141593F / this.b) + 1.0F * d9 + 1.0D;
+      double d11 = MathHelper.sin(l * 3.141593F / this.b) + 1.0F * d9 + 1.0D;
+      int i1 = MathHelper.floor(d6 - d10 / 2.0D);
+      int j1 = MathHelper.floor(d7 - d11 / 2.0D);
+      int k1 = MathHelper.floor(d8 - d10 / 2.0D);
+      int l1 = MathHelper.floor(d6 + d10 / 2.0D);
+      int i2 = MathHelper.floor(d7 + d11 / 2.0D);
+      int j2 = MathHelper.floor(d8 + d10 / 2.0D);
 
-        for (int var19 = 0; var19 <= this.b; ++var19)
-        {
-            double var20 = var7 + (var9 - var7) * (double)var19 / (double)this.b;
-            double var22 = var15 + (var17 - var15) * (double)var19 / (double)this.b;
-            double var24 = var11 + (var13 - var11) * (double)var19 / (double)this.b;
-            double var26 = var2.nextDouble() * (double)this.b / 16.0D;
-            double var28 = (double)(MathHelper.sin((float)var19 * (float)Math.PI / (float)this.b) + 1.0F) * var26 + 1.0D;
-            double var30 = (double)(MathHelper.sin((float)var19 * (float)Math.PI / (float)this.b) + 1.0F) * var26 + 1.0D;
-            int var32 = MathHelper.floor(var20 - var28 / 2.0D);
-            int var33 = MathHelper.floor(var22 - var30 / 2.0D);
-            int var34 = MathHelper.floor(var24 - var28 / 2.0D);
-            int var35 = MathHelper.floor(var20 + var28 / 2.0D);
-            int var36 = MathHelper.floor(var22 + var30 / 2.0D);
-            int var37 = MathHelper.floor(var24 + var28 / 2.0D);
+      for (int k2 = i1; k2 <= l1; k2++) {
+        double d12 = (k2 + 0.5D - d6) / (d10 / 2.0D);
 
-            for (int var38 = var32; var38 <= var35; ++var38)
-            {
-                double var39 = ((double)var38 + 0.5D - var20) / (var28 / 2.0D);
+        if (d12 * d12 < 1.0D) {
+          for (int l2 = j1; l2 <= i2; l2++) {
+            double d13 = (l2 + 0.5D - d7) / (d11 / 2.0D);
 
-                if (var39 * var39 < 1.0D)
-                {
-                    for (int var41 = var33; var41 <= var36; ++var41)
-                    {
-                        double var42 = ((double)var41 + 0.5D - var22) / (var30 / 2.0D);
+            if (d12 * d12 + d13 * d13 < 1.0D) {
+              for (int i3 = k1; i3 <= j2; i3++) {
+                double d14 = (i3 + 0.5D - d8) / (d10 / 2.0D);
 
-                        if (var39 * var39 + var42 * var42 < 1.0D)
-                        {
-                            for (int var44 = var34; var44 <= var37; ++var44)
-                            {
-                                double var45 = ((double)var44 + 0.5D - var24) / (var28 / 2.0D);
-
-                                if (var39 * var39 + var42 * var42 + var45 * var45 < 1.0D && var1.getTypeId(var38, var41, var44) == Block.STONE.id)
-                                {
-                                    var1.setRawTypeId(var38, var41, var44, this.a);
-                                }
-                            }
-                        }
-                    }
+                Block bl = Block.byId[world.getTypeId(k2, l2, i3)];
+                if ((d12 * d12 + d13 * d13 + d14 * d14 < 1.0D) && (bl != null) && (bl.isGenMineableReplaceable(world, k2, l2, i3))) {
+                  world.setRawTypeId(k2, l2, i3, this.a);
                 }
+              }
             }
+          }
         }
-
-        return true;
+      }
     }
+
+    return true;
+  }
 }
+

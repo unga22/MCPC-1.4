@@ -1,5 +1,8 @@
 package net.minecraft.server;
 
+import cpw.mods.fml.common.Side;
+import cpw.mods.fml.common.asm.SideOnly;
+import java.util.List;
 import java.util.Random;
 
 public class BlockLog extends Block
@@ -56,14 +59,9 @@ public class BlockLog extends Block
                     {
                         int var12 = var1.getTypeId(var2 + var9, var3 + var10, var4 + var11);
 
-                        if (var12 == Block.LEAVES.id)
+                        if (Block.byId[var12] != null)
                         {
-                            int var13 = var1.getData(var2 + var9, var3 + var10, var4 + var11);
-
-                            if ((var13 & 8) == 0)
-                            {
-                                var1.setRawData(var2 + var9, var3 + var10, var4 + var11, var13 | 8);
-                            }
+                            Block.byId[var12].beginLeavesDecay(var1, var2 + var9, var3 + var10, var4 + var11);
                         }
                     }
                 }
@@ -125,6 +123,15 @@ public class BlockLog extends Block
         return var0 & 3;
     }
 
+    @SideOnly(Side.CLIENT)
+    public void a(int var1, CreativeModeTab var2, List var3)
+    {
+        var3.add(new ItemStack(var1, 1, 0));
+        var3.add(new ItemStack(var1, 1, 1));
+        var3.add(new ItemStack(var1, 1, 2));
+        var3.add(new ItemStack(var1, 1, 3));
+    }
+
     /**
      * Returns an item stack containing a single instance of the current block type. 'i' is the block's subtype/damage
      * and is ignored for blocks which do not support subtypes. Blocks which cannot be harvested should return null.
@@ -132,5 +139,15 @@ public class BlockLog extends Block
     protected ItemStack f_(int var1)
     {
         return new ItemStack(this.id, 1, e(var1));
+    }
+
+    public boolean canSustainLeaves(World var1, int var2, int var3, int var4)
+    {
+        return true;
+    }
+
+    public boolean isWood(World var1, int var2, int var3, int var4)
+    {
+        return true;
     }
 }

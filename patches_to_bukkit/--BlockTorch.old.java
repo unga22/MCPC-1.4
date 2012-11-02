@@ -4,245 +4,166 @@ import java.util.Random;
 
 public class BlockTorch extends Block
 {
-    protected BlockTorch(int var1, int var2)
-    {
-        super(var1, var2, Material.ORIENTABLE);
-        this.b(true);
-        this.a(CreativeModeTab.c);
+  protected BlockTorch(int i, int j)
+  {
+    super(i, j, Material.ORIENTABLE);
+    a(true);
+  }
+
+  public AxisAlignedBB e(World world, int i, int j, int k) {
+    return null;
+  }
+
+  public boolean a() {
+    return false;
+  }
+
+  public boolean b() {
+    return false;
+  }
+
+  public int c() {
+    return 2;
+  }
+
+  private boolean g(World world, int i, int j, int k) {
+    if (world.isBlockSolidOnSide(i, j, k, 1)) {
+      return true;
+    }
+    int l = world.getTypeId(i, j, k);
+
+    if ((l != Block.FENCE.id) && (l != Block.NETHER_FENCE.id) && (l != Block.GLASS.id)) {
+      if ((Block.byId[l] != null) && ((Block.byId[l] instanceof BlockStairs))) {
+        int i1 = world.getData(i, j, k);
+
+        if ((0x4 & i1) != 0) {
+          return true;
+        }
+      }
+
+      return false;
+    }
+    return true;
+  }
+
+  public boolean canPlace(World par1World, int par2, int par3, int par4)
+  {
+    return (par1World.isBlockSolidOnSide(par2 - 1, par3, par4, 5)) || (par1World.isBlockSolidOnSide(par2 + 1, par3, par4, 4)) || (par1World.isBlockSolidOnSide(par2, par3, par4 - 1, 3)) || (par1World.isBlockSolidOnSide(par2, par3, par4 + 1, 2)) || (g(par1World, par2, par3 - 1, par4));
+  }
+
+  public void postPlace(World world, int i, int j, int k, int l)
+  {
+    int i1 = world.getData(i, j, k);
+
+    if ((l == 1) && (g(world, i, j - 1, k))) {
+      i1 = 5;
     }
 
-    /**
-     * Returns a bounding box from the pool of bounding boxes (this means this box can change after the pool has been
-     * cleared to be reused)
-     */
-    public AxisAlignedBB e(World var1, int var2, int var3, int var4)
-    {
-        return null;
+    if ((l == 2) && (world.isBlockSolidOnSide(i, j, k + 1, 2))) {
+      i1 = 4;
     }
 
-    /**
-     * Is this block (a) opaque and (b) a full 1m cube?  This determines whether or not to render the shared face of two
-     * adjacent blocks and also whether the player can attach torches, redstone wire, etc to this block.
-     */
-    public boolean c()
-    {
-        return false;
+    if ((l == 3) && (world.isBlockSolidOnSide(i, j, k - 1, 3))) {
+      i1 = 3;
     }
 
-    /**
-     * If this block doesn't render as an ordinary block it will return False (examples: signs, buttons, stairs, etc)
-     */
-    public boolean b()
-    {
-        return false;
+    if ((l == 4) && (world.isBlockSolidOnSide(i + 1, j, k, 4))) {
+      i1 = 2;
     }
 
-    /**
-     * The type of render function that is called for this block
-     */
-    public int d()
-    {
-        return 2;
+    if ((l == 5) && (world.isBlockSolidOnSide(i - 1, j, k, 5))) {
+      i1 = 1;
     }
 
-    /**
-     * Gets if we can place a torch on a block.
-     */
-    private boolean l(World var1, int var2, int var3, int var4)
-    {
-        if (var1.t(var2, var3, var4))
-        {
-            return true;
-        }
-        else
-        {
-            int var5 = var1.getTypeId(var2, var3, var4);
-            return var5 == Block.FENCE.id || var5 == Block.NETHER_FENCE.id || var5 == Block.GLASS.id || var5 == Block.COBBLE_WALL.id;
-        }
+    world.setData(i, j, k, i1);
+  }
+
+  public void a(World world, int i, int j, int k, Random random) {
+    super.a(world, i, j, k, random);
+    if (world.getData(i, j, k) == 0)
+      onPlace(world, i, j, k);
+  }
+
+  public void onPlace(World world, int i, int j, int k)
+  {
+    if (world.isBlockSolidOnSide(i - 1, j, k, 5))
+      world.setData(i, j, k, 1);
+    else if (world.isBlockSolidOnSide(i + 1, j, k, 4))
+      world.setData(i, j, k, 2);
+    else if (world.isBlockSolidOnSide(i, j, k - 1, 3))
+      world.setData(i, j, k, 3);
+    else if (world.isBlockSolidOnSide(i, j, k + 1, 2))
+      world.setData(i, j, k, 4);
+    else if (g(world, i, j - 1, k)) {
+      world.setData(i, j, k, 5);
     }
 
-    /**
-     * Checks to see if its valid to put this block at the specified coordinates. Args: world, x, y, z
-     */
-    public boolean canPlace(World var1, int var2, int var3, int var4)
-    {
-        return var1.b(var2 - 1, var3, var4, true) ? true : (var1.b(var2 + 1, var3, var4, true) ? true : (var1.b(var2, var3, var4 - 1, true) ? true : (var1.b(var2, var3, var4 + 1, true) ? true : this.l(var1, var2, var3 - 1, var4))));
+    h(world, i, j, k);
+  }
+
+  public void doPhysics(World world, int i, int j, int k, int l) {
+    if (h(world, i, j, k)) {
+      int i1 = world.getData(i, j, k);
+      boolean flag = false;
+
+      if ((!world.isBlockSolidOnSide(i - 1, j, k, 5)) && (i1 == 1)) {
+        flag = true;
+      }
+
+      if ((!world.isBlockSolidOnSide(i + 1, j, k, 4)) && (i1 == 2)) {
+        flag = true;
+      }
+
+      if ((!world.isBlockSolidOnSide(i, j, k - 1, 3)) && (i1 == 3)) {
+        flag = true;
+      }
+
+      if ((!world.isBlockSolidOnSide(i, j, k + 1, 2)) && (i1 == 4)) {
+        flag = true;
+      }
+
+      if ((!g(world, i, j - 1, k)) && (i1 == 5)) {
+        flag = true;
+      }
+
+      if (flag) {
+        b(world, i, j, k, world.getData(i, j, k), 0);
+        world.setTypeId(i, j, k, 0);
+      }
+    }
+  }
+
+  private boolean h(World world, int i, int j, int k) {
+    if (!canPlace(world, i, j, k)) {
+      if (world.getTypeId(i, j, k) == this.id) {
+        b(world, i, j, k, world.getData(i, j, k), 0);
+        world.setTypeId(i, j, k, 0);
+      }
+
+      return false;
+    }
+    return true;
+  }
+
+  public MovingObjectPosition a(World world, int i, int j, int k, Vec3D vec3d, Vec3D vec3d1)
+  {
+    int l = world.getData(i, j, k) & 0x7;
+    float f = 0.15F;
+
+    if (l == 1) {
+      a(0.0F, 0.2F, 0.5F - f, f * 2.0F, 0.8F, 0.5F + f);
+    } else if (l == 2) {
+      a(1.0F - f * 2.0F, 0.2F, 0.5F - f, 1.0F, 0.8F, 0.5F + f);
+    } else if (l == 3) {
+      a(0.5F - f, 0.2F, 0.0F, 0.5F + f, 0.8F, f * 2.0F);
+    } else if (l == 4) {
+      a(0.5F - f, 0.2F, 1.0F - f * 2.0F, 0.5F + f, 0.8F, 1.0F);
+    } else {
+      f = 0.1F;
+      a(0.5F - f, 0.0F, 0.5F - f, 0.5F + f, 0.6F, 0.5F + f);
     }
 
-    /**
-     * called before onBlockPlacedBy by ItemBlock and ItemReed
-     */
-    public void postPlace(World var1, int var2, int var3, int var4, int var5, float var6, float var7, float var8)
-    {
-        int var9 = var1.getData(var2, var3, var4);
-
-        if (var5 == 1 && this.l(var1, var2, var3 - 1, var4))
-        {
-            var9 = 5;
-        }
-
-        if (var5 == 2 && var1.b(var2, var3, var4 + 1, true))
-        {
-            var9 = 4;
-        }
-
-        if (var5 == 3 && var1.b(var2, var3, var4 - 1, true))
-        {
-            var9 = 3;
-        }
-
-        if (var5 == 4 && var1.b(var2 + 1, var3, var4, true))
-        {
-            var9 = 2;
-        }
-
-        if (var5 == 5 && var1.b(var2 - 1, var3, var4, true))
-        {
-            var9 = 1;
-        }
-
-        var1.setData(var2, var3, var4, var9);
-    }
-
-    /**
-     * Ticks the block if it's been scheduled
-     */
-    public void b(World var1, int var2, int var3, int var4, Random var5)
-    {
-        super.b(var1, var2, var3, var4, var5);
-
-        if (var1.getData(var2, var3, var4) == 0)
-        {
-            this.onPlace(var1, var2, var3, var4);
-        }
-    }
-
-    /**
-     * Called whenever the block is added into the world. Args: world, x, y, z
-     */
-    public void onPlace(World var1, int var2, int var3, int var4)
-    {
-        if (var1.b(var2 - 1, var3, var4, true))
-        {
-            var1.setData(var2, var3, var4, 1);
-        }
-        else if (var1.b(var2 + 1, var3, var4, true))
-        {
-            var1.setData(var2, var3, var4, 2);
-        }
-        else if (var1.b(var2, var3, var4 - 1, true))
-        {
-            var1.setData(var2, var3, var4, 3);
-        }
-        else if (var1.b(var2, var3, var4 + 1, true))
-        {
-            var1.setData(var2, var3, var4, 4);
-        }
-        else if (this.l(var1, var2, var3 - 1, var4))
-        {
-            var1.setData(var2, var3, var4, 5);
-        }
-
-        this.n(var1, var2, var3, var4);
-    }
-
-    /**
-     * Lets the block know when one of its neighbor changes. Doesn't know which neighbor changed (coordinates passed are
-     * their own) Args: x, y, z, neighbor blockID
-     */
-    public void doPhysics(World var1, int var2, int var3, int var4, int var5)
-    {
-        if (this.n(var1, var2, var3, var4))
-        {
-            int var6 = var1.getData(var2, var3, var4);
-            boolean var7 = false;
-
-            if (!var1.b(var2 - 1, var3, var4, true) && var6 == 1)
-            {
-                var7 = true;
-            }
-
-            if (!var1.b(var2 + 1, var3, var4, true) && var6 == 2)
-            {
-                var7 = true;
-            }
-
-            if (!var1.b(var2, var3, var4 - 1, true) && var6 == 3)
-            {
-                var7 = true;
-            }
-
-            if (!var1.b(var2, var3, var4 + 1, true) && var6 == 4)
-            {
-                var7 = true;
-            }
-
-            if (!this.l(var1, var2, var3 - 1, var4) && var6 == 5)
-            {
-                var7 = true;
-            }
-
-            if (var7)
-            {
-                this.c(var1, var2, var3, var4, var1.getData(var2, var3, var4), 0);
-                var1.setTypeId(var2, var3, var4, 0);
-            }
-        }
-    }
-
-    /**
-     * Tests if the block can remain at its current location and will drop as an item if it is unable to stay. Returns
-     * True if it can stay and False if it drops. Args: world, x, y, z
-     */
-    private boolean n(World var1, int var2, int var3, int var4)
-    {
-        if (!this.canPlace(var1, var2, var3, var4))
-        {
-            if (var1.getTypeId(var2, var3, var4) == this.id)
-            {
-                this.c(var1, var2, var3, var4, var1.getData(var2, var3, var4), 0);
-                var1.setTypeId(var2, var3, var4, 0);
-            }
-
-            return false;
-        }
-        else
-        {
-            return true;
-        }
-    }
-
-    /**
-     * Ray traces through the blocks collision from start vector to end vector returning a ray trace hit. Args: world,
-     * x, y, z, startVec, endVec
-     */
-    public MovingObjectPosition a(World var1, int var2, int var3, int var4, Vec3D var5, Vec3D var6)
-    {
-        int var7 = var1.getData(var2, var3, var4) & 7;
-        float var8 = 0.15F;
-
-        if (var7 == 1)
-        {
-            this.a(0.0F, 0.2F, 0.5F - var8, var8 * 2.0F, 0.8F, 0.5F + var8);
-        }
-        else if (var7 == 2)
-        {
-            this.a(1.0F - var8 * 2.0F, 0.2F, 0.5F - var8, 1.0F, 0.8F, 0.5F + var8);
-        }
-        else if (var7 == 3)
-        {
-            this.a(0.5F - var8, 0.2F, 0.0F, 0.5F + var8, 0.8F, var8 * 2.0F);
-        }
-        else if (var7 == 4)
-        {
-            this.a(0.5F - var8, 0.2F, 1.0F - var8 * 2.0F, 0.5F + var8, 0.8F, 1.0F);
-        }
-        else
-        {
-            var8 = 0.1F;
-            this.a(0.5F - var8, 0.0F, 0.5F - var8, 0.5F + var8, 0.6F, 0.5F + var8);
-        }
-
-        return super.a(var1, var2, var3, var4, var5, var6);
-    }
+    return super.a(world, i, j, k, vec3d, vec3d1);
+  }
 }
+

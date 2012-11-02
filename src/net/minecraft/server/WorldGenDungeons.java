@@ -1,6 +1,7 @@
 package net.minecraft.server;
 
 import java.util.Random;
+import net.minecraftforge.common.DungeonHooks;
 
 public class WorldGenDungeons extends WorldGenerator
 {
@@ -81,54 +82,54 @@ public class WorldGenDungeons extends WorldGenerator
                 {
                     if (var11 < 3)
                     {
-                        label210:
+                        label111:
                         {
                             var12 = var3 + var2.nextInt(var7 * 2 + 1) - var7;
-                            int var14 = var5 + var2.nextInt(var8 * 2 + 1) - var8;
+                            int var19 = var5 + var2.nextInt(var8 * 2 + 1) - var8;
 
-                            if (var1.isEmpty(var12, var4, var14))
+                            if (var1.isEmpty(var12, var4, var19))
                             {
-                                int var15 = 0;
+                                int var14 = 0;
 
-                                if (var1.getMaterial(var12 - 1, var4, var14).isBuildable())
+                                if (var1.getMaterial(var12 - 1, var4, var19).isBuildable())
                                 {
-                                    ++var15;
+                                    ++var14;
                                 }
 
-                                if (var1.getMaterial(var12 + 1, var4, var14).isBuildable())
+                                if (var1.getMaterial(var12 + 1, var4, var19).isBuildable())
                                 {
-                                    ++var15;
+                                    ++var14;
                                 }
 
-                                if (var1.getMaterial(var12, var4, var14 - 1).isBuildable())
+                                if (var1.getMaterial(var12, var4, var19 - 1).isBuildable())
                                 {
-                                    ++var15;
+                                    ++var14;
                                 }
 
-                                if (var1.getMaterial(var12, var4, var14 + 1).isBuildable())
+                                if (var1.getMaterial(var12, var4, var19 + 1).isBuildable())
                                 {
-                                    ++var15;
+                                    ++var14;
                                 }
 
-                                if (var15 == 1)
+                                if (var14 == 1)
                                 {
-                                    var1.setTypeId(var12, var4, var14, Block.CHEST.id);
-                                    TileEntityChest var16 = (TileEntityChest)var1.getTileEntity(var12, var4, var14);
+                                    var1.setTypeId(var12, var4, var19, Block.CHEST.id);
+                                    TileEntityChest var15 = (TileEntityChest)var1.getTileEntity(var12, var4, var19);
 
-                                    if (var16 != null)
+                                    if (var15 != null)
                                     {
-                                        for (int var17 = 0; var17 < 8; ++var17)
+                                        for (int var16 = 0; var16 < DungeonHooks.getDungeonLootTries(); ++var16)
                                         {
-                                            ItemStack var18 = this.a(var2);
+                                            ItemStack var17 = DungeonHooks.getRandomDungeonLoot(var2);
 
-                                            if (var18 != null)
+                                            if (var17 != null)
                                             {
-                                                var16.setItem(var2.nextInt(var16.getSize()), var18);
+                                                var15.setItem(var2.nextInt(var15.getSize()), var17);
                                             }
                                         }
                                     }
 
-                                    break label210;
+                                    break label111;
                                 }
                             }
 
@@ -143,11 +144,11 @@ public class WorldGenDungeons extends WorldGenerator
             }
 
             var1.setTypeId(var3, var4, var5, Block.MOB_SPAWNER.id);
-            TileEntityMobSpawner var19 = (TileEntityMobSpawner)var1.getTileEntity(var3, var4, var5);
+            TileEntityMobSpawner var18 = (TileEntityMobSpawner)var1.getTileEntity(var3, var4, var5);
 
-            if (var19 != null)
+            if (var18 != null)
             {
-                var19.a(this.b(var2));
+                var18.a(DungeonHooks.getRandomDungeonMob(var2));
             }
             else
             {

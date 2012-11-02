@@ -4,133 +4,56 @@ import java.util.Random;
 
 public class BlockLog extends Block
 {
-    /** The type of tree this log came from. */
-    public static final String[] a = new String[] {"oak", "spruce", "birch", "jungle"};
+  protected BlockLog(int i)
+  {
+    super(i, Material.WOOD);
+    this.textureId = 20;
+  }
 
-    protected BlockLog(int var1)
-    {
-        super(var1, Material.WOOD);
-        this.textureId = 20;
-        this.a(CreativeModeTab.b);
-    }
+  public int a(Random random) {
+    return 1;
+  }
 
-    /**
-     * The type of render function that is called for this block
-     */
-    public int d()
-    {
-        return 31;
-    }
+  public int getDropType(int i, Random random, int j) {
+    return Block.LOG.id;
+  }
 
-    /**
-     * Returns the quantity of items to drop on block destruction.
-     */
-    public int a(Random var1)
-    {
-        return 1;
-    }
+  public void a(World world, EntityHuman entityhuman, int i, int j, int k, int l) {
+    super.a(world, entityhuman, i, j, k, l);
+  }
 
-    /**
-     * Returns the ID of the items to drop on destruction.
-     */
-    public int getDropType(int var1, Random var2, int var3)
-    {
-        return Block.LOG.id;
-    }
+  public void remove(World world, int i, int j, int k) {
+    byte b0 = 4;
+    int l = b0 + 1;
 
-    /**
-     * ejects contained items into the world, and notifies neighbours of an update, as appropriate
-     */
-    public void remove(World var1, int var2, int var3, int var4, int var5, int var6)
-    {
-        byte var7 = 4;
-        int var8 = var7 + 1;
+    if (world.a(i - l, j - l, k - l, i + l, j + l, k + l))
+      for (int i1 = -b0; i1 <= b0; i1++)
+        for (int j1 = -b0; j1 <= b0; j1++)
+          for (int k1 = -b0; k1 <= b0; k1++) {
+            int l1 = world.getTypeId(i + i1, j + j1, k + k1);
 
-        if (var1.d(var2 - var8, var3 - var8, var4 - var8, var2 + var8, var3 + var8, var4 + var8))
-        {
-            for (int var9 = -var7; var9 <= var7; ++var9)
-            {
-                for (int var10 = -var7; var10 <= var7; ++var10)
-                {
-                    for (int var11 = -var7; var11 <= var7; ++var11)
-                    {
-                        int var12 = var1.getTypeId(var2 + var9, var3 + var10, var4 + var11);
+            if (Block.byId[l1] != null)
+              Block.byId[l1].beginLeavesDecay(world, i + i1, j + j1, k + k1);
+          }
+  }
 
-                        if (var12 == Block.LEAVES.id)
-                        {
-                            int var13 = var1.getData(var2 + var9, var3 + var10, var4 + var11);
+  public int a(int i, int j)
+  {
+    return j == 3 ? 153 : j == 2 ? 117 : j == 1 ? 116 : i == 0 ? 21 : i == 1 ? 21 : 20;
+  }
 
-                            if ((var13 & 8) == 0)
-                            {
-                                var1.setRawData(var2 + var9, var3 + var10, var4 + var11, var13 | 8);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
+  protected int getDropData(int i) {
+    return i;
+  }
 
-    /**
-     * called before onBlockPlacedBy by ItemBlock and ItemReed
-     */
-    public void postPlace(World var1, int var2, int var3, int var4, int var5, float var6, float var7, float var8)
-    {
-        int var9 = var1.getData(var2, var3, var4) & 3;
-        byte var10 = 0;
+  public boolean canSustainLeaves(World world, int x, int y, int z)
+  {
+    return true;
+  }
 
-        switch (var5)
-        {
-            case 0:
-            case 1:
-                var10 = 0;
-                break;
-
-            case 2:
-            case 3:
-                var10 = 8;
-                break;
-
-            case 4:
-            case 5:
-                var10 = 4;
-        }
-
-        var1.setData(var2, var3, var4, var9 | var10);
-    }
-
-    /**
-     * From the specified side and block metadata retrieves the blocks texture. Args: side, metadata
-     */
-    public int a(int var1, int var2)
-    {
-        int var3 = var2 & 12;
-        int var4 = var2 & 3;
-        return var3 == 0 && (var1 == 1 || var1 == 0) ? 21 : (var3 == 4 && (var1 == 5 || var1 == 4) ? 21 : (var3 == 8 && (var1 == 2 || var1 == 3) ? 21 : (var4 == 1 ? 116 : (var4 == 2 ? 117 : (var4 == 3 ? 153 : 20)))));
-    }
-
-    /**
-     * Determines the damage on the item the block drops. Used in cloth and wood.
-     */
-    public int getDropData(int var1)
-    {
-        return var1 & 3;
-    }
-
-    /**
-     * returns a number between 0 and 3
-     */
-    public static int e(int var0)
-    {
-        return var0 & 3;
-    }
-
-    /**
-     * Returns an item stack containing a single instance of the current block type. 'i' is the block's subtype/damage
-     * and is ignored for blocks which do not support subtypes. Blocks which cannot be harvested should return null.
-     */
-    protected ItemStack f_(int var1)
-    {
-        return new ItemStack(this.id, 1, e(var1));
-    }
+  public boolean isWood(World world, int x, int y, int z)
+  {
+    return true;
+  }
 }
+

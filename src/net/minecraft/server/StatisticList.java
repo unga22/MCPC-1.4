@@ -1,5 +1,7 @@
 package net.minecraft.server;
 
+import cpw.mods.fml.common.Side;
+import cpw.mods.fml.common.asm.SideOnly;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -170,9 +172,9 @@ public class StatisticList
      */
     private static Statistic[] a(String var0, int var1)
     {
-        Statistic[] var2 = new Statistic[256];
+        Statistic[] var2 = new Statistic[Block.byId.length];
 
-        for (int var3 = 0; var3 < 256; ++var3)
+        for (int var3 = 0; var3 < Block.byId.length; ++var3)
         {
             if (Block.byId[var3] != null && Block.byId[var3].C())
             {
@@ -269,6 +271,12 @@ public class StatisticList
             c.remove(var0[var1]);
             var0[var1] = var0[var2];
         }
+    }
+
+    @SideOnly(Side.CLIENT)
+    public static Statistic a(int var0)
+    {
+        return (Statistic)a.get(Integer.valueOf(var0));
     }
 
     static

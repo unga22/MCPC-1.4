@@ -2,11 +2,12 @@ package net.minecraft.server;
 
 import java.util.List;
 import java.util.Random;
+import net.minecraftforge.common.ChestGenHooks;
 
 public class WorldGenStrongholdLibrary extends WorldGenStrongholdPiece
 {
     /** List of items that Stronghold Library chests can contain. */
-    private static final StructurePieceTreasure[] b = new StructurePieceTreasure[] {new StructurePieceTreasure(Item.BOOK.id, 0, 1, 3, 20), new StructurePieceTreasure(Item.PAPER.id, 0, 2, 7, 20), new StructurePieceTreasure(Item.MAP_EMPTY.id, 0, 1, 1, 1), new StructurePieceTreasure(Item.COMPASS.id, 0, 1, 1, 1)};
+    public static final StructurePieceTreasure[] b = new StructurePieceTreasure[] {new StructurePieceTreasure(Item.BOOK.id, 0, 1, 3, 20), new StructurePieceTreasure(Item.PAPER.id, 0, 2, 7, 20), new StructurePieceTreasure(Item.MAP_EMPTY.id, 0, 1, 1, 1), new StructurePieceTreasure(Item.COMPASS.id, 0, 1, 1, 1)};
     protected final WorldGenStrongholdDoorType a;
     private final boolean c;
 
@@ -58,41 +59,41 @@ public class WorldGenStrongholdLibrary extends WorldGenStrongholdPiece
             this.a(var1, var3, 0, 0, 0, 13, var4 - 1, 14, true, var2, WorldGenStrongholdPieces.b());
             this.a(var1, var2, var3, this.a, 4, 1, 0);
             this.a(var1, var3, var2, 0.07F, 2, 1, 1, 11, 4, 13, Block.WEB.id, Block.WEB.id, false);
-            int var7;
+            int var5;
 
-            for (var7 = 1; var7 <= 13; ++var7)
+            for (var5 = 1; var5 <= 13; ++var5)
             {
-                if ((var7 - 1) % 4 == 0)
+                if ((var5 - 1) % 4 == 0)
                 {
-                    this.a(var1, var3, 1, 1, var7, 1, 4, var7, Block.WOOD.id, Block.WOOD.id, false);
-                    this.a(var1, var3, 12, 1, var7, 12, 4, var7, Block.WOOD.id, Block.WOOD.id, false);
-                    this.a(var1, Block.TORCH.id, 0, 2, 3, var7, var3);
-                    this.a(var1, Block.TORCH.id, 0, 11, 3, var7, var3);
+                    this.a(var1, var3, 1, 1, var5, 1, 4, var5, Block.WOOD.id, Block.WOOD.id, false);
+                    this.a(var1, var3, 12, 1, var5, 12, 4, var5, Block.WOOD.id, Block.WOOD.id, false);
+                    this.a(var1, Block.TORCH.id, 0, 2, 3, var5, var3);
+                    this.a(var1, Block.TORCH.id, 0, 11, 3, var5, var3);
 
                     if (this.c)
                     {
-                        this.a(var1, var3, 1, 6, var7, 1, 9, var7, Block.WOOD.id, Block.WOOD.id, false);
-                        this.a(var1, var3, 12, 6, var7, 12, 9, var7, Block.WOOD.id, Block.WOOD.id, false);
+                        this.a(var1, var3, 1, 6, var5, 1, 9, var5, Block.WOOD.id, Block.WOOD.id, false);
+                        this.a(var1, var3, 12, 6, var5, 12, 9, var5, Block.WOOD.id, Block.WOOD.id, false);
                     }
                 }
                 else
                 {
-                    this.a(var1, var3, 1, 1, var7, 1, 4, var7, Block.BOOKSHELF.id, Block.BOOKSHELF.id, false);
-                    this.a(var1, var3, 12, 1, var7, 12, 4, var7, Block.BOOKSHELF.id, Block.BOOKSHELF.id, false);
+                    this.a(var1, var3, 1, 1, var5, 1, 4, var5, Block.BOOKSHELF.id, Block.BOOKSHELF.id, false);
+                    this.a(var1, var3, 12, 1, var5, 12, 4, var5, Block.BOOKSHELF.id, Block.BOOKSHELF.id, false);
 
                     if (this.c)
                     {
-                        this.a(var1, var3, 1, 6, var7, 1, 9, var7, Block.BOOKSHELF.id, Block.BOOKSHELF.id, false);
-                        this.a(var1, var3, 12, 6, var7, 12, 9, var7, Block.BOOKSHELF.id, Block.BOOKSHELF.id, false);
+                        this.a(var1, var3, 1, 6, var5, 1, 9, var5, Block.BOOKSHELF.id, Block.BOOKSHELF.id, false);
+                        this.a(var1, var3, 12, 6, var5, 12, 9, var5, Block.BOOKSHELF.id, Block.BOOKSHELF.id, false);
                     }
                 }
             }
 
-            for (var7 = 3; var7 < 12; var7 += 2)
+            for (var5 = 3; var5 < 12; var5 += 2)
             {
-                this.a(var1, var3, 3, 1, var7, 4, 3, var7, Block.BOOKSHELF.id, Block.BOOKSHELF.id, false);
-                this.a(var1, var3, 6, 1, var7, 7, 3, var7, Block.BOOKSHELF.id, Block.BOOKSHELF.id, false);
-                this.a(var1, var3, 9, 1, var7, 10, 3, var7, Block.BOOKSHELF.id, Block.BOOKSHELF.id, false);
+                this.a(var1, var3, 3, 1, var5, 4, 3, var5, Block.BOOKSHELF.id, Block.BOOKSHELF.id, false);
+                this.a(var1, var3, 6, 1, var5, 7, 3, var5, Block.BOOKSHELF.id, Block.BOOKSHELF.id, false);
+                this.a(var1, var3, 9, 1, var5, 10, 3, var5, Block.BOOKSHELF.id, Block.BOOKSHELF.id, false);
             }
 
             if (this.c)
@@ -111,42 +112,43 @@ public class WorldGenStrongholdLibrary extends WorldGenStrongholdPiece
                 this.a(var1, Block.FENCE.id, 0, 9, 6, 11, var3);
                 this.a(var1, Block.FENCE.id, 0, 8, 6, 11, var3);
                 this.a(var1, Block.FENCE.id, 0, 9, 6, 10, var3);
-                var7 = this.c(Block.LADDER.id, 3);
-                this.a(var1, Block.LADDER.id, var7, 10, 1, 13, var3);
-                this.a(var1, Block.LADDER.id, var7, 10, 2, 13, var3);
-                this.a(var1, Block.LADDER.id, var7, 10, 3, 13, var3);
-                this.a(var1, Block.LADDER.id, var7, 10, 4, 13, var3);
-                this.a(var1, Block.LADDER.id, var7, 10, 5, 13, var3);
-                this.a(var1, Block.LADDER.id, var7, 10, 6, 13, var3);
-                this.a(var1, Block.LADDER.id, var7, 10, 7, 13, var3);
-                byte var8 = 7;
-                byte var9 = 7;
-                this.a(var1, Block.FENCE.id, 0, var8 - 1, 9, var9, var3);
-                this.a(var1, Block.FENCE.id, 0, var8, 9, var9, var3);
-                this.a(var1, Block.FENCE.id, 0, var8 - 1, 8, var9, var3);
-                this.a(var1, Block.FENCE.id, 0, var8, 8, var9, var3);
-                this.a(var1, Block.FENCE.id, 0, var8 - 1, 7, var9, var3);
-                this.a(var1, Block.FENCE.id, 0, var8, 7, var9, var3);
-                this.a(var1, Block.FENCE.id, 0, var8 - 2, 7, var9, var3);
-                this.a(var1, Block.FENCE.id, 0, var8 + 1, 7, var9, var3);
-                this.a(var1, Block.FENCE.id, 0, var8 - 1, 7, var9 - 1, var3);
-                this.a(var1, Block.FENCE.id, 0, var8 - 1, 7, var9 + 1, var3);
-                this.a(var1, Block.FENCE.id, 0, var8, 7, var9 - 1, var3);
-                this.a(var1, Block.FENCE.id, 0, var8, 7, var9 + 1, var3);
-                this.a(var1, Block.TORCH.id, 0, var8 - 2, 8, var9, var3);
-                this.a(var1, Block.TORCH.id, 0, var8 + 1, 8, var9, var3);
-                this.a(var1, Block.TORCH.id, 0, var8 - 1, 8, var9 - 1, var3);
-                this.a(var1, Block.TORCH.id, 0, var8 - 1, 8, var9 + 1, var3);
-                this.a(var1, Block.TORCH.id, 0, var8, 8, var9 - 1, var3);
-                this.a(var1, Block.TORCH.id, 0, var8, 8, var9 + 1, var3);
+                var5 = this.c(Block.LADDER.id, 3);
+                this.a(var1, Block.LADDER.id, var5, 10, 1, 13, var3);
+                this.a(var1, Block.LADDER.id, var5, 10, 2, 13, var3);
+                this.a(var1, Block.LADDER.id, var5, 10, 3, 13, var3);
+                this.a(var1, Block.LADDER.id, var5, 10, 4, 13, var3);
+                this.a(var1, Block.LADDER.id, var5, 10, 5, 13, var3);
+                this.a(var1, Block.LADDER.id, var5, 10, 6, 13, var3);
+                this.a(var1, Block.LADDER.id, var5, 10, 7, 13, var3);
+                byte var6 = 7;
+                byte var7 = 7;
+                this.a(var1, Block.FENCE.id, 0, var6 - 1, 9, var7, var3);
+                this.a(var1, Block.FENCE.id, 0, var6, 9, var7, var3);
+                this.a(var1, Block.FENCE.id, 0, var6 - 1, 8, var7, var3);
+                this.a(var1, Block.FENCE.id, 0, var6, 8, var7, var3);
+                this.a(var1, Block.FENCE.id, 0, var6 - 1, 7, var7, var3);
+                this.a(var1, Block.FENCE.id, 0, var6, 7, var7, var3);
+                this.a(var1, Block.FENCE.id, 0, var6 - 2, 7, var7, var3);
+                this.a(var1, Block.FENCE.id, 0, var6 + 1, 7, var7, var3);
+                this.a(var1, Block.FENCE.id, 0, var6 - 1, 7, var7 - 1, var3);
+                this.a(var1, Block.FENCE.id, 0, var6 - 1, 7, var7 + 1, var3);
+                this.a(var1, Block.FENCE.id, 0, var6, 7, var7 - 1, var3);
+                this.a(var1, Block.FENCE.id, 0, var6, 7, var7 + 1, var3);
+                this.a(var1, Block.TORCH.id, 0, var6 - 2, 8, var7, var3);
+                this.a(var1, Block.TORCH.id, 0, var6 + 1, 8, var7, var3);
+                this.a(var1, Block.TORCH.id, 0, var6 - 1, 8, var7 - 1, var3);
+                this.a(var1, Block.TORCH.id, 0, var6 - 1, 8, var7 + 1, var3);
+                this.a(var1, Block.TORCH.id, 0, var6, 8, var7 - 1, var3);
+                this.a(var1, Block.TORCH.id, 0, var6, 8, var7 + 1, var3);
             }
 
-            this.a(var1, var3, var2, 3, 3, 5, b, 1 + var2.nextInt(4));
+            ChestGenHooks var8 = ChestGenHooks.getInfo("strongholdLibrary");
+            this.a(var1, var3, var2, 3, 3, 5, var8.getItems(), var8.getCount(var2));
 
             if (this.c)
             {
                 this.a(var1, 0, 0, 12, 9, 1, var3);
-                this.a(var1, var3, var2, 12, 8, 1, b, 1 + var2.nextInt(4));
+                this.a(var1, var3, var2, 12, 8, 1, var8.getItems(), var8.getCount(var2));
             }
 
             return true;

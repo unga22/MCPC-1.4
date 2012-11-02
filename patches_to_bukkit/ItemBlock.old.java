@@ -1,113 +1,105 @@
 package net.minecraft.server;
 
+import org.bukkit.craftbukkit.block.CraftBlockState;
+import org.bukkit.craftbukkit.event.CraftEventFactory;
+import org.bukkit.event.block.BlockPlaceEvent;
+
 public class ItemBlock extends Item
+  implements net.minecraft.src.ItemBlock
 {
-    /** The block ID of the Block associated with this ItemBlock */
-    private int id;
+  private int id;
 
-    public ItemBlock(int var1)
-    {
-        super(var1);
-        this.id = var1 + 256;
-        this.c(Block.byId[var1 + 256].a(2));
+  public ItemBlock(int i)
+  {
+    super(i);
+    this.id = (i + 256);
+    d(Block.byId[(i + 256)].a(2));
+  }
+
+  public int a() {
+    return this.id;
+  }
+
+  public boolean interactWith(ItemStack itemstack, EntityHuman entityhuman, World world, int i, int j, int k, int l) {
+    int clickedX = i; int clickedY = j; int clickedZ = k;
+    int i1 = world.getTypeId(i, j, k);
+
+    if (i1 == Block.SNOW.id) {
+      l = 1;
+    } else if ((i1 != Block.VINE.id) && (i1 != Block.LONG_GRASS.id) && (i1 != Block.DEAD_BUSH.id)) {
+      if (l == 0) {
+        j--;
+      }
+
+      if (l == 1) {
+        j++;
+      }
+
+      if (l == 2) {
+        k--;
+      }
+
+      if (l == 3) {
+        k++;
+      }
+
+      if (l == 4) {
+        i--;
+      }
+
+      if (l == 5) {
+        i++;
+      }
     }
 
-    /**
-     * Returns the blockID for this Item
-     */
-    public int g()
-    {
-        return this.id;
+    if (itemstack.count == 0)
+      return false;
+    if (!entityhuman.d(i, j, k))
+      return false;
+    if ((j == 255) && (Block.byId[this.id].material.isBuildable())) {
+      return false;
     }
 
-    /**
-     * Callback for item usage. If the item does something special on right clicking, he will have one of those. Return
-     * True if something happen and false if it don't. This is for ITEMS, not BLOCKS
-     */
-    public boolean interactWith(ItemStack var1, EntityHuman var2, World var3, int var4, int var5, int var6, int var7, float var8, float var9, float var10)
-    {
-        int var11 = var3.getTypeId(var4, var5, var6);
+    int id = (l == -1) && ((itemstack.getItem() instanceof ItemStep)) ? Block.DOUBLE_STEP.id : this.id;
+    if ((id != this.id) || (world.mayPlace(this.id, i, j, k, false, l))) {
+      Block block = Block.byId[id];
 
-        if (var11 == Block.SNOW.id)
-        {
-            var7 = 1;
-        }
-        else if (var11 != Block.VINE.id && var11 != Block.LONG_GRASS.id && var11 != Block.DEAD_BUSH.id)
-        {
-            if (var7 == 0)
-            {
-                --var5;
-            }
+      CraftBlockState replacedBlockState = CraftBlockState.getBlockState(world, i, j, k);
 
-            if (var7 == 1)
-            {
-                ++var5;
-            }
+      world.suppressPhysics = true;
+      world.setTypeIdAndData(i, j, k, id, filterData(itemstack.getData()));
+      BlockPlaceEvent event = CraftEventFactory.callBlockPlaceEvent(world, entityhuman, replacedBlockState, clickedX, clickedY, clickedZ);
+      id = world.getTypeId(i, j, k);
+      int data = world.getData(i, j, k);
+      replacedBlockState.update(true);
+      world.suppressPhysics = false;
 
-            if (var7 == 2)
-            {
-                --var6;
-            }
+      if ((event.isCancelled()) || (!event.canBuild())) {
+        return true;
+      }
 
-            if (var7 == 3)
-            {
-                ++var6;
-            }
-
-            if (var7 == 4)
-            {
-                --var4;
-            }
-
-            if (var7 == 5)
-            {
-                ++var4;
-            }
+      if (world.setTypeIdAndData(i, j, k, id, data)) {
+        if ((world.getTypeId(i, j, k) == id) && (Block.byId[id] != null)) {
+          Block.byId[id].postPlace(world, i, j, k, l);
+          Block.byId[id].postPlace(world, i, j, k, entityhuman);
         }
 
-        if (var1.count == 0)
-        {
-            return false;
-        }
-        else if (!var2.func_82247_a(var4, var5, var6, var7, var1))
-        {
-            return false;
-        }
-        else if (var5 == 255 && Block.byId[this.id].material.isBuildable())
-        {
-            return false;
-        }
-        else if (var3.mayPlace(this.id, var4, var5, var6, false, var7, var2))
-        {
-            Block var12 = Block.byId[this.id];
+        world.makeSound(i + 0.5F, j + 0.5F, k + 0.5F, block.stepSound.getName(), (block.stepSound.getVolume1() + 1.0F) / 2.0F, block.stepSound.getVolume2() * 0.8F);
+        itemstack.count -= 1;
+      }
 
-            if (var3.setTypeIdAndData(var4, var5, var6, this.id, this.filterData(var1.getData())))
-            {
-                if (var3.getTypeId(var4, var5, var6) == this.id)
-                {
-                    Block.byId[this.id].postPlace(var3, var4, var5, var6, var7, var8, var9, var10);
-                    Block.byId[this.id].postPlace(var3, var4, var5, var6, var2);
-                }
-
-                var3.makeSound((double)((float)var4 + 0.5F), (double)((float)var5 + 0.5F), (double)((float)var6 + 0.5F), var12.stepSound.func_82593_b(), (var12.stepSound.getVolume1() + 1.0F) / 2.0F, var12.stepSound.getVolume2() * 0.8F);
-                --var1.count;
-            }
-
-            return true;
-        }
-        else
-        {
-            return false;
-        }
+      return true;
     }
+    return false;
+  }
 
-    public String c_(ItemStack var1)
-    {
-        return Block.byId[this.id].a();
-    }
+  public String a(ItemStack itemstack)
+  {
+    return Block.byId[this.id].q();
+  }
 
-    public String getName()
-    {
-        return Block.byId[this.id].a();
-    }
+  public String getName() {
+    return Block.byId[this.id].q();
+  }
 }
+

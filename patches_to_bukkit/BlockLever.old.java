@@ -1,389 +1,226 @@
 package net.minecraft.server;
 
+import java.util.Random;
+import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.CraftWorld;
+import org.bukkit.event.block.BlockRedstoneEvent;
+import org.bukkit.plugin.PluginManager;
+
 public class BlockLever extends Block
 {
-    protected BlockLever(int var1, int var2)
-    {
-        super(var1, var2, Material.ORIENTABLE);
-        this.a(CreativeModeTab.d);
+  protected BlockLever(int i, int j)
+  {
+    super(i, j, Material.ORIENTABLE);
+  }
+
+  public AxisAlignedBB e(World world, int i, int j, int k) {
+    return null;
+  }
+
+  public boolean a() {
+    return false;
+  }
+
+  public boolean b() {
+    return false;
+  }
+
+  public int c() {
+    return 12;
+  }
+
+  public boolean canPlace(World par1World, int par2, int par3, int par4, int par5) {
+    return ((par5 == 1) && (par1World.isBlockSolidOnSide(par2, par3 - 1, par4, 1))) || ((par5 == 2) && (par1World.isBlockSolidOnSide(par2, par3, par4 + 1, 2))) || ((par5 == 3) && (par1World.isBlockSolidOnSide(par2, par3, par4 - 1, 3))) || ((par5 == 4) && (par1World.isBlockSolidOnSide(par2 + 1, par3, par4, 4))) || ((par5 == 5) && (par1World.isBlockSolidOnSide(par2 - 1, par3, par4, 5)));
+  }
+
+  public boolean canPlace(World par1World, int par2, int par3, int par4)
+  {
+    return (par1World.isBlockSolidOnSide(par2 - 1, par3, par4, 5)) || (par1World.isBlockSolidOnSide(par2 + 1, par3, par4, 4)) || (par1World.isBlockSolidOnSide(par2, par3, par4 - 1, 3)) || (par1World.isBlockSolidOnSide(par2, par3, par4 + 1, 2)) || (par1World.isBlockSolidOnSide(par2, par3 - 1, par4, 1));
+  }
+
+  public void postPlace(World world, int i, int j, int k, int l)
+  {
+    int i1 = world.getData(i, j, k);
+    int j1 = i1 & 0x8;
+
+    i1 &= 7;
+    i1 = -1;
+    if ((l == 1) && (world.isBlockSolidOnSide(i, j - 1, k, 1))) {
+      i1 = 5 + world.random.nextInt(2);
     }
 
-    /**
-     * Returns a bounding box from the pool of bounding boxes (this means this box can change after the pool has been
-     * cleared to be reused)
-     */
-    public AxisAlignedBB e(World var1, int var2, int var3, int var4)
-    {
-        return null;
+    if ((l == 2) && (world.isBlockSolidOnSide(i, j, k + 1, 2))) {
+      i1 = 4;
     }
 
-    /**
-     * Is this block (a) opaque and (b) a full 1m cube?  This determines whether or not to render the shared face of two
-     * adjacent blocks and also whether the player can attach torches, redstone wire, etc to this block.
-     */
-    public boolean c()
-    {
-        return false;
+    if ((l == 3) && (world.isBlockSolidOnSide(i, j, k - 1, 3))) {
+      i1 = 3;
     }
 
-    /**
-     * If this block doesn't render as an ordinary block it will return False (examples: signs, buttons, stairs, etc)
-     */
-    public boolean b()
-    {
-        return false;
+    if ((l == 4) && (world.isBlockSolidOnSide(i + 1, j, k, 4))) {
+      i1 = 2;
     }
 
-    /**
-     * The type of render function that is called for this block
-     */
-    public int d()
-    {
-        return 12;
+    if ((l == 5) && (world.isBlockSolidOnSide(i - 1, j, k, 5))) {
+      i1 = 1;
     }
 
-    /**
-     * checks to see if you can place this block can be placed on that side of a block: BlockLever overrides
-     */
-    public boolean canPlace(World var1, int var2, int var3, int var4, int var5)
-    {
-        return var5 == 0 && var1.s(var2, var3 + 1, var4) ? true : (var5 == 1 && var1.t(var2, var3 - 1, var4) ? true : (var5 == 2 && var1.s(var2, var3, var4 + 1) ? true : (var5 == 3 && var1.s(var2, var3, var4 - 1) ? true : (var5 == 4 && var1.s(var2 + 1, var3, var4) ? true : var5 == 5 && var1.s(var2 - 1, var3, var4)))));
+    if (i1 == -1) {
+      b(world, i, j, k, world.getData(i, j, k), 0);
+      world.setTypeId(i, j, k, 0);
+    } else {
+      world.setData(i, j, k, i1 + j1);
+    }
+  }
+
+  public void doPhysics(World world, int i, int j, int k, int l) {
+    if (g(world, i, j, k)) {
+      int i1 = world.getData(i, j, k) & 0x7;
+      boolean flag = false;
+
+      if ((!world.isBlockSolidOnSide(i - 1, j, k, 5)) && (i1 == 1)) {
+        flag = true;
+      }
+
+      if ((!world.isBlockSolidOnSide(i + 1, j, k, 4)) && (i1 == 2)) {
+        flag = true;
+      }
+
+      if ((!world.isBlockSolidOnSide(i, j, k - 1, 3)) && (i1 == 3)) {
+        flag = true;
+      }
+
+      if ((!world.isBlockSolidOnSide(i, j, k + 1, 2)) && (i1 == 4)) {
+        flag = true;
+      }
+
+      if ((!world.isBlockSolidOnSide(i, j - 1, k, 1)) && (i1 == 5)) {
+        flag = true;
+      }
+
+      if ((!world.isBlockSolidOnSide(i, j - 1, k, 1)) && (i1 == 6)) {
+        flag = true;
+      }
+
+      if (flag) {
+        b(world, i, j, k, world.getData(i, j, k), 0);
+        world.setTypeId(i, j, k, 0);
+      }
+    }
+  }
+
+  private boolean g(World world, int i, int j, int k) {
+    if (!canPlace(world, i, j, k)) {
+      b(world, i, j, k, world.getData(i, j, k), 0);
+      world.setTypeId(i, j, k, 0);
+      return false;
+    }
+    return true;
+  }
+
+  public void updateShape(IBlockAccess iblockaccess, int i, int j, int k)
+  {
+    int l = iblockaccess.getData(i, j, k) & 0x7;
+    float f = 0.1875F;
+
+    if (l == 1) {
+      a(0.0F, 0.2F, 0.5F - f, f * 2.0F, 0.8F, 0.5F + f);
+    } else if (l == 2) {
+      a(1.0F - f * 2.0F, 0.2F, 0.5F - f, 1.0F, 0.8F, 0.5F + f);
+    } else if (l == 3) {
+      a(0.5F - f, 0.2F, 0.0F, 0.5F + f, 0.8F, f * 2.0F);
+    } else if (l == 4) {
+      a(0.5F - f, 0.2F, 1.0F - f * 2.0F, 0.5F + f, 0.8F, 1.0F);
+    } else {
+      f = 0.25F;
+      a(0.5F - f, 0.0F, 0.5F - f, 0.5F + f, 0.6F, 0.5F + f);
+    }
+  }
+
+  public void attack(World world, int i, int j, int k, EntityHuman entityhuman) {
+    interact(world, i, j, k, entityhuman);
+  }
+
+  public boolean interact(World world, int i, int j, int k, EntityHuman entityhuman) {
+    if (world.isStatic) {
+      return true;
+    }
+    int l = world.getData(i, j, k);
+    int i1 = l & 0x7;
+    int j1 = 8 - (l & 0x8);
+
+    org.bukkit.block.Block block = world.getWorld().getBlockAt(i, j, k);
+    int old = j1 != 8 ? 1 : 0;
+    int current = j1 == 8 ? 1 : 0;
+
+    BlockRedstoneEvent eventRedstone = new BlockRedstoneEvent(block, old, current);
+    world.getServer().getPluginManager().callEvent(eventRedstone);
+
+    if ((eventRedstone.getNewCurrent() > 0 ? 1 : 0) != (j1 == 8 ? 1 : 0)) {
+      return true;
     }
 
-    /**
-     * Checks to see if its valid to put this block at the specified coordinates. Args: world, x, y, z
-     */
-    public boolean canPlace(World var1, int var2, int var3, int var4)
-    {
-        return var1.s(var2 - 1, var3, var4) ? true : (var1.s(var2 + 1, var3, var4) ? true : (var1.s(var2, var3, var4 - 1) ? true : (var1.s(var2, var3, var4 + 1) ? true : (var1.t(var2, var3 - 1, var4) ? true : var1.s(var2, var3 + 1, var4)))));
+    world.setData(i, j, k, i1 + j1);
+    world.b(i, j, k, i, j, k);
+    world.makeSound(i + 0.5D, j + 0.5D, k + 0.5D, "random.click", 0.3F, j1 > 0 ? 0.6F : 0.5F);
+    world.applyPhysics(i, j, k, this.id);
+    if (i1 == 1)
+      world.applyPhysics(i - 1, j, k, this.id);
+    else if (i1 == 2)
+      world.applyPhysics(i + 1, j, k, this.id);
+    else if (i1 == 3)
+      world.applyPhysics(i, j, k - 1, this.id);
+    else if (i1 == 4)
+      world.applyPhysics(i, j, k + 1, this.id);
+    else {
+      world.applyPhysics(i, j - 1, k, this.id);
     }
 
-    /**
-     * called before onBlockPlacedBy by ItemBlock and ItemReed
-     */
-    public void postPlace(World var1, int var2, int var3, int var4, int var5, float var6, float var7, float var8)
-    {
-        int var9 = var1.getData(var2, var3, var4);
-        int var10 = var9 & 8;
-        var9 &= 7;
-        var9 = -1;
+    return true;
+  }
 
-        if (var5 == 0 && var1.s(var2, var3 + 1, var4))
-        {
-            var9 = var1.random.nextBoolean() ? 0 : 7;
-        }
+  public void remove(World world, int i, int j, int k)
+  {
+    int l = world.getData(i, j, k);
 
-        if (var5 == 1 && var1.t(var2, var3 - 1, var4))
-        {
-            var9 = 5 + var1.random.nextInt(2);
-        }
+    if ((l & 0x8) > 0) {
+      world.applyPhysics(i, j, k, this.id);
+      int i1 = l & 0x7;
 
-        if (var5 == 2 && var1.s(var2, var3, var4 + 1))
-        {
-            var9 = 4;
-        }
-
-        if (var5 == 3 && var1.s(var2, var3, var4 - 1))
-        {
-            var9 = 3;
-        }
-
-        if (var5 == 4 && var1.s(var2 + 1, var3, var4))
-        {
-            var9 = 2;
-        }
-
-        if (var5 == 5 && var1.s(var2 - 1, var3, var4))
-        {
-            var9 = 1;
-        }
-
-        if (var9 == -1)
-        {
-            this.c(var1, var2, var3, var4, var1.getData(var2, var3, var4), 0);
-            var1.setTypeId(var2, var3, var4, 0);
-        }
-        else
-        {
-            var1.setData(var2, var3, var4, var9 + var10);
-        }
+      if (i1 == 1)
+        world.applyPhysics(i - 1, j, k, this.id);
+      else if (i1 == 2)
+        world.applyPhysics(i + 1, j, k, this.id);
+      else if (i1 == 3)
+        world.applyPhysics(i, j, k - 1, this.id);
+      else if (i1 == 4)
+        world.applyPhysics(i, j, k + 1, this.id);
+      else {
+        world.applyPhysics(i, j - 1, k, this.id);
+      }
     }
 
-    /**
-     * only used in ComponentScatteredFeatureJunglePyramid.addComponentParts"
-     */
-    public static int d(int var0)
-    {
-        switch (var0)
-        {
-            case 0:
-                return 0;
+    super.remove(world, i, j, k);
+  }
 
-            case 1:
-                return 5;
+  public boolean a(IBlockAccess iblockaccess, int i, int j, int k, int l) {
+    return (iblockaccess.getData(i, j, k) & 0x8) > 0;
+  }
 
-            case 2:
-                return 4;
+  public boolean d(World world, int i, int j, int k, int l) {
+    int i1 = world.getData(i, j, k);
 
-            case 3:
-                return 3;
-
-            case 4:
-                return 2;
-
-            case 5:
-                return 1;
-
-            default:
-                return -1;
-        }
+    if ((i1 & 0x8) == 0) {
+      return false;
     }
+    int j1 = i1 & 0x7;
 
-    /**
-     * Lets the block know when one of its neighbor changes. Doesn't know which neighbor changed (coordinates passed are
-     * their own) Args: x, y, z, neighbor blockID
-     */
-    public void doPhysics(World var1, int var2, int var3, int var4, int var5)
-    {
-        if (this.l(var1, var2, var3, var4))
-        {
-            int var6 = var1.getData(var2, var3, var4) & 7;
-            boolean var7 = false;
+    return (j1 == 6) && (l == 1);
+  }
 
-            if (!var1.s(var2 - 1, var3, var4) && var6 == 1)
-            {
-                var7 = true;
-            }
-
-            if (!var1.s(var2 + 1, var3, var4) && var6 == 2)
-            {
-                var7 = true;
-            }
-
-            if (!var1.s(var2, var3, var4 - 1) && var6 == 3)
-            {
-                var7 = true;
-            }
-
-            if (!var1.s(var2, var3, var4 + 1) && var6 == 4)
-            {
-                var7 = true;
-            }
-
-            if (!var1.t(var2, var3 - 1, var4) && var6 == 5)
-            {
-                var7 = true;
-            }
-
-            if (!var1.t(var2, var3 - 1, var4) && var6 == 6)
-            {
-                var7 = true;
-            }
-
-            if (!var1.s(var2, var3 + 1, var4) && var6 == 0)
-            {
-                var7 = true;
-            }
-
-            if (!var1.s(var2, var3 + 1, var4) && var6 == 7)
-            {
-                var7 = true;
-            }
-
-            if (var7)
-            {
-                this.c(var1, var2, var3, var4, var1.getData(var2, var3, var4), 0);
-                var1.setTypeId(var2, var3, var4, 0);
-            }
-        }
-    }
-
-    /**
-     * Checks if the block is attached to another block. If it is not, it returns false and drops the block as an item.
-     * If it is it returns true.
-     */
-    private boolean l(World var1, int var2, int var3, int var4)
-    {
-        if (!this.canPlace(var1, var2, var3, var4))
-        {
-            this.c(var1, var2, var3, var4, var1.getData(var2, var3, var4), 0);
-            var1.setTypeId(var2, var3, var4, 0);
-            return false;
-        }
-        else
-        {
-            return true;
-        }
-    }
-
-    /**
-     * Updates the blocks bounds based on its current state. Args: world, x, y, z
-     */
-    public void updateShape(IBlockAccess var1, int var2, int var3, int var4)
-    {
-        int var5 = var1.getData(var2, var3, var4) & 7;
-        float var6 = 0.1875F;
-
-        if (var5 == 1)
-        {
-            this.a(0.0F, 0.2F, 0.5F - var6, var6 * 2.0F, 0.8F, 0.5F + var6);
-        }
-        else if (var5 == 2)
-        {
-            this.a(1.0F - var6 * 2.0F, 0.2F, 0.5F - var6, 1.0F, 0.8F, 0.5F + var6);
-        }
-        else if (var5 == 3)
-        {
-            this.a(0.5F - var6, 0.2F, 0.0F, 0.5F + var6, 0.8F, var6 * 2.0F);
-        }
-        else if (var5 == 4)
-        {
-            this.a(0.5F - var6, 0.2F, 1.0F - var6 * 2.0F, 0.5F + var6, 0.8F, 1.0F);
-        }
-        else if (var5 != 5 && var5 != 6)
-        {
-            if (var5 == 0 || var5 == 7)
-            {
-                var6 = 0.25F;
-                this.a(0.5F - var6, 0.4F, 0.5F - var6, 0.5F + var6, 1.0F, 0.5F + var6);
-            }
-        }
-        else
-        {
-            var6 = 0.25F;
-            this.a(0.5F - var6, 0.0F, 0.5F - var6, 0.5F + var6, 0.6F, 0.5F + var6);
-        }
-    }
-
-    /**
-     * Called when the block is clicked by a player. Args: x, y, z, entityPlayer
-     */
-    public void attack(World var1, int var2, int var3, int var4, EntityHuman var5) {}
-
-    /**
-     * Called upon block activation (right click on the block.)
-     */
-    public boolean interact(World var1, int var2, int var3, int var4, EntityHuman var5, int var6, float var7, float var8, float var9)
-    {
-        if (var1.isStatic)
-        {
-            return true;
-        }
-        else
-        {
-            int var10 = var1.getData(var2, var3, var4);
-            int var11 = var10 & 7;
-            int var12 = 8 - (var10 & 8);
-            var1.setData(var2, var3, var4, var11 + var12);
-            var1.e(var2, var3, var4, var2, var3, var4);
-            var1.makeSound((double)var2 + 0.5D, (double)var3 + 0.5D, (double)var4 + 0.5D, "random.click", 0.3F, var12 > 0 ? 0.6F : 0.5F);
-            var1.applyPhysics(var2, var3, var4, this.id);
-
-            if (var11 == 1)
-            {
-                var1.applyPhysics(var2 - 1, var3, var4, this.id);
-            }
-            else if (var11 == 2)
-            {
-                var1.applyPhysics(var2 + 1, var3, var4, this.id);
-            }
-            else if (var11 == 3)
-            {
-                var1.applyPhysics(var2, var3, var4 - 1, this.id);
-            }
-            else if (var11 == 4)
-            {
-                var1.applyPhysics(var2, var3, var4 + 1, this.id);
-            }
-            else if (var11 != 5 && var11 != 6)
-            {
-                if (var11 == 0 || var11 == 7)
-                {
-                    var1.applyPhysics(var2, var3 + 1, var4, this.id);
-                }
-            }
-            else
-            {
-                var1.applyPhysics(var2, var3 - 1, var4, this.id);
-            }
-
-            return true;
-        }
-    }
-
-    /**
-     * ejects contained items into the world, and notifies neighbours of an update, as appropriate
-     */
-    public void remove(World var1, int var2, int var3, int var4, int var5, int var6)
-    {
-        if ((var6 & 8) > 0)
-        {
-            var1.applyPhysics(var2, var3, var4, this.id);
-            int var7 = var6 & 7;
-
-            if (var7 == 1)
-            {
-                var1.applyPhysics(var2 - 1, var3, var4, this.id);
-            }
-            else if (var7 == 2)
-            {
-                var1.applyPhysics(var2 + 1, var3, var4, this.id);
-            }
-            else if (var7 == 3)
-            {
-                var1.applyPhysics(var2, var3, var4 - 1, this.id);
-            }
-            else if (var7 == 4)
-            {
-                var1.applyPhysics(var2, var3, var4 + 1, this.id);
-            }
-            else if (var7 != 5 && var7 != 6)
-            {
-                if (var7 == 0 || var7 == 7)
-                {
-                    var1.applyPhysics(var2, var3 + 1, var4, this.id);
-                }
-            }
-            else
-            {
-                var1.applyPhysics(var2, var3 - 1, var4, this.id);
-            }
-        }
-
-        super.remove(var1, var2, var3, var4, var5, var6);
-    }
-
-    /**
-     * Is this block powering the block on the specified side
-     */
-    public boolean b(IBlockAccess var1, int var2, int var3, int var4, int var5)
-    {
-        return (var1.getData(var2, var3, var4) & 8) > 0;
-    }
-
-    /**
-     * Is this block indirectly powering the block on the specified side
-     */
-    public boolean c(IBlockAccess var1, int var2, int var3, int var4, int var5)
-    {
-        int var6 = var1.getData(var2, var3, var4);
-
-        if ((var6 & 8) == 0)
-        {
-            return false;
-        }
-        else
-        {
-            int var7 = var6 & 7;
-            return var7 == 0 && var5 == 0 ? true : (var7 == 7 && var5 == 0 ? true : (var7 == 6 && var5 == 1 ? true : (var7 == 5 && var5 == 1 ? true : (var7 == 4 && var5 == 2 ? true : (var7 == 3 && var5 == 3 ? true : (var7 == 2 && var5 == 4 ? true : var7 == 1 && var5 == 5))))));
-        }
-    }
-
-    /**
-     * Can this block provide power. Only wire currently seems to have this change based on its state.
-     */
-    public boolean isPowerSource()
-    {
-        return true;
-    }
+  public boolean isPowerSource()
+  {
+    return true;
+  }
 }
+

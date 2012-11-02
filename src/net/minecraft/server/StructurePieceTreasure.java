@@ -1,6 +1,7 @@
 package net.minecraft.server;
 
 import java.util.Random;
+import net.minecraftforge.common.ChestGenHooks;
 
 public class StructurePieceTreasure extends WeightedRandomChoice
 {
@@ -15,6 +16,7 @@ public class StructurePieceTreasure extends WeightedRandomChoice
 
     /** The maximum chance of item generating. */
     private int e;
+    public final ItemStack itemStack;
 
     public StructurePieceTreasure(int var1, int var2, int var3, int var4, int var5)
     {
@@ -23,6 +25,15 @@ public class StructurePieceTreasure extends WeightedRandomChoice
         this.c = var2;
         this.d = var3;
         this.e = var4;
+        this.itemStack = new ItemStack(var1, 1, var2);
+    }
+
+    public StructurePieceTreasure(ItemStack var1, int var2, int var3, int var4)
+    {
+        super(var4);
+        this.itemStack = var1;
+        this.d = var2;
+        this.e = var3;
     }
 
     /**
@@ -33,18 +44,14 @@ public class StructurePieceTreasure extends WeightedRandomChoice
         for (int var4 = 0; var4 < var3; ++var4)
         {
             StructurePieceTreasure var5 = (StructurePieceTreasure)WeightedRandom.a(var0, var1);
-            int var6 = var5.d + var0.nextInt(var5.e - var5.d + 1);
+            ItemStack[] var6 = ChestGenHooks.generateStacks(var0, var5.itemStack, var5.d, var5.d);
+            ItemStack[] var7 = var6;
+            int var8 = var6.length;
 
-            if (Item.byId[var5.b].getMaxStackSize() >= var6)
+            for (int var9 = 0; var9 < var8; ++var9)
             {
-                var2.setItem(var0.nextInt(var2.getSize()), new ItemStack(var5.b, var6, var5.c));
-            }
-            else
-            {
-                for (int var7 = 0; var7 < var6; ++var7)
-                {
-                    var2.setItem(var0.nextInt(var2.getSize()), new ItemStack(var5.b, 1, var5.c));
-                }
+                ItemStack var10 = var7[var9];
+                var2.setItem(var0.nextInt(var2.getSize()), var10);
             }
         }
     }
@@ -57,18 +64,14 @@ public class StructurePieceTreasure extends WeightedRandomChoice
         for (int var4 = 0; var4 < var3; ++var4)
         {
             StructurePieceTreasure var5 = (StructurePieceTreasure)WeightedRandom.a(var0, var1);
-            int var6 = var5.d + var0.nextInt(var5.e - var5.d + 1);
+            ItemStack[] var6 = ChestGenHooks.generateStacks(var0, var5.itemStack, var5.d, var5.d);
+            ItemStack[] var7 = var6;
+            int var8 = var6.length;
 
-            if (Item.byId[var5.b].getMaxStackSize() >= var6)
+            for (int var9 = 0; var9 < var8; ++var9)
             {
-                var2.setItem(var0.nextInt(var2.getSize()), new ItemStack(var5.b, var6, var5.c));
-            }
-            else
-            {
-                for (int var7 = 0; var7 < var6; ++var7)
-                {
-                    var2.setItem(var0.nextInt(var2.getSize()), new ItemStack(var5.b, 1, var5.c));
-                }
+                ItemStack var10 = var7[var9];
+                var2.setItem(var0.nextInt(var2.getSize()), var10);
             }
         }
     }

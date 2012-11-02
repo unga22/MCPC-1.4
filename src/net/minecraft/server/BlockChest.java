@@ -1,7 +1,10 @@
 package net.minecraft.server;
 
+import cpw.mods.fml.common.Side;
+import cpw.mods.fml.common.asm.SideOnly;
 import java.util.Iterator;
 import java.util.Random;
+import net.minecraftforge.common.ForgeDirection;
 
 public class BlockChest extends BlockContainer
 {
@@ -252,6 +255,12 @@ public class BlockChest extends BlockContainer
         }
     }
 
+    @SideOnly(Side.CLIENT)
+    public int d(IBlockAccess var1, int var2, int var3, int var4, int var5)
+    {
+        return 4;
+    }
+
     /**
      * Returns the block texture based on the side being looked at.  Args: side
      */
@@ -330,27 +339,27 @@ public class BlockChest extends BlockContainer
                 {
                     float var10 = this.a.nextFloat() * 0.8F + 0.1F;
                     float var11 = this.a.nextFloat() * 0.8F + 0.1F;
-                    EntityItem var14;
+                    EntityItem var12;
 
-                    for (float var12 = this.a.nextFloat() * 0.8F + 0.1F; var9.count > 0; var1.addEntity(var14))
+                    for (float var13 = this.a.nextFloat() * 0.8F + 0.1F; var9.count > 0; var1.addEntity(var12))
                     {
-                        int var13 = this.a.nextInt(21) + 10;
+                        int var14 = this.a.nextInt(21) + 10;
 
-                        if (var13 > var9.count)
+                        if (var14 > var9.count)
                         {
-                            var13 = var9.count;
+                            var14 = var9.count;
                         }
 
-                        var9.count -= var13;
-                        var14 = new EntityItem(var1, (double)((float)var2 + var10), (double)((float)var3 + var11), (double)((float)var4 + var12), new ItemStack(var9.id, var13, var9.getData()));
+                        var9.count -= var14;
+                        var12 = new EntityItem(var1, (double)((float)var2 + var10), (double)((float)var3 + var11), (double)((float)var4 + var13), new ItemStack(var9.id, var14, var9.getData()));
                         float var15 = 0.05F;
-                        var14.motX = (double)((float)this.a.nextGaussian() * var15);
-                        var14.motY = (double)((float)this.a.nextGaussian() * var15 + 0.2F);
-                        var14.motZ = (double)((float)this.a.nextGaussian() * var15);
+                        var12.motX = (double)((float)this.a.nextGaussian() * var15);
+                        var12.motY = (double)((float)this.a.nextGaussian() * var15 + 0.2F);
+                        var12.motZ = (double)((float)this.a.nextGaussian() * var15);
 
                         if (var9.hasTag())
                         {
-                            var14.itemStack.setTag((NBTTagCompound)var9.getTag().clone());
+                            var12.itemStack.setTag((NBTTagCompound)var9.getTag().clone());
                         }
                     }
                 }
@@ -371,7 +380,7 @@ public class BlockChest extends BlockContainer
         {
             return true;
         }
-        else if (var1.s(var2, var3 + 1, var4))
+        else if (var1.isBlockSolidOnSide(var2, var3 + 1, var4, ForgeDirection.DOWN))
         {
             return true;
         }
@@ -379,19 +388,19 @@ public class BlockChest extends BlockContainer
         {
             return true;
         }
-        else if (var1.getTypeId(var2 - 1, var3, var4) == this.id && (var1.s(var2 - 1, var3 + 1, var4) || n(var1, var2 - 1, var3, var4)))
+        else if (var1.getTypeId(var2 - 1, var3, var4) == this.id && (var1.isBlockSolidOnSide(var2 - 1, var3 + 1, var4, ForgeDirection.DOWN) || n(var1, var2 - 1, var3, var4)))
         {
             return true;
         }
-        else if (var1.getTypeId(var2 + 1, var3, var4) == this.id && (var1.s(var2 + 1, var3 + 1, var4) || n(var1, var2 + 1, var3, var4)))
+        else if (var1.getTypeId(var2 + 1, var3, var4) == this.id && (var1.isBlockSolidOnSide(var2 + 1, var3 + 1, var4, ForgeDirection.DOWN) || n(var1, var2 + 1, var3, var4)))
         {
             return true;
         }
-        else if (var1.getTypeId(var2, var3, var4 - 1) == this.id && (var1.s(var2, var3 + 1, var4 - 1) || n(var1, var2, var3, var4 - 1)))
+        else if (var1.getTypeId(var2, var3, var4 - 1) == this.id && (var1.isBlockSolidOnSide(var2, var3 + 1, var4 - 1, ForgeDirection.DOWN) || n(var1, var2, var3, var4 - 1)))
         {
             return true;
         }
-        else if (var1.getTypeId(var2, var3, var4 + 1) == this.id && (var1.s(var2, var3 + 1, var4 + 1) || n(var1, var2, var3, var4 + 1)))
+        else if (var1.getTypeId(var2, var3, var4 + 1) == this.id && (var1.isBlockSolidOnSide(var2, var3 + 1, var4 + 1, ForgeDirection.DOWN) || n(var1, var2, var3, var4 + 1)))
         {
             return true;
         }
@@ -444,20 +453,17 @@ public class BlockChest extends BlockContainer
     private static boolean n(World var0, int var1, int var2, int var3)
     {
         Iterator var4 = var0.a(EntityOcelot.class, AxisAlignedBB.a().a((double)var1, (double)(var2 + 1), (double)var3, (double)(var1 + 1), (double)(var2 + 2), (double)(var3 + 1))).iterator();
-        EntityOcelot var6;
 
-        do
+        while (var4.hasNext())
         {
-            if (!var4.hasNext())
+            EntityOcelot var6 = (EntityOcelot)var4.next();
+
+            if (var6.isSitting())
             {
-                return false;
+                return true;
             }
-
-            EntityOcelot var5 = (EntityOcelot)var4.next();
-            var6 = (EntityOcelot)var5;
         }
-        while (!var6.isSitting());
 
-        return true;
+        return false;
     }
 }

@@ -1,51 +1,47 @@
 package net.minecraft.server;
 
+import org.bukkit.block.Block;
+import org.bukkit.craftbukkit.block.CraftBlockState;
+import org.bukkit.craftbukkit.event.CraftEventFactory;
+import org.bukkit.event.block.BlockPlaceEvent;
+
 public class ItemSeeds extends Item
 {
-    /**
-     * The type of block this seed turns into (wheat or pumpkin stems for instance)
-     */
-    private int id;
+  private int id;
+  private int b;
 
-    /** BlockID of the block the seeds can be planted on. */
-    private int b;
+  public ItemSeeds(int i, int j, int k)
+  {
+    super(i);
+    this.id = j;
+    this.b = k;
+  }
 
-    public ItemSeeds(int var1, int var2, int var3)
-    {
-        super(var1);
-        this.id = var2;
-        this.b = var3;
-        this.a(CreativeModeTab.l);
+  public boolean interactWith(ItemStack itemstack, EntityHuman entityhuman, World world, int i, int j, int k, int l) {
+    if (l != 1)
+      return false;
+    if ((entityhuman.d(i, j, k)) && (entityhuman.d(i, j + 1, k))) {
+      int i1 = world.getTypeId(i, j, k);
+
+      if ((i1 == this.b) && (world.isEmpty(i, j + 1, k))) {
+        CraftBlockState blockState = CraftBlockState.getBlockState(world, i, j + 1, k);
+
+        world.setTypeId(i, j + 1, k, this.id);
+
+        BlockPlaceEvent event = CraftEventFactory.callBlockPlaceEvent(world, entityhuman, blockState, i, j, k);
+
+        if ((event.isCancelled()) || (!event.canBuild())) {
+          event.getBlockPlaced().setTypeId(0);
+          return false;
+        }
+
+        itemstack.count -= 1;
+        return true;
+      }
+      return false;
     }
 
-    /**
-     * Callback for item usage. If the item does something special on right clicking, he will have one of those. Return
-     * True if something happen and false if it don't. This is for ITEMS, not BLOCKS
-     */
-    public boolean interactWith(ItemStack var1, EntityHuman var2, World var3, int var4, int var5, int var6, int var7, float var8, float var9, float var10)
-    {
-        if (var7 != 1)
-        {
-            return false;
-        }
-        else if (var2.func_82247_a(var4, var5, var6, var7, var1) && var2.func_82247_a(var4, var5 + 1, var6, var7, var1))
-        {
-            int var11 = var3.getTypeId(var4, var5, var6);
-
-            if (var11 == this.b && var3.isEmpty(var4, var5 + 1, var6))
-            {
-                var3.setTypeId(var4, var5 + 1, var6, this.id);
-                --var1.count;
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
-        else
-        {
-            return false;
-        }
-    }
+    return false;
+  }
 }
+

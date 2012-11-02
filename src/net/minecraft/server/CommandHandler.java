@@ -8,6 +8,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Map.Entry;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.CommandEvent;
 
 public class CommandHandler implements ICommandHandler
 {
@@ -39,29 +41,41 @@ public class CommandHandler implements ICommandHandler
 
             if (var5.b(var1))
             {
+                CommandEvent var7 = new CommandEvent(var5, var1, var3);
+
+                if (MinecraftForge.EVENT_BUS.post(var7))
+                {
+                    if (var7.exception != null)
+                    {
+                        throw var7.exception;
+                    }
+
+                    return;
+                }
+
                 if (var6 > -1)
                 {
-                    EntityPlayer[] var7 = PlayerSelector.func_82380_c(var1, var3[var6]);
-                    String var8 = var3[var6];
-                    EntityPlayer[] var9 = var7;
-                    int var10 = var7.length;
+                    EntityPlayer[] var8 = PlayerSelector.func_82380_c(var1, var3[var6]);
+                    String var9 = var3[var6];
+                    EntityPlayer[] var10 = var8;
+                    int var11 = var8.length;
 
-                    for (int var11 = 0; var11 < var10; ++var11)
+                    for (int var12 = 0; var12 < var11; ++var12)
                     {
-                        EntityPlayer var12 = var9[var11];
-                        var3[var6] = var12.getLocalizedName();
+                        EntityPlayer var13 = var10[var12];
+                        var3[var6] = var13.getLocalizedName();
 
                         try
                         {
                             var5.b(var1, var3);
                         }
-                        catch (ExceptionPlayerNotFound var14)
+                        catch (ExceptionPlayerNotFound var15)
                         {
-                            var1.sendMessage("\u00a7c" + var1.a(var14.getMessage(), var14.a()));
+                            var1.sendMessage("\u00a7c" + var1.a(var15.getMessage(), var15.a()));
                         }
                     }
 
-                    var3[var6] = var8;
+                    var3[var6] = var9;
                 }
                 else
                 {
@@ -73,18 +87,18 @@ public class CommandHandler implements ICommandHandler
                 var1.sendMessage("\u00a7cYou do not have permission to use this command.");
             }
         }
-        catch (ExceptionUsage var15)
+        catch (ExceptionUsage var16)
         {
-            var1.sendMessage("\u00a7c" + var1.a("commands.generic.usage", new Object[] {var1.a(var15.getMessage(), var15.a())}));
+            var1.sendMessage("\u00a7c" + var1.a("commands.generic.usage", new Object[] {var1.a(var16.getMessage(), var16.a())}));
         }
-        catch (CommandException var16)
+        catch (CommandException var17)
         {
-            var1.sendMessage("\u00a7c" + var1.a(var16.getMessage(), var16.a()));
+            var1.sendMessage("\u00a7c" + var1.a(var17.getMessage(), var17.a()));
         }
-        catch (Throwable var17)
+        catch (Throwable var18)
         {
             var1.sendMessage("\u00a7c" + var1.a("commands.generic.exception", new Object[0]));
-            var17.printStackTrace();
+            var18.printStackTrace();
         }
     }
 

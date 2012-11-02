@@ -1,5 +1,7 @@
 package net.minecraft.server;
 
+import cpw.mods.fml.common.Side;
+import cpw.mods.fml.common.asm.SideOnly;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -85,6 +87,12 @@ public class WorldChunkManager
             var1[var7] = var8;
         }
 
+        return var1;
+    }
+
+    @SideOnly(Side.CLIENT)
+    public float a(float var1, int var2)
+    {
         return var1;
     }
 

@@ -1,575 +1,443 @@
 package net.minecraft.server;
 
+import forge.ITextureProvider;
+import java.io.PrintStream;
+import java.util.ArrayList;
 import java.util.Random;
 
 public class Item
+  implements ITextureProvider
 {
-    private CreativeModeTab a = null;
+  protected static Random c = new Random();
+  public static Item[] byId = new Item[32000];
+  public static Item IRON_SPADE = new ItemSpade(0, EnumToolMaterial.IRON).a(2, 5).a("shovelIron");
+  public static Item IRON_PICKAXE = new ItemPickaxe(1, EnumToolMaterial.IRON).a(2, 6).a("pickaxeIron");
+  public static Item IRON_AXE = new ItemAxe(2, EnumToolMaterial.IRON).a(2, 7).a("hatchetIron");
+  public static Item FLINT_AND_STEEL = new ItemFlintAndSteel(3).a(5, 0).a("flintAndSteel");
+  public static Item APPLE = new ItemFood(4, 4, 0.3F, false).a(10, 0).a("apple");
+  public static Item BOW = new ItemBow(5).a(5, 1).a("bow");
+  public static Item ARROW = new Item(6).a(5, 2).a("arrow");
+  public static Item COAL = new ItemCoal(7).a(7, 0).a("coal");
+  public static Item DIAMOND = new Item(8).a(7, 3).a("emerald");
+  public static Item IRON_INGOT = new Item(9).a(7, 1).a("ingotIron");
+  public static Item GOLD_INGOT = new Item(10).a(7, 2).a("ingotGold");
+  public static Item IRON_SWORD = new ItemSword(11, EnumToolMaterial.IRON).a(2, 4).a("swordIron");
+  public static Item WOOD_SWORD = new ItemSword(12, EnumToolMaterial.WOOD).a(0, 4).a("swordWood");
+  public static Item WOOD_SPADE = new ItemSpade(13, EnumToolMaterial.WOOD).a(0, 5).a("shovelWood");
+  public static Item WOOD_PICKAXE = new ItemPickaxe(14, EnumToolMaterial.WOOD).a(0, 6).a("pickaxeWood");
+  public static Item WOOD_AXE = new ItemAxe(15, EnumToolMaterial.WOOD).a(0, 7).a("hatchetWood");
+  public static Item STONE_SWORD = new ItemSword(16, EnumToolMaterial.STONE).a(1, 4).a("swordStone");
+  public static Item STONE_SPADE = new ItemSpade(17, EnumToolMaterial.STONE).a(1, 5).a("shovelStone");
+  public static Item STONE_PICKAXE = new ItemPickaxe(18, EnumToolMaterial.STONE).a(1, 6).a("pickaxeStone");
+  public static Item STONE_AXE = new ItemAxe(19, EnumToolMaterial.STONE).a(1, 7).a("hatchetStone");
+  public static Item DIAMOND_SWORD = new ItemSword(20, EnumToolMaterial.DIAMOND).a(3, 4).a("swordDiamond");
+  public static Item DIAMOND_SPADE = new ItemSpade(21, EnumToolMaterial.DIAMOND).a(3, 5).a("shovelDiamond");
+  public static Item DIAMOND_PICKAXE = new ItemPickaxe(22, EnumToolMaterial.DIAMOND).a(3, 6).a("pickaxeDiamond");
+  public static Item DIAMOND_AXE = new ItemAxe(23, EnumToolMaterial.DIAMOND).a(3, 7).a("hatchetDiamond");
+  public static Item STICK = new Item(24).a(5, 3).h().a("stick");
+  public static Item BOWL = new Item(25).a(7, 4).a("bowl");
+  public static Item MUSHROOM_SOUP = new ItemSoup(26, 8).a(8, 4).a("mushroomStew");
+  public static Item GOLD_SWORD = new ItemSword(27, EnumToolMaterial.GOLD).a(4, 4).a("swordGold");
+  public static Item GOLD_SPADE = new ItemSpade(28, EnumToolMaterial.GOLD).a(4, 5).a("shovelGold");
+  public static Item GOLD_PICKAXE = new ItemPickaxe(29, EnumToolMaterial.GOLD).a(4, 6).a("pickaxeGold");
+  public static Item GOLD_AXE = new ItemAxe(30, EnumToolMaterial.GOLD).a(4, 7).a("hatchetGold");
+  public static Item STRING = new Item(31).a(8, 0).a("string");
+  public static Item FEATHER = new Item(32).a(8, 1).a("feather");
+  public static Item SULPHUR = new Item(33).a(8, 2).a("sulphur").b(PotionBrewer.k);
+  public static Item WOOD_HOE = new ItemHoe(34, EnumToolMaterial.WOOD).a(0, 8).a("hoeWood");
+  public static Item STONE_HOE = new ItemHoe(35, EnumToolMaterial.STONE).a(1, 8).a("hoeStone");
+  public static Item IRON_HOE = new ItemHoe(36, EnumToolMaterial.IRON).a(2, 8).a("hoeIron");
+  public static Item DIAMOND_HOE = new ItemHoe(37, EnumToolMaterial.DIAMOND).a(3, 8).a("hoeDiamond");
+  public static Item GOLD_HOE = new ItemHoe(38, EnumToolMaterial.GOLD).a(4, 8).a("hoeGold");
+  public static Item SEEDS = new ItemSeeds(39, Block.CROPS.id, Block.SOIL.id).a(9, 0).a("seeds");
+  public static Item WHEAT = new Item(40).a(9, 1).a("wheat");
+  public static Item BREAD = new ItemFood(41, 5, 0.6F, false).a(9, 2).a("bread");
+  public static Item LEATHER_HELMET = new ItemArmor(42, EnumArmorMaterial.CLOTH, 0, 0).a(0, 0).a("helmetCloth");
+  public static Item LEATHER_CHESTPLATE = new ItemArmor(43, EnumArmorMaterial.CLOTH, 0, 1).a(0, 1).a("chestplateCloth");
+  public static Item LEATHER_LEGGINGS = new ItemArmor(44, EnumArmorMaterial.CLOTH, 0, 2).a(0, 2).a("leggingsCloth");
+  public static Item LEATHER_BOOTS = new ItemArmor(45, EnumArmorMaterial.CLOTH, 0, 3).a(0, 3).a("bootsCloth");
+  public static Item CHAINMAIL_HELMET = new ItemArmor(46, EnumArmorMaterial.IRON, 1, 0).a(1, 0).a("helmetChain");
+  public static Item CHAINMAIL_CHESTPLATE = new ItemArmor(47, EnumArmorMaterial.IRON, 1, 1).a(1, 1).a("chestplateChain");
+  public static Item CHAINMAIL_LEGGINGS = new ItemArmor(48, EnumArmorMaterial.IRON, 1, 2).a(1, 2).a("leggingsChain");
+  public static Item CHAINMAIL_BOOTS = new ItemArmor(49, EnumArmorMaterial.IRON, 1, 3).a(1, 3).a("bootsChain");
+  public static Item IRON_HELMET = new ItemArmor(50, EnumArmorMaterial.CHAIN, 2, 0).a(2, 0).a("helmetIron");
+  public static Item IRON_CHESTPLATE = new ItemArmor(51, EnumArmorMaterial.CHAIN, 2, 1).a(2, 1).a("chestplateIron");
+  public static Item IRON_LEGGINGS = new ItemArmor(52, EnumArmorMaterial.CHAIN, 2, 2).a(2, 2).a("leggingsIron");
+  public static Item IRON_BOOTS = new ItemArmor(53, EnumArmorMaterial.CHAIN, 2, 3).a(2, 3).a("bootsIron");
+  public static Item DIAMOND_HELMET = new ItemArmor(54, EnumArmorMaterial.DIAMOND, 3, 0).a(3, 0).a("helmetDiamond");
+  public static Item DIAMOND_CHESTPLATE = new ItemArmor(55, EnumArmorMaterial.DIAMOND, 3, 1).a(3, 1).a("chestplateDiamond");
+  public static Item DIAMOND_LEGGINGS = new ItemArmor(56, EnumArmorMaterial.DIAMOND, 3, 2).a(3, 2).a("leggingsDiamond");
+  public static Item DIAMOND_BOOTS = new ItemArmor(57, EnumArmorMaterial.DIAMOND, 3, 3).a(3, 3).a("bootsDiamond");
+  public static Item GOLD_HELMET = new ItemArmor(58, EnumArmorMaterial.GOLD, 4, 0).a(4, 0).a("helmetGold");
+  public static Item GOLD_CHESTPLATE = new ItemArmor(59, EnumArmorMaterial.GOLD, 4, 1).a(4, 1).a("chestplateGold");
+  public static Item GOLD_LEGGINGS = new ItemArmor(60, EnumArmorMaterial.GOLD, 4, 2).a(4, 2).a("leggingsGold");
+  public static Item GOLD_BOOTS = new ItemArmor(61, EnumArmorMaterial.GOLD, 4, 3).a(4, 3).a("bootsGold");
+  public static Item FLINT = new Item(62).a(6, 0).a("flint");
+  public static Item PORK = new ItemFood(63, 3, 0.3F, true).a(7, 5).a("porkchopRaw");
+  public static Item GRILLED_PORK = new ItemFood(64, 8, 0.8F, true).a(8, 5).a("porkchopCooked");
+  public static Item PAINTING = new ItemPainting(65).a(10, 1).a("painting");
+  public static Item GOLDEN_APPLE = new ItemGoldenApple(66, 4, 1.2F, false).r().a(MobEffectList.REGENERATION.id, 5, 0, 1.0F).a(11, 0).a("appleGold");
+  public static Item SIGN = new ItemSign(67).a(10, 2).a("sign");
+  public static Item WOOD_DOOR = new ItemDoor(68, Material.WOOD).a(11, 2).a("doorWood");
+  public static Item BUCKET = new ItemBucket(69, 0).a(10, 4).a("bucket");
+  public static Item WATER_BUCKET = new ItemBucket(70, Block.WATER.id).a(11, 4).a("bucketWater").a(BUCKET);
+  public static Item LAVA_BUCKET = new ItemBucket(71, Block.LAVA.id).a(12, 4).a("bucketLava").a(BUCKET);
+  public static Item MINECART = new ItemMinecart(72, 0).a(7, 8).a("minecart");
+  public static Item SADDLE = new ItemSaddle(73).a(8, 6).a("saddle");
+  public static Item IRON_DOOR = new ItemDoor(74, Material.ORE).a(12, 2).a("doorIron");
+  public static Item REDSTONE = new ItemRedstone(75).a(8, 3).a("redstone").b(PotionBrewer.i);
+  public static Item SNOW_BALL = new ItemSnowball(76).a(14, 0).a("snowball");
+  public static Item BOAT = new ItemBoat(77).a(8, 8).a("boat");
+  public static Item LEATHER = new Item(78).a(7, 6).a("leather");
+  public static Item MILK_BUCKET = new ItemMilkBucket(79).a(13, 4).a("milk").a(BUCKET);
+  public static Item CLAY_BRICK = new Item(80).a(6, 1).a("brick");
+  public static Item CLAY_BALL = new Item(81).a(9, 3).a("clay");
+  public static Item SUGAR_CANE = new ItemReed(82, Block.SUGAR_CANE_BLOCK).a(11, 1).a("reeds");
+  public static Item PAPER = new Item(83).a(10, 3).a("paper");
+  public static Item BOOK = new Item(84).a(11, 3).a("book");
+  public static Item SLIME_BALL = new Item(85).a(14, 1).a("slimeball");
+  public static Item STORAGE_MINECART = new ItemMinecart(86, 1).a(7, 9).a("minecartChest");
+  public static Item POWERED_MINECART = new ItemMinecart(87, 2).a(7, 10).a("minecartFurnace");
+  public static Item EGG = new ItemEgg(88).a(12, 0).a("egg");
+  public static Item COMPASS = new Item(89).a(6, 3).a("compass");
+  public static Item FISHING_ROD = new ItemFishingRod(90).a(5, 4).a("fishingRod");
+  public static Item WATCH = new Item(91).a(6, 4).a("clock");
+  public static Item GLOWSTONE_DUST = new Item(92).a(9, 4).a("yellowDust").b(PotionBrewer.j);
+  public static Item RAW_FISH = new ItemFood(93, 2, 0.3F, false).a(9, 5).a("fishRaw");
+  public static Item COOKED_FISH = new ItemFood(94, 5, 0.6F, false).a(10, 5).a("fishCooked");
+  public static Item INK_SACK = new ItemDye(95).a(14, 4).a("dyePowder");
+  public static Item BONE = new Item(96).a(12, 1).a("bone").h();
+  public static Item SUGAR = new Item(97).a(13, 0).a("sugar").b(PotionBrewer.b);
+  public static Item CAKE = new ItemReed(98, Block.CAKE_BLOCK).e(1).a(13, 1).a("cake");
+  public static Item BED = new ItemBed(99).e(1).a(13, 2).a("bed");
+  public static Item DIODE = new ItemReed(100, Block.DIODE_OFF).a(6, 5).a("diode");
+  public static Item COOKIE = new ItemFood(101, 1, 0.1F, false).a(12, 5).a("cookie");
+  public static ItemWorldMap MAP = (ItemWorldMap)new ItemWorldMap(102).a(12, 3).a("map");
+  public static ItemShears SHEARS = (ItemShears)new ItemShears(103).a(13, 5).a("shears");
+  public static Item MELON = new ItemFood(104, 2, 0.3F, false).a(13, 6).a("melon");
+  public static Item PUMPKIN_SEEDS = new ItemSeeds(105, Block.PUMPKIN_STEM.id, Block.SOIL.id).a(13, 3).a("seeds_pumpkin");
+  public static Item MELON_SEEDS = new ItemSeeds(106, Block.MELON_STEM.id, Block.SOIL.id).a(14, 3).a("seeds_melon");
+  public static Item RAW_BEEF = new ItemFood(107, 3, 0.3F, true).a(9, 6).a("beefRaw");
+  public static Item COOKED_BEEF = new ItemFood(108, 8, 0.8F, true).a(10, 6).a("beefCooked");
+  public static Item RAW_CHICKEN = new ItemFood(109, 2, 0.3F, true).a(MobEffectList.HUNGER.id, 30, 0, 0.3F).a(9, 7).a("chickenRaw");
+  public static Item COOKED_CHICKEN = new ItemFood(110, 6, 0.6F, true).a(10, 7).a("chickenCooked");
+  public static Item ROTTEN_FLESH = new ItemFood(111, 4, 0.1F, true).a(MobEffectList.HUNGER.id, 30, 0, 0.8F).a(11, 5).a("rottenFlesh");
+  public static Item ENDER_PEARL = new ItemEnderPearl(112).a(11, 6).a("enderPearl");
+  public static Item BLAZE_ROD = new Item(113).a(12, 6).a("blazeRod");
+  public static Item GHAST_TEAR = new Item(114).a(11, 7).a("ghastTear").b(PotionBrewer.c);
+  public static Item GOLD_NUGGET = new Item(115).a(12, 7).a("goldNugget");
+  public static Item NETHER_STALK = new ItemSeeds(116, Block.NETHER_WART.id, Block.SOUL_SAND.id).a(13, 7).a("netherStalkSeeds").b("+4");
+  public static ItemPotion POTION = (ItemPotion)new ItemPotion(117).a(13, 8).a("potion");
+  public static Item GLASS_BOTTLE = new ItemGlassBottle(118).a(12, 8).a("glassBottle");
+  public static Item SPIDER_EYE = new ItemFood(119, 2, 0.8F, false).a(MobEffectList.POISON.id, 5, 0, 1.0F).a(11, 8).a("spiderEye").b(PotionBrewer.d);
+  public static Item FERMENTED_SPIDER_EYE = new Item(120).a(10, 8).a("fermentedSpiderEye").b(PotionBrewer.e);
+  public static Item BLAZE_POWDER = new Item(121).a(13, 9).a("blazePowder").b(PotionBrewer.g);
+  public static Item MAGMA_CREAM = new Item(122).a(13, 10).a("magmaCream").b(PotionBrewer.h);
+  public static Item BREWING_STAND = new ItemReed(123, Block.BREWING_STAND).a(12, 10).a("brewingStand");
+  public static Item CAULDRON = new ItemReed(124, Block.CAULDRON).a(12, 9).a("cauldron");
+  public static Item EYE_OF_ENDER = new ItemEnderEye(125).a(11, 9).a("eyeOfEnder");
+  public static Item SPECKLED_MELON = new Item(126).a(9, 8).a("speckledMelon").b(PotionBrewer.f);
+  public static Item MONSTER_EGG = new ItemMonsterEgg(127).a(9, 9).a("monsterPlacer");
+  public static Item EXP_BOTTLE = new ItemExpBottle(128).a(11, 10).a("expBottle");
+  public static Item FIREBALL = new ItemFireball(129).a(14, 2).a("fireball");
+  public static Item RECORD_1 = new ItemRecord(2000, "13").a(0, 15).a("record");
+  public static Item RECORD_2 = new ItemRecord(2001, "cat").a(1, 15).a("record");
+  public static Item RECORD_3 = new ItemRecord(2002, "blocks").a(2, 15).a("record");
+  public static Item RECORD_4 = new ItemRecord(2003, "chirp").a(3, 15).a("record");
+  public static Item RECORD_5 = new ItemRecord(2004, "far").a(4, 15).a("record");
+  public static Item RECORD_6 = new ItemRecord(2005, "mall").a(5, 15).a("record");
+  public static Item RECORD_7 = new ItemRecord(2006, "mellohi").a(6, 15).a("record");
+  public static Item RECORD_8 = new ItemRecord(2007, "stal").a(7, 15).a("record");
+  public static Item RECORD_9 = new ItemRecord(2008, "strad").a(8, 15).a("record");
+  public static Item RECORD_10 = new ItemRecord(2009, "ward").a(9, 15).a("record");
+  public static Item RECORD_11 = new ItemRecord(2010, "11").a(10, 15).a("record");
+  public final int id;
+  protected int maxStackSize = 64;
+  private int durability = 0;
+  protected int textureId;
+  protected boolean bS = false;
+  protected boolean bT = false;
+  private Item craftingResult = null;
+  private String bU = null;
+  private String name;
+  protected boolean canRepair = true;
 
-    /** The RNG used by the Item subclasses. */
-    protected static Random d = new Random();
+  public boolean isDefaultTexture = true;
+  private String currentTexture = "/gui/items.png";
 
-    /** A 32000 elements Item array. */
-    public static Item[] byId = new Item[32000];
-    public static Item IRON_SPADE = (new ItemSpade(0, EnumToolMaterial.IRON)).b(2, 5).b("shovelIron");
-    public static Item IRON_PICKAXE = (new ItemPickaxe(1, EnumToolMaterial.IRON)).b(2, 6).b("pickaxeIron");
-    public static Item IRON_AXE = (new ItemAxe(2, EnumToolMaterial.IRON)).b(2, 7).b("hatchetIron");
-    public static Item FLINT_AND_STEEL = (new ItemFlintAndSteel(3)).b(5, 0).b("flintAndSteel");
-    public static Item APPLE = (new ItemFood(4, 4, 0.3F, false)).b(10, 0).b("apple");
-    public static Item BOW = (new ItemBow(5)).b(5, 1).b("bow");
-    public static Item ARROW = (new Item(6)).b(5, 2).b("arrow").a(CreativeModeTab.j);
-    public static Item COAL = (new ItemCoal(7)).b(7, 0).b("coal");
-    public static Item DIAMOND = (new Item(8)).b(7, 3).b("diamond").a(CreativeModeTab.l);
-    public static Item IRON_INGOT = (new Item(9)).b(7, 1).b("ingotIron").a(CreativeModeTab.l);
-    public static Item GOLD_INGOT = (new Item(10)).b(7, 2).b("ingotGold").a(CreativeModeTab.l);
-    public static Item IRON_SWORD = (new ItemSword(11, EnumToolMaterial.IRON)).b(2, 4).b("swordIron");
-    public static Item WOOD_SWORD = (new ItemSword(12, EnumToolMaterial.WOOD)).b(0, 4).b("swordWood");
-    public static Item WOOD_SPADE = (new ItemSpade(13, EnumToolMaterial.WOOD)).b(0, 5).b("shovelWood");
-    public static Item WOOD_PICKAXE = (new ItemPickaxe(14, EnumToolMaterial.WOOD)).b(0, 6).b("pickaxeWood");
-    public static Item WOOD_AXE = (new ItemAxe(15, EnumToolMaterial.WOOD)).b(0, 7).b("hatchetWood");
-    public static Item STONE_SWORD = (new ItemSword(16, EnumToolMaterial.STONE)).b(1, 4).b("swordStone");
-    public static Item STONE_SPADE = (new ItemSpade(17, EnumToolMaterial.STONE)).b(1, 5).b("shovelStone");
-    public static Item STONE_PICKAXE = (new ItemPickaxe(18, EnumToolMaterial.STONE)).b(1, 6).b("pickaxeStone");
-    public static Item STONE_AXE = (new ItemAxe(19, EnumToolMaterial.STONE)).b(1, 7).b("hatchetStone");
-    public static Item DIAMOND_SWORD = (new ItemSword(20, EnumToolMaterial.EMERALD)).b(3, 4).b("swordDiamond");
-    public static Item DIAMOND_SPADE = (new ItemSpade(21, EnumToolMaterial.EMERALD)).b(3, 5).b("shovelDiamond");
-    public static Item DIAMOND_PICKAXE = (new ItemPickaxe(22, EnumToolMaterial.EMERALD)).b(3, 6).b("pickaxeDiamond");
-    public static Item DIAMOND_AXE = (new ItemAxe(23, EnumToolMaterial.EMERALD)).b(3, 7).b("hatchetDiamond");
-    public static Item STICK = (new Item(24)).b(5, 3).o().b("stick").a(CreativeModeTab.l);
-    public static Item BOWL = (new Item(25)).b(7, 4).b("bowl").a(CreativeModeTab.l);
-    public static Item MUSHROOM_SOUP = (new ItemSoup(26, 6)).b(8, 4).b("mushroomStew");
-    public static Item GOLD_SWORD = (new ItemSword(27, EnumToolMaterial.GOLD)).b(4, 4).b("swordGold");
-    public static Item GOLD_SPADE = (new ItemSpade(28, EnumToolMaterial.GOLD)).b(4, 5).b("shovelGold");
-    public static Item GOLD_PICKAXE = (new ItemPickaxe(29, EnumToolMaterial.GOLD)).b(4, 6).b("pickaxeGold");
-    public static Item GOLD_AXE = (new ItemAxe(30, EnumToolMaterial.GOLD)).b(4, 7).b("hatchetGold");
-    public static Item STRING = (new ItemReed(31, Block.TRIPWIRE)).b(8, 0).b("string").a(CreativeModeTab.l);
-    public static Item FEATHER = (new Item(32)).b(8, 1).b("feather").a(CreativeModeTab.l);
-    public static Item SULPHUR = (new Item(33)).b(8, 2).b("sulphur").c(PotionBrewer.k).a(CreativeModeTab.l);
-    public static Item WOOD_HOE = (new ItemHoe(34, EnumToolMaterial.WOOD)).b(0, 8).b("hoeWood");
-    public static Item STONE_HOE = (new ItemHoe(35, EnumToolMaterial.STONE)).b(1, 8).b("hoeStone");
-    public static Item IRON_HOE = (new ItemHoe(36, EnumToolMaterial.IRON)).b(2, 8).b("hoeIron");
-    public static Item DIAMOND_HOE = (new ItemHoe(37, EnumToolMaterial.EMERALD)).b(3, 8).b("hoeDiamond");
-    public static Item GOLD_HOE = (new ItemHoe(38, EnumToolMaterial.GOLD)).b(4, 8).b("hoeGold");
-    public static Item SEEDS = (new ItemSeeds(39, Block.CROPS.id, Block.SOIL.id)).b(9, 0).b("seeds");
-    public static Item WHEAT = (new Item(40)).b(9, 1).b("wheat").a(CreativeModeTab.l);
-    public static Item BREAD = (new ItemFood(41, 5, 0.6F, false)).b(9, 2).b("bread");
-    public static Item LEATHER_HELMET = (new ItemArmor(42, EnumArmorMaterial.CLOTH, 0, 0)).b(0, 0).b("helmetCloth");
-    public static Item LEATHER_CHESTPLATE = (new ItemArmor(43, EnumArmorMaterial.CLOTH, 0, 1)).b(0, 1).b("chestplateCloth");
-    public static Item LEATHER_LEGGINGS = (new ItemArmor(44, EnumArmorMaterial.CLOTH, 0, 2)).b(0, 2).b("leggingsCloth");
-    public static Item LEATHER_BOOTS = (new ItemArmor(45, EnumArmorMaterial.CLOTH, 0, 3)).b(0, 3).b("bootsCloth");
-    public static Item CHAINMAIL_HELMET = (new ItemArmor(46, EnumArmorMaterial.CHAIN, 1, 0)).b(1, 0).b("helmetChain");
-    public static Item CHAINMAIL_CHESTPLATE = (new ItemArmor(47, EnumArmorMaterial.CHAIN, 1, 1)).b(1, 1).b("chestplateChain");
-    public static Item CHAINMAIL_LEGGINGS = (new ItemArmor(48, EnumArmorMaterial.CHAIN, 1, 2)).b(1, 2).b("leggingsChain");
-    public static Item CHAINMAIL_BOOTS = (new ItemArmor(49, EnumArmorMaterial.CHAIN, 1, 3)).b(1, 3).b("bootsChain");
-    public static Item IRON_HELMET = (new ItemArmor(50, EnumArmorMaterial.IRON, 2, 0)).b(2, 0).b("helmetIron");
-    public static Item IRON_CHESTPLATE = (new ItemArmor(51, EnumArmorMaterial.IRON, 2, 1)).b(2, 1).b("chestplateIron");
-    public static Item IRON_LEGGINGS = (new ItemArmor(52, EnumArmorMaterial.IRON, 2, 2)).b(2, 2).b("leggingsIron");
-    public static Item IRON_BOOTS = (new ItemArmor(53, EnumArmorMaterial.IRON, 2, 3)).b(2, 3).b("bootsIron");
-    public static Item DIAMOND_HELMET = (new ItemArmor(54, EnumArmorMaterial.DIAMOND, 3, 0)).b(3, 0).b("helmetDiamond");
-    public static Item DIAMOND_CHESTPLATE = (new ItemArmor(55, EnumArmorMaterial.DIAMOND, 3, 1)).b(3, 1).b("chestplateDiamond");
-    public static Item DIAMOND_LEGGINGS = (new ItemArmor(56, EnumArmorMaterial.DIAMOND, 3, 2)).b(3, 2).b("leggingsDiamond");
-    public static Item DIAMOND_BOOTS = (new ItemArmor(57, EnumArmorMaterial.DIAMOND, 3, 3)).b(3, 3).b("bootsDiamond");
-    public static Item GOLD_HELMET = (new ItemArmor(58, EnumArmorMaterial.GOLD, 4, 0)).b(4, 0).b("helmetGold");
-    public static Item GOLD_CHESTPLATE = (new ItemArmor(59, EnumArmorMaterial.GOLD, 4, 1)).b(4, 1).b("chestplateGold");
-    public static Item GOLD_LEGGINGS = (new ItemArmor(60, EnumArmorMaterial.GOLD, 4, 2)).b(4, 2).b("leggingsGold");
-    public static Item GOLD_BOOTS = (new ItemArmor(61, EnumArmorMaterial.GOLD, 4, 3)).b(4, 3).b("bootsGold");
-    public static Item FLINT = (new Item(62)).b(6, 0).b("flint").a(CreativeModeTab.l);
-    public static Item PORK = (new ItemFood(63, 3, 0.3F, true)).b(7, 5).b("porkchopRaw");
-    public static Item GRILLED_PORK = (new ItemFood(64, 8, 0.8F, true)).b(8, 5).b("porkchopCooked");
-    public static Item PAINTING = (new ItemHanging(65, EntityPainting.class)).b(10, 1).b("painting");
-    public static Item GOLDEN_APPLE = (new ItemGoldenApple(66, 4, 1.2F, false)).j().a(MobEffectList.REGENERATION.id, 5, 0, 1.0F).b(11, 0).b("appleGold");
-    public static Item SIGN = (new ItemSign(67)).b(10, 2).b("sign");
-    public static Item WOOD_DOOR = (new ItemDoor(68, Material.WOOD)).b(11, 2).b("doorWood");
-    public static Item BUCKET = (new ItemBucket(69, 0)).b(10, 4).b("bucket").d(16);
-    public static Item WATER_BUCKET = (new ItemBucket(70, Block.WATER.id)).b(11, 4).b("bucketWater").a(BUCKET);
-    public static Item LAVA_BUCKET = (new ItemBucket(71, Block.LAVA.id)).b(12, 4).b("bucketLava").a(BUCKET);
-    public static Item MINECART = (new ItemMinecart(72, 0)).b(7, 8).b("minecart");
-    public static Item SADDLE = (new ItemSaddle(73)).b(8, 6).b("saddle");
-    public static Item IRON_DOOR = (new ItemDoor(74, Material.ORE)).b(12, 2).b("doorIron");
-    public static Item REDSTONE = (new ItemRedstone(75)).b(8, 3).b("redstone").c(PotionBrewer.i);
-    public static Item SNOW_BALL = (new ItemSnowball(76)).b(14, 0).b("snowball");
-    public static Item BOAT = (new ItemBoat(77)).b(8, 8).b("boat");
-    public static Item LEATHER = (new Item(78)).b(7, 6).b("leather").a(CreativeModeTab.l);
-    public static Item MILK_BUCKET = (new ItemMilkBucket(79)).b(13, 4).b("milk").a(BUCKET);
-    public static Item CLAY_BRICK = (new Item(80)).b(6, 1).b("brick").a(CreativeModeTab.l);
-    public static Item CLAY_BALL = (new Item(81)).b(9, 3).b("clay").a(CreativeModeTab.l);
-    public static Item SUGAR_CANE = (new ItemReed(82, Block.SUGAR_CANE_BLOCK)).b(11, 1).b("reeds").a(CreativeModeTab.l);
-    public static Item PAPER = (new Item(83)).b(10, 3).b("paper").a(CreativeModeTab.f);
-    public static Item BOOK = (new Item(84)).b(11, 3).b("book").a(CreativeModeTab.f);
-    public static Item SLIME_BALL = (new Item(85)).b(14, 1).b("slimeball").a(CreativeModeTab.f);
-    public static Item STORAGE_MINECART = (new ItemMinecart(86, 1)).b(7, 9).b("minecartChest");
-    public static Item POWERED_MINECART = (new ItemMinecart(87, 2)).b(7, 10).b("minecartFurnace");
-    public static Item EGG = (new ItemEgg(88)).b(12, 0).b("egg");
-    public static Item COMPASS = (new Item(89)).b(6, 3).b("compass").a(CreativeModeTab.i);
-    public static Item FISHING_ROD = (new ItemFishingRod(90)).b(5, 4).b("fishingRod");
-    public static Item WATCH = (new Item(91)).b(6, 4).b("clock").a(CreativeModeTab.i);
-    public static Item GLOWSTONE_DUST = (new Item(92)).b(9, 4).b("yellowDust").c(PotionBrewer.j).a(CreativeModeTab.l);
-    public static Item RAW_FISH = (new ItemFood(93, 2, 0.3F, false)).b(9, 5).b("fishRaw");
-    public static Item COOKED_FISH = (new ItemFood(94, 5, 0.6F, false)).b(10, 5).b("fishCooked");
-    public static Item INK_SACK = (new ItemDye(95)).b(14, 4).b("dyePowder");
-    public static Item BONE = (new Item(96)).b(12, 1).b("bone").o().a(CreativeModeTab.f);
-    public static Item SUGAR = (new Item(97)).b(13, 0).b("sugar").c(PotionBrewer.b).a(CreativeModeTab.l);
-    public static Item CAKE = (new ItemReed(98, Block.CAKE_BLOCK)).d(1).b(13, 1).b("cake").a(CreativeModeTab.h);
-    public static Item BED = (new ItemBed(99)).d(1).b(13, 2).b("bed");
-    public static Item DIODE = (new ItemReed(100, Block.DIODE_OFF)).b(6, 5).b("diode").a(CreativeModeTab.d);
-    public static Item COOKIE = (new ItemFood(101, 2, 0.1F, false)).b(12, 5).b("cookie");
-    public static ItemWorldMap MAP = (ItemWorldMap)(new ItemWorldMap(102)).b(12, 3).b("map");
-
-    /**
-     * Item introduced on 1.7 version, is a shear to cut leaves (you can keep the block) or get wool from sheeps.
-     */
-    public static ItemShears SHEARS = (ItemShears)(new ItemShears(103)).b(13, 5).b("shears");
-    public static Item MELON = (new ItemFood(104, 2, 0.3F, false)).b(13, 6).b("melon");
-    public static Item PUMPKIN_SEEDS = (new ItemSeeds(105, Block.PUMPKIN_STEM.id, Block.SOIL.id)).b(13, 3).b("seeds_pumpkin");
-    public static Item MELON_SEEDS = (new ItemSeeds(106, Block.MELON_STEM.id, Block.SOIL.id)).b(14, 3).b("seeds_melon");
-    public static Item RAW_BEEF = (new ItemFood(107, 3, 0.3F, true)).b(9, 6).b("beefRaw");
-    public static Item COOKED_BEEF = (new ItemFood(108, 8, 0.8F, true)).b(10, 6).b("beefCooked");
-    public static Item RAW_CHICKEN = (new ItemFood(109, 2, 0.3F, true)).a(MobEffectList.HUNGER.id, 30, 0, 0.3F).b(9, 7).b("chickenRaw");
-    public static Item COOKED_CHICKEN = (new ItemFood(110, 6, 0.6F, true)).b(10, 7).b("chickenCooked");
-    public static Item ROTTEN_FLESH = (new ItemFood(111, 4, 0.1F, true)).a(MobEffectList.HUNGER.id, 30, 0, 0.8F).b(11, 5).b("rottenFlesh");
-    public static Item ENDER_PEARL = (new ItemEnderPearl(112)).b(11, 6).b("enderPearl");
-    public static Item BLAZE_ROD = (new Item(113)).b(12, 6).b("blazeRod").a(CreativeModeTab.l);
-    public static Item GHAST_TEAR = (new Item(114)).b(11, 7).b("ghastTear").c(PotionBrewer.c).a(CreativeModeTab.k);
-    public static Item GOLD_NUGGET = (new Item(115)).b(12, 7).b("goldNugget").a(CreativeModeTab.l);
-    public static Item NETHER_STALK = (new ItemSeeds(116, Block.NETHER_WART.id, Block.SOUL_SAND.id)).b(13, 7).b("netherStalkSeeds").c("+4");
-    public static ItemPotion POTION = (ItemPotion)(new ItemPotion(117)).b(13, 8).b("potion");
-    public static Item GLASS_BOTTLE = (new ItemGlassBottle(118)).b(12, 8).b("glassBottle");
-    public static Item SPIDER_EYE = (new ItemFood(119, 2, 0.8F, false)).a(MobEffectList.POISON.id, 5, 0, 1.0F).b(11, 8).b("spiderEye").c(PotionBrewer.d);
-    public static Item FERMENTED_SPIDER_EYE = (new Item(120)).b(10, 8).b("fermentedSpiderEye").c(PotionBrewer.e).a(CreativeModeTab.k);
-    public static Item BLAZE_POWDER = (new Item(121)).b(13, 9).b("blazePowder").c(PotionBrewer.g).a(CreativeModeTab.k);
-    public static Item MAGMA_CREAM = (new Item(122)).b(13, 10).b("magmaCream").c(PotionBrewer.h).a(CreativeModeTab.k);
-    public static Item BREWING_STAND = (new ItemReed(123, Block.BREWING_STAND)).b(12, 10).b("brewingStand").a(CreativeModeTab.k);
-    public static Item CAULDRON = (new ItemReed(124, Block.CAULDRON)).b(12, 9).b("cauldron").a(CreativeModeTab.k);
-    public static Item EYE_OF_ENDER = (new ItemEnderEye(125)).b(11, 9).b("eyeOfEnder");
-    public static Item SPECKLED_MELON = (new Item(126)).b(9, 8).b("speckledMelon").c(PotionBrewer.f).a(CreativeModeTab.k);
-    public static Item MONSTER_EGG = (new ItemMonsterEgg(127)).b(9, 9).b("monsterPlacer");
-
-    /**
-     * Bottle o' Enchanting. Drops between 1 and 3 experience orbs when thrown.
-     */
-    public static Item EXP_BOTTLE = (new ItemExpBottle(128)).b(11, 10).b("expBottle");
-
-    /**
-     * Fire Charge. When used in a dispenser it fires a fireball similiar to a Ghast's.
-     */
-    public static Item FIREBALL = (new ItemFireball(129)).b(14, 2).b("fireball");
-    public static Item BOOK_AND_QUILL = (new ItemBookAndQuill(130)).b(11, 11).b("writingBook").a(CreativeModeTab.f);
-    public static Item WRITTEN_BOOK = (new ItemWrittenBook(131)).b(12, 11).b("writtenBook");
-    public static Item EMERALD = (new Item(132)).b(10, 11).b("emerald").a(CreativeModeTab.l);
-    public static Item ITEM_FRAME = (new ItemHanging(133, EntityItemFrame.class)).b(14, 12).b("frame");
-    public static Item FLOWER_POT = (new ItemReed(134, Block.FLOWER_POT)).b(13, 11).b("flowerPot").a(CreativeModeTab.c);
-    public static Item CARROT = (new ItemSeedFood(135, 4, 0.6F, Block.CARROTS.id, Block.SOIL.id)).b(8, 7).b("carrots");
-    public static Item POTATO = (new ItemSeedFood(136, 1, 0.3F, Block.POTATOES.id, Block.SOIL.id)).b(7, 7).b("potato");
-    public static Item POTATO_BAKED = (new ItemFood(137, 6, 0.6F, false)).b(6, 7).b("potatoBaked");
-    public static Item POTATO_POISON = (new ItemFood(138, 2, 0.3F, false)).a(MobEffectList.POISON.id, 5, 0, 0.6F).b(6, 8).b("potatoPoisonous");
-    public static ItemMapEmpty MAP_EMPTY = (ItemMapEmpty)(new ItemMapEmpty(139)).b(13, 12).b("emptyMap");
-    public static Item CARROT_GOLDEN = (new ItemFood(140, 6, 1.2F, false)).b(6, 9).b("carrotGolden").c(PotionBrewer.field_82818_l);
-    public static Item SKULL = (new ItemSkull(141)).b("skull");
-    public static Item CARROT_STICK = (new ItemCarrotStick(142)).b(6, 6).b("carrotOnAStick");
-    public static Item NETHER_STAR = (new ItemNetherStar(143)).b(9, 11).b("netherStar").a(CreativeModeTab.l);
-    public static Item PUMPKIN_PIE = (new ItemFood(144, 8, 0.3F, false)).b(8, 9).b("pumpkinPie").a(CreativeModeTab.h);
-    public static Item RECORD_1 = (new ItemRecord(2000, "13")).b(0, 15).b("record");
-    public static Item RECORD_2 = (new ItemRecord(2001, "cat")).b(1, 15).b("record");
-    public static Item RECORD_3 = (new ItemRecord(2002, "blocks")).b(2, 15).b("record");
-    public static Item RECORD_4 = (new ItemRecord(2003, "chirp")).b(3, 15).b("record");
-    public static Item RECORD_5 = (new ItemRecord(2004, "far")).b(4, 15).b("record");
-    public static Item RECORD_6 = (new ItemRecord(2005, "mall")).b(5, 15).b("record");
-    public static Item RECORD_7 = (new ItemRecord(2006, "mellohi")).b(6, 15).b("record");
-    public static Item RECORD_8 = (new ItemRecord(2007, "stal")).b(7, 15).b("record");
-    public static Item RECORD_9 = (new ItemRecord(2008, "strad")).b(8, 15).b("record");
-    public static Item RECORD_10 = (new ItemRecord(2009, "ward")).b(9, 15).b("record");
-    public static Item RECORD_11 = (new ItemRecord(2010, "11")).b(10, 15).b("record");
-
-    /** Item index + 256 */
-    public final int id;
-
-    /** Maximum size of the stack. */
-    protected int maxStackSize = 64;
-
-    /** Maximum damage an item can handle. */
-    private int durability = 0;
-
-    /** Icon index in the icons table. */
-    protected int textureId;
-
-    /** If true, render the object in full 3D, like weapons and tools. */
-    protected boolean ci = false;
-
-    /**
-     * Some items (like dyes) have multiple subtypes on same item, this is field define this behavior
-     */
-    protected boolean cj = false;
-    private Item craftingResult = null;
-
-    /**
-     * The string representing this item's effect on a potion when used as an ingredient.
-     */
-    private String ck = null;
-
-    /** full name of item from language file */
-    private String name;
-
-    protected Item(int var1)
-    {
-        this.id = 256 + var1;
-
-        if (byId[256 + var1] != null)
-        {
-            System.out.println("CONFLICT @ " + var1);
-        }
-
-        byId[256 + var1] = this;
+  protected Item(int i)
+  {
+    this.id = (256 + i);
+    if (byId[(256 + i)] != null) {
+      System.out.println("CONFLICT @ " + i + " item slot already occupied by " + byId[(256 + i)] + " while adding " + this);
     }
 
-    /**
-     * Sets the icon index for this item. Returns the item.
-     */
-    public Item c(int var1)
+    byId[(256 + i)] = this;
+    org.bukkit.Material.addMaterial(256 + i);
+  }
+
+  public Item d(int i) {
+    this.textureId = i;
+    return this;
+  }
+
+  public Item e(int i) {
+    this.maxStackSize = i;
+    return this;
+  }
+
+  public Item a(int i, int j) {
+    this.textureId = (i + j * 16);
+    return this;
+  }
+
+  public boolean interactWith(ItemStack itemstack, EntityHuman entityhuman, World world, int i, int j, int k, int l) {
+    return false;
+  }
+
+  public float getDestroySpeed(ItemStack itemstack, Block block) {
+    return 1.0F;
+  }
+
+  public ItemStack a(ItemStack itemstack, World world, EntityHuman entityhuman) {
+    return itemstack;
+  }
+
+  public ItemStack b(ItemStack itemstack, World world, EntityHuman entityhuman) {
+    return itemstack;
+  }
+
+  public int getMaxStackSize() {
+    return this.maxStackSize;
+  }
+
+  public int filterData(int i) {
+    return 0;
+  }
+
+  public boolean e() {
+    return this.bT;
+  }
+
+  protected Item a(boolean flag) {
+    this.bT = flag;
+    return this;
+  }
+
+  public int getMaxDurability() {
+    return this.durability;
+  }
+
+  protected Item setMaxDurability(int i) {
+    this.durability = i;
+    return this;
+  }
+
+  public boolean g() {
+    return (this.durability > 0) && (!this.bT);
+  }
+
+  public boolean a(ItemStack itemstack, EntityLiving entityliving, EntityLiving entityliving1) {
+    return false;
+  }
+
+  public boolean a(ItemStack itemstack, int i, int j, int k, int l, EntityLiving entityliving) {
+    return false;
+  }
+
+  public int a(Entity entity) {
+    return 1;
+  }
+
+  public boolean canDestroySpecialBlock(Block block) {
+    return false;
+  }
+  public void a(ItemStack itemstack, EntityLiving entityliving) {
+  }
+
+  public Item h() {
+    this.bS = true;
+    return this;
+  }
+
+  public Item a(String s) {
+    this.name = ("item." + s);
+    return this;
+  }
+
+  public String getName() {
+    return this.name;
+  }
+
+  public String a(ItemStack itemstack) {
+    return this.name;
+  }
+
+  public Item a(Item item) {
+    this.craftingResult = item;
+    return this;
+  }
+
+  public boolean e(ItemStack itemstack) {
+    return true;
+  }
+
+  public boolean i() {
+    return false;
+  }
+
+  public Item j() {
+    return this.craftingResult;
+  }
+
+  public boolean k() {
+    return this.craftingResult != null;
+  }
+
+  public String l() {
+    return LocaleI18n.get(getName() + ".name");
+  }
+  public void a(ItemStack itemstack, World world, Entity entity, int i, boolean flag) {
+  }
+  public void d(ItemStack itemstack, World world, EntityHuman entityhuman) {
+  }
+
+  public boolean t_() {
+    return false;
+  }
+
+  public EnumAnimation d(ItemStack itemstack) {
+    return EnumAnimation.a;
+  }
+
+  public int c(ItemStack itemstack) {
+    return 0;
+  }
+  public void a(ItemStack itemstack, World world, EntityHuman entityhuman, int i) {
+  }
+
+  protected Item b(String s) {
+    this.bU = s;
+    return this;
+  }
+
+  public String m() {
+    return this.bU;
+  }
+
+  public boolean n() {
+    return this.bU != null;
+  }
+
+  public boolean f(ItemStack itemstack) {
+    return (getMaxStackSize() == 1) && (g());
+  }
+
+  protected MovingObjectPosition a(World world, EntityHuman entityhuman, boolean flag) {
+    float f = 1.0F;
+    float f1 = entityhuman.lastPitch + (entityhuman.pitch - entityhuman.lastPitch) * f;
+    float f2 = entityhuman.lastYaw + (entityhuman.yaw - entityhuman.lastYaw) * f;
+    double d0 = entityhuman.lastX + (entityhuman.locX - entityhuman.lastX) * f;
+    double d1 = entityhuman.lastY + (entityhuman.locY - entityhuman.lastY) * f + 1.62D - entityhuman.height;
+    double d2 = entityhuman.lastZ + (entityhuman.locZ - entityhuman.lastZ) * f;
+    Vec3D vec3d = Vec3D.create(d0, d1, d2);
+    float f3 = MathHelper.cos(-f2 * 0.01745329F - 3.141593F);
+    float f4 = MathHelper.sin(-f2 * 0.01745329F - 3.141593F);
+    float f5 = -MathHelper.cos(-f1 * 0.01745329F);
+    float f6 = MathHelper.sin(-f1 * 0.01745329F);
+    float f7 = f4 * f5;
+    float f8 = f3 * f5;
+    double d3 = 5.0D;
+    if ((entityhuman instanceof EntityPlayer))
     {
-        this.textureId = var1;
-        return this;
+      d3 = ((EntityPlayer)entityhuman).itemInWorldManager.getBlockReachDistance();
     }
+    Vec3D vec3d1 = vec3d.add(f7 * d3, f6 * d3, f8 * d3);
+    MovingObjectPosition movingobjectposition = world.rayTrace(vec3d, vec3d1, flag, !flag);
 
-    public Item d(int var1)
+    return movingobjectposition;
+  }
+
+  public int c() {
+    return 0;
+  }
+
+  public void addCreativeItems(ArrayList itemList)
+  {
+    if ((this.id != POTION.id) && (this.id != MONSTER_EGG.id))
     {
-        this.maxStackSize = var1;
-        return this;
+      itemList.add(new ItemStack(this, 1));
     }
+  }
 
-    public Item b(int var1, int var2)
+  public boolean onDroppedByPlayer(ItemStack item, EntityHuman entityHuman)
+  {
+    return true;
+  }
+
+  public boolean onItemUseFirst(ItemStack stack, EntityHuman entityhuman, World world, int X, int Y, int Z, int side)
+  {
+    return false;
+  }
+
+  public float getStrVsBlock(ItemStack itemstack, Block block, int metadata)
+  {
+    return getDestroySpeed(itemstack, block);
+  }
+
+  public boolean isRepairable()
+  {
+    return (this.canRepair) && (g());
+  }
+
+  public Item setNoRepair()
+  {
+    this.canRepair = false;
+    return this;
+  }
+
+  public boolean onBlockStartBreak(ItemStack itemstack, int X, int Y, int Z, EntityHuman player)
+  {
+    return false;
+  }
+
+  public void onUsingItemTick(ItemStack stack, EntityHuman entityHuman, int count)
+  {
+  }
+
+  public boolean onLeftClickEntity(ItemStack stack, EntityHuman entityHuman, Entity entity)
+  {
+    return false;
+  }
+
+  public int getIconIndex(ItemStack stack, int renderPass, EntityPlayer player, ItemStack usingItem, int useRemaining)
+  {
+    return 0;
+  }
+
+  public int getRenderPasses(int metadata)
+  {
+    return 1;
+  }
+
+  public String getTextureFile()
+  {
+    if ((this instanceof ItemBlock))
     {
-        this.textureId = var1 + var2 * 16;
-        return this;
+      return Block.byId[((ItemBlock)this).a()].getTextureFile();
     }
+    return this.currentTexture;
+  }
 
-    /**
-     * Callback for item usage. If the item does something special on right clicking, he will have one of those. Return
-     * True if something happen and false if it don't. This is for ITEMS, not BLOCKS
-     */
-    public boolean interactWith(ItemStack var1, EntityHuman var2, World var3, int var4, int var5, int var6, int var7, float var8, float var9, float var10)
-    {
-        return false;
-    }
+  public void setTextureFile(String texture)
+  {
+    this.currentTexture = texture;
+    this.isDefaultTexture = false;
+  }
 
-    /**
-     * Returns the strength of the stack against a given block. 1.0F base, (Quality+1)*2 if correct blocktype, 1.5F if
-     * sword
-     */
-    public float getDestroySpeed(ItemStack var1, Block var2)
-    {
-        return 1.0F;
-    }
-
-    /**
-     * Called whenever this item is equipped and the right mouse button is pressed. Args: itemStack, world, entityPlayer
-     */
-    public ItemStack a(ItemStack var1, World var2, EntityHuman var3)
-    {
-        return var1;
-    }
-
-    public ItemStack b(ItemStack var1, World var2, EntityHuman var3)
-    {
-        return var1;
-    }
-
-    /**
-     * Returns the maximum size of the stack for a specific item. *Isn't this more a Set than a Get?*
-     */
-    public int getMaxStackSize()
-    {
-        return this.maxStackSize;
-    }
-
-    /**
-     * Returns the metadata of the block which this Item (ItemBlock) can place
-     */
-    public int filterData(int var1)
-    {
-        return 0;
-    }
-
-    public boolean l()
-    {
-        return this.cj;
-    }
-
-    protected Item a(boolean var1)
-    {
-        this.cj = var1;
-        return this;
-    }
-
-    /**
-     * Returns the maximum damage an item can take.
-     */
-    public int getMaxDurability()
-    {
-        return this.durability;
-    }
-
-    /**
-     * set max damage of an Item
-     */
-    protected Item setMaxDurability(int var1)
-    {
-        this.durability = var1;
-        return this;
-    }
-
-    public boolean n()
-    {
-        return this.durability > 0 && !this.cj;
-    }
-
-    /**
-     * Current implementations of this method in child classes do not use the entry argument beside ev. They just raise
-     * the damage on the stack.
-     */
-    public boolean a(ItemStack var1, EntityLiving var2, EntityLiving var3)
-    {
-        return false;
-    }
-
-    public boolean a(ItemStack var1, World var2, int var3, int var4, int var5, int var6, EntityLiving var7)
-    {
-        return false;
-    }
-
-    /**
-     * Returns the damage against a given entity.
-     */
-    public int a(Entity var1)
-    {
-        return 1;
-    }
-
-    /**
-     * Returns if the item (tool) can harvest results from the block type.
-     */
-    public boolean canDestroySpecialBlock(Block var1)
-    {
-        return false;
-    }
-
-    /**
-     * Called when a player right clicks a entity with a item.
-     */
-    public boolean a(ItemStack var1, EntityLiving var2)
-    {
-        return false;
-    }
-
-    /**
-     * Sets bFull3D to True and return the object.
-     */
-    public Item o()
-    {
-        this.ci = true;
-        return this;
-    }
-
-    /**
-     * set name of item from language file
-     */
-    public Item b(String var1)
-    {
-        this.name = "item." + var1;
-        return this;
-    }
-
-    public String func_77657_g(ItemStack var1)
-    {
-        String var2 = this.c_(var1);
-        return var2 == null ? "" : LocaleI18n.get(var2);
-    }
-
-    public String getName()
-    {
-        return this.name;
-    }
-
-    public String c_(ItemStack var1)
-    {
-        return this.name;
-    }
-
-    public Item a(Item var1)
-    {
-        this.craftingResult = var1;
-        return this;
-    }
-
-    /**
-     * If this returns true, after a recipe involving this item is crafted the container item will be added to the
-     * player's inventory instead of remaining in the crafting grid.
-     */
-    public boolean h(ItemStack var1)
-    {
-        return true;
-    }
-
-    /**
-     * If this function returns true (or the item is damageable), the ItemStack's NBT tag will be sent to the client.
-     */
-    public boolean q()
-    {
-        return true;
-    }
-
-    public Item r()
-    {
-        return this.craftingResult;
-    }
-
-    /**
-     * True if this Item has a container item (a.k.a. crafting result)
-     */
-    public boolean s()
-    {
-        return this.craftingResult != null;
-    }
-
-    public String t()
-    {
-        return LocaleI18n.get(this.getName() + ".name");
-    }
-
-    public String func_77653_i(ItemStack var1)
-    {
-        return LocaleI18n.get(this.c_(var1) + ".name");
-    }
-
-    /**
-     * Called each tick as long the item is on a player inventory. Uses by maps to check if is on a player hand and
-     * update it's contents.
-     */
-    public void a(ItemStack var1, World var2, Entity var3, int var4, boolean var5) {}
-
-    /**
-     * Called when item is crafted/smelted. Used only by maps so far.
-     */
-    public void d(ItemStack var1, World var2, EntityHuman var3) {}
-
-    /**
-     * false for all Items except sub-classes of ItemMapBase
-     */
-    public boolean f()
-    {
-        return false;
-    }
-
-    /**
-     * returns the action that specifies what animation to play when the items is being used
-     */
-    public EnumAnimation d_(ItemStack var1)
-    {
-        return EnumAnimation.none;
-    }
-
-    /**
-     * How long it takes to use or consume an item
-     */
-    public int a(ItemStack var1)
-    {
-        return 0;
-    }
-
-    /**
-     * called when the player releases the use item button. Args: itemstack, world, entityplayer, itemInUseCount
-     */
-    public void a(ItemStack var1, World var2, EntityHuman var3, int var4) {}
-
-    /**
-     * Sets the string representing this item's effect on a potion when used as an ingredient.
-     */
-    protected Item c(String var1)
-    {
-        this.ck = var1;
-        return this;
-    }
-
-    /**
-     * Returns a string representing what this item does to a potion.
-     */
-    public String u()
-    {
-        return this.ck;
-    }
-
-    /**
-     * Returns true if this item serves as a potion ingredient (its ingredient information is not null).
-     */
-    public boolean v()
-    {
-        return this.ck != null;
-    }
-
-    public String func_77628_j(ItemStack var1)
-    {
-        return ("" + LocaleLanguage.a().func_74809_c(this.func_77657_g(var1))).trim();
-    }
-
-    /**
-     * Checks isDamagable and if it cannot be stacked
-     */
-    public boolean k(ItemStack var1)
-    {
-        return this.getMaxStackSize() == 1 && this.n();
-    }
-
-    protected MovingObjectPosition a(World var1, EntityHuman var2, boolean var3)
-    {
-        float var4 = 1.0F;
-        float var5 = var2.lastPitch + (var2.pitch - var2.lastPitch) * var4;
-        float var6 = var2.lastYaw + (var2.yaw - var2.lastYaw) * var4;
-        double var7 = var2.lastX + (var2.locX - var2.lastX) * (double)var4;
-        double var9 = var2.lastY + (var2.locY - var2.lastY) * (double)var4 + 1.62D - (double)var2.height;
-        double var11 = var2.lastZ + (var2.locZ - var2.lastZ) * (double)var4;
-        Vec3D var13 = var1.getVec3DPool().create(var7, var9, var11);
-        float var14 = MathHelper.cos(-var6 * 0.017453292F - (float)Math.PI);
-        float var15 = MathHelper.sin(-var6 * 0.017453292F - (float)Math.PI);
-        float var16 = -MathHelper.cos(-var5 * 0.017453292F);
-        float var17 = MathHelper.sin(-var5 * 0.017453292F);
-        float var18 = var15 * var16;
-        float var20 = var14 * var16;
-        double var21 = 5.0D;
-        Vec3D var23 = var13.add((double)var18 * var21, (double)var17 * var21, (double)var20 * var21);
-        return var1.rayTrace(var13, var23, var3, !var3);
-    }
-
-    /**
-     * Return the enchantability factor of the item, most of the time is based on material.
-     */
-    public int c()
-    {
-        return 0;
-    }
-
-    /**
-     * returns this;
-     */
-    public Item a(CreativeModeTab var1)
-    {
-        this.a = var1;
-        return this;
-    }
-
-    public boolean func_82788_x()
-    {
-        return true;
-    }
-
-    /**
-     * Return whether this item is repairable in an anvil.
-     */
-    public boolean a(ItemStack var1, ItemStack var2)
-    {
-        return false;
-    }
-
-    static
-    {
-        StatisticList.c();
-    }
+  static
+  {
+    StatisticList.c();
+  }
 }
+

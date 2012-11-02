@@ -5,147 +5,128 @@ import java.util.Random;
 
 public class WorldGenStrongholdRoomCrossing extends WorldGenStrongholdPiece
 {
-    /**
-     * Items that could generate in the chest that is located in Stronghold Room Crossing.
-     */
-    private static final StructurePieceTreasure[] c = new StructurePieceTreasure[] {new StructurePieceTreasure(Item.IRON_INGOT.id, 0, 1, 5, 10), new StructurePieceTreasure(Item.GOLD_INGOT.id, 0, 1, 3, 5), new StructurePieceTreasure(Item.REDSTONE.id, 0, 4, 9, 5), new StructurePieceTreasure(Item.COAL.id, 0, 3, 8, 10), new StructurePieceTreasure(Item.BREAD.id, 0, 1, 3, 15), new StructurePieceTreasure(Item.APPLE.id, 0, 1, 3, 15), new StructurePieceTreasure(Item.IRON_PICKAXE.id, 0, 1, 1, 1)};
-    protected final WorldGenStrongholdDoorType a;
-    protected final int b;
+  private static final StructurePieceTreasure[] c = { new StructurePieceTreasure(Item.IRON_INGOT.id, 0, 1, 5, 10), new StructurePieceTreasure(Item.GOLD_INGOT.id, 0, 1, 3, 5), new StructurePieceTreasure(Item.REDSTONE.id, 0, 4, 9, 5), new StructurePieceTreasure(Item.COAL.id, 0, 3, 8, 10), new StructurePieceTreasure(Item.BREAD.id, 0, 1, 3, 15), new StructurePieceTreasure(Item.APPLE.id, 0, 1, 3, 15), new StructurePieceTreasure(Item.IRON_PICKAXE.id, 0, 1, 1, 1) };
+  protected final WorldGenStrongholdDoorType a;
+  protected final int b;
 
-    public WorldGenStrongholdRoomCrossing(int var1, Random var2, StructureBoundingBox var3, int var4)
-    {
-        super(var1);
-        this.f = var4;
-        this.a = this.a(var2);
-        this.e = var3;
-        this.b = var2.nextInt(5);
+  public WorldGenStrongholdRoomCrossing(int paramInt1, Random paramRandom, StructureBoundingBox paramStructureBoundingBox, int paramInt2)
+  {
+    super(paramInt1);
+
+    this.h = paramInt2;
+    this.a = a(paramRandom);
+    this.g = paramStructureBoundingBox;
+    this.b = paramRandom.nextInt(5);
+  }
+
+  public void a(StructurePiece paramStructurePiece, List paramList, Random paramRandom)
+  {
+    a((WorldGenStrongholdStairs2)paramStructurePiece, paramList, paramRandom, 4, 1);
+    b((WorldGenStrongholdStairs2)paramStructurePiece, paramList, paramRandom, 1, 4);
+    c((WorldGenStrongholdStairs2)paramStructurePiece, paramList, paramRandom, 1, 4);
+  }
+
+  public static WorldGenStrongholdRoomCrossing a(List paramList, Random paramRandom, int paramInt1, int paramInt2, int paramInt3, int paramInt4, int paramInt5)
+  {
+    StructureBoundingBox localStructureBoundingBox = StructureBoundingBox.a(paramInt1, paramInt2, paramInt3, -4, -1, 0, 11, 7, 11, paramInt4);
+
+    if ((!a(localStructureBoundingBox)) || (StructurePiece.a(paramList, localStructureBoundingBox) != null)) {
+      return null;
     }
 
-    /**
-     * Initiates construction of the Structure Component picked, at the current Location of StructGen
-     */
-    public void a(StructurePiece var1, List var2, Random var3)
-    {
-        this.a((WorldGenStrongholdStart)var1, var2, var3, 4, 1);
-        this.b((WorldGenStrongholdStart)var1, var2, var3, 1, 4);
-        this.c((WorldGenStrongholdStart)var1, var2, var3, 1, 4);
+    return new WorldGenStrongholdRoomCrossing(paramInt5, paramRandom, localStructureBoundingBox, paramInt4);
+  }
+
+  public boolean a(World paramWorld, Random paramRandom, StructureBoundingBox paramStructureBoundingBox)
+  {
+    if (a(paramWorld, paramStructureBoundingBox)) {
+      return false;
     }
 
-    public static WorldGenStrongholdRoomCrossing a(List var0, Random var1, int var2, int var3, int var4, int var5, int var6)
-    {
-        StructureBoundingBox var7 = StructureBoundingBox.a(var2, var3, var4, -4, -1, 0, 11, 7, 11, var5);
-        return a(var7) && StructurePiece.a(var0, var7) == null ? new WorldGenStrongholdRoomCrossing(var6, var1, var7, var5) : null;
-    }
+    a(paramWorld, paramStructureBoundingBox, 0, 0, 0, 10, 6, 10, true, paramRandom, WorldGenStrongholdPieces.b());
 
-    /**
-     * second Part of Structure generating, this for example places Spiderwebs, Mob Spawners, it closes Mineshafts at
-     * the end, it adds Fences...
-     */
-    public boolean a(World var1, Random var2, StructureBoundingBox var3)
-    {
-        if (this.a(var1, var3))
-        {
-            return false;
+    a(paramWorld, paramRandom, paramStructureBoundingBox, this.a, 4, 1, 0);
+
+    a(paramWorld, paramStructureBoundingBox, 4, 1, 10, 6, 3, 10, 0, 0, false);
+    a(paramWorld, paramStructureBoundingBox, 0, 1, 4, 0, 3, 6, 0, 0, false);
+    a(paramWorld, paramStructureBoundingBox, 10, 1, 4, 10, 3, 6, 0, 0, false);
+    int i;
+    switch (this.b) {
+    default:
+      break;
+    case 0:
+      a(paramWorld, Block.SMOOTH_BRICK.id, 0, 5, 1, 5, paramStructureBoundingBox);
+      a(paramWorld, Block.SMOOTH_BRICK.id, 0, 5, 2, 5, paramStructureBoundingBox);
+      a(paramWorld, Block.SMOOTH_BRICK.id, 0, 5, 3, 5, paramStructureBoundingBox);
+      a(paramWorld, Block.TORCH.id, 0, 4, 3, 5, paramStructureBoundingBox);
+      a(paramWorld, Block.TORCH.id, 0, 6, 3, 5, paramStructureBoundingBox);
+      a(paramWorld, Block.TORCH.id, 0, 5, 3, 4, paramStructureBoundingBox);
+      a(paramWorld, Block.TORCH.id, 0, 5, 3, 6, paramStructureBoundingBox);
+      a(paramWorld, Block.STEP.id, 0, 4, 1, 4, paramStructureBoundingBox);
+      a(paramWorld, Block.STEP.id, 0, 4, 1, 5, paramStructureBoundingBox);
+      a(paramWorld, Block.STEP.id, 0, 4, 1, 6, paramStructureBoundingBox);
+      a(paramWorld, Block.STEP.id, 0, 6, 1, 4, paramStructureBoundingBox);
+      a(paramWorld, Block.STEP.id, 0, 6, 1, 5, paramStructureBoundingBox);
+      a(paramWorld, Block.STEP.id, 0, 6, 1, 6, paramStructureBoundingBox);
+      a(paramWorld, Block.STEP.id, 0, 5, 1, 4, paramStructureBoundingBox);
+      a(paramWorld, Block.STEP.id, 0, 5, 1, 6, paramStructureBoundingBox);
+      break;
+    case 1:
+      for (i = 0; i < 5; i++) {
+        a(paramWorld, Block.SMOOTH_BRICK.id, 0, 3, 1, 3 + i, paramStructureBoundingBox);
+        a(paramWorld, Block.SMOOTH_BRICK.id, 0, 7, 1, 3 + i, paramStructureBoundingBox);
+        a(paramWorld, Block.SMOOTH_BRICK.id, 0, 3 + i, 1, 3, paramStructureBoundingBox);
+        a(paramWorld, Block.SMOOTH_BRICK.id, 0, 3 + i, 1, 7, paramStructureBoundingBox);
+      }
+      a(paramWorld, Block.SMOOTH_BRICK.id, 0, 5, 1, 5, paramStructureBoundingBox);
+      a(paramWorld, Block.SMOOTH_BRICK.id, 0, 5, 2, 5, paramStructureBoundingBox);
+      a(paramWorld, Block.SMOOTH_BRICK.id, 0, 5, 3, 5, paramStructureBoundingBox);
+      a(paramWorld, Block.WATER.id, 0, 5, 4, 5, paramStructureBoundingBox);
+
+      break;
+    case 2:
+      for (i = 1; i <= 9; i++) {
+        a(paramWorld, Block.COBBLESTONE.id, 0, 1, 3, i, paramStructureBoundingBox);
+        a(paramWorld, Block.COBBLESTONE.id, 0, 9, 3, i, paramStructureBoundingBox);
+      }
+      for (i = 1; i <= 9; i++) {
+        a(paramWorld, Block.COBBLESTONE.id, 0, i, 3, 1, paramStructureBoundingBox);
+        a(paramWorld, Block.COBBLESTONE.id, 0, i, 3, 9, paramStructureBoundingBox);
+      }
+      a(paramWorld, Block.COBBLESTONE.id, 0, 5, 1, 4, paramStructureBoundingBox);
+      a(paramWorld, Block.COBBLESTONE.id, 0, 5, 1, 6, paramStructureBoundingBox);
+      a(paramWorld, Block.COBBLESTONE.id, 0, 5, 3, 4, paramStructureBoundingBox);
+      a(paramWorld, Block.COBBLESTONE.id, 0, 5, 3, 6, paramStructureBoundingBox);
+      a(paramWorld, Block.COBBLESTONE.id, 0, 4, 1, 5, paramStructureBoundingBox);
+      a(paramWorld, Block.COBBLESTONE.id, 0, 6, 1, 5, paramStructureBoundingBox);
+      a(paramWorld, Block.COBBLESTONE.id, 0, 4, 3, 5, paramStructureBoundingBox);
+      a(paramWorld, Block.COBBLESTONE.id, 0, 6, 3, 5, paramStructureBoundingBox);
+      for (i = 1; i <= 3; i++) {
+        a(paramWorld, Block.COBBLESTONE.id, 0, 4, i, 4, paramStructureBoundingBox);
+        a(paramWorld, Block.COBBLESTONE.id, 0, 6, i, 4, paramStructureBoundingBox);
+        a(paramWorld, Block.COBBLESTONE.id, 0, 4, i, 6, paramStructureBoundingBox);
+        a(paramWorld, Block.COBBLESTONE.id, 0, 6, i, 6, paramStructureBoundingBox);
+      }
+      a(paramWorld, Block.TORCH.id, 0, 5, 3, 5, paramStructureBoundingBox);
+      for (i = 2; i <= 8; i++) {
+        a(paramWorld, Block.WOOD.id, 0, 2, 3, i, paramStructureBoundingBox);
+        a(paramWorld, Block.WOOD.id, 0, 3, 3, i, paramStructureBoundingBox);
+        if ((i <= 3) || (i >= 7)) {
+          a(paramWorld, Block.WOOD.id, 0, 4, 3, i, paramStructureBoundingBox);
+          a(paramWorld, Block.WOOD.id, 0, 5, 3, i, paramStructureBoundingBox);
+          a(paramWorld, Block.WOOD.id, 0, 6, 3, i, paramStructureBoundingBox);
         }
-        else
-        {
-            this.a(var1, var3, 0, 0, 0, 10, 6, 10, true, var2, WorldGenStrongholdPieces.b());
-            this.a(var1, var2, var3, this.a, 4, 1, 0);
-            this.a(var1, var3, 4, 1, 10, 6, 3, 10, 0, 0, false);
-            this.a(var1, var3, 0, 1, 4, 0, 3, 6, 0, 0, false);
-            this.a(var1, var3, 10, 1, 4, 10, 3, 6, 0, 0, false);
-            int var4;
+        a(paramWorld, Block.WOOD.id, 0, 7, 3, i, paramStructureBoundingBox);
+        a(paramWorld, Block.WOOD.id, 0, 8, 3, i, paramStructureBoundingBox);
+      }
+      a(paramWorld, Block.LADDER.id, c(Block.LADDER.id, 4), 9, 1, 3, paramStructureBoundingBox);
+      a(paramWorld, Block.LADDER.id, c(Block.LADDER.id, 4), 9, 2, 3, paramStructureBoundingBox);
+      a(paramWorld, Block.LADDER.id, c(Block.LADDER.id, 4), 9, 3, 3, paramStructureBoundingBox);
 
-            switch (this.b)
-            {
-                case 0:
-                    this.a(var1, Block.SMOOTH_BRICK.id, 0, 5, 1, 5, var3);
-                    this.a(var1, Block.SMOOTH_BRICK.id, 0, 5, 2, 5, var3);
-                    this.a(var1, Block.SMOOTH_BRICK.id, 0, 5, 3, 5, var3);
-                    this.a(var1, Block.TORCH.id, 0, 4, 3, 5, var3);
-                    this.a(var1, Block.TORCH.id, 0, 6, 3, 5, var3);
-                    this.a(var1, Block.TORCH.id, 0, 5, 3, 4, var3);
-                    this.a(var1, Block.TORCH.id, 0, 5, 3, 6, var3);
-                    this.a(var1, Block.STEP.id, 0, 4, 1, 4, var3);
-                    this.a(var1, Block.STEP.id, 0, 4, 1, 5, var3);
-                    this.a(var1, Block.STEP.id, 0, 4, 1, 6, var3);
-                    this.a(var1, Block.STEP.id, 0, 6, 1, 4, var3);
-                    this.a(var1, Block.STEP.id, 0, 6, 1, 5, var3);
-                    this.a(var1, Block.STEP.id, 0, 6, 1, 6, var3);
-                    this.a(var1, Block.STEP.id, 0, 5, 1, 4, var3);
-                    this.a(var1, Block.STEP.id, 0, 5, 1, 6, var3);
-                    break;
-
-                case 1:
-                    for (var4 = 0; var4 < 5; ++var4)
-                    {
-                        this.a(var1, Block.SMOOTH_BRICK.id, 0, 3, 1, 3 + var4, var3);
-                        this.a(var1, Block.SMOOTH_BRICK.id, 0, 7, 1, 3 + var4, var3);
-                        this.a(var1, Block.SMOOTH_BRICK.id, 0, 3 + var4, 1, 3, var3);
-                        this.a(var1, Block.SMOOTH_BRICK.id, 0, 3 + var4, 1, 7, var3);
-                    }
-
-                    this.a(var1, Block.SMOOTH_BRICK.id, 0, 5, 1, 5, var3);
-                    this.a(var1, Block.SMOOTH_BRICK.id, 0, 5, 2, 5, var3);
-                    this.a(var1, Block.SMOOTH_BRICK.id, 0, 5, 3, 5, var3);
-                    this.a(var1, Block.WATER.id, 0, 5, 4, 5, var3);
-                    break;
-
-                case 2:
-                    for (var4 = 1; var4 <= 9; ++var4)
-                    {
-                        this.a(var1, Block.COBBLESTONE.id, 0, 1, 3, var4, var3);
-                        this.a(var1, Block.COBBLESTONE.id, 0, 9, 3, var4, var3);
-                    }
-
-                    for (var4 = 1; var4 <= 9; ++var4)
-                    {
-                        this.a(var1, Block.COBBLESTONE.id, 0, var4, 3, 1, var3);
-                        this.a(var1, Block.COBBLESTONE.id, 0, var4, 3, 9, var3);
-                    }
-
-                    this.a(var1, Block.COBBLESTONE.id, 0, 5, 1, 4, var3);
-                    this.a(var1, Block.COBBLESTONE.id, 0, 5, 1, 6, var3);
-                    this.a(var1, Block.COBBLESTONE.id, 0, 5, 3, 4, var3);
-                    this.a(var1, Block.COBBLESTONE.id, 0, 5, 3, 6, var3);
-                    this.a(var1, Block.COBBLESTONE.id, 0, 4, 1, 5, var3);
-                    this.a(var1, Block.COBBLESTONE.id, 0, 6, 1, 5, var3);
-                    this.a(var1, Block.COBBLESTONE.id, 0, 4, 3, 5, var3);
-                    this.a(var1, Block.COBBLESTONE.id, 0, 6, 3, 5, var3);
-
-                    for (var4 = 1; var4 <= 3; ++var4)
-                    {
-                        this.a(var1, Block.COBBLESTONE.id, 0, 4, var4, 4, var3);
-                        this.a(var1, Block.COBBLESTONE.id, 0, 6, var4, 4, var3);
-                        this.a(var1, Block.COBBLESTONE.id, 0, 4, var4, 6, var3);
-                        this.a(var1, Block.COBBLESTONE.id, 0, 6, var4, 6, var3);
-                    }
-
-                    this.a(var1, Block.TORCH.id, 0, 5, 3, 5, var3);
-
-                    for (var4 = 2; var4 <= 8; ++var4)
-                    {
-                        this.a(var1, Block.WOOD.id, 0, 2, 3, var4, var3);
-                        this.a(var1, Block.WOOD.id, 0, 3, 3, var4, var3);
-
-                        if (var4 <= 3 || var4 >= 7)
-                        {
-                            this.a(var1, Block.WOOD.id, 0, 4, 3, var4, var3);
-                            this.a(var1, Block.WOOD.id, 0, 5, 3, var4, var3);
-                            this.a(var1, Block.WOOD.id, 0, 6, 3, var4, var3);
-                        }
-
-                        this.a(var1, Block.WOOD.id, 0, 7, 3, var4, var3);
-                        this.a(var1, Block.WOOD.id, 0, 8, 3, var4, var3);
-                    }
-
-                    this.a(var1, Block.LADDER.id, this.c(Block.LADDER.id, 4), 9, 1, 3, var3);
-                    this.a(var1, Block.LADDER.id, this.c(Block.LADDER.id, 4), 9, 2, 3, var3);
-                    this.a(var1, Block.LADDER.id, this.c(Block.LADDER.id, 4), 9, 3, 3, var3);
-                    this.a(var1, var3, var2, 3, 4, 8, c, 1 + var2.nextInt(4));
-            }
-
-            return true;
-        }
+      a(paramWorld, paramStructureBoundingBox, paramRandom, 3, 4, 8, c, 1 + paramRandom.nextInt(4));
     }
+
+    return true;
+  }
 }
+

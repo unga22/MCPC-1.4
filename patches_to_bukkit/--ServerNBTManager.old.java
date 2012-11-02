@@ -1,63 +1,43 @@
 package net.minecraft.server;
 
 import java.io.File;
+import java.util.List;
 
 public class ServerNBTManager extends WorldNBTStorage
 {
-    public ServerNBTManager(File var1, String var2, boolean var3)
+  public ServerNBTManager(File file1, String s, boolean flag)
+  {
+    super(file1, s, flag);
+  }
+
+  public IChunkLoader createChunkLoader(WorldProvider worldprovider) {
+    File file1 = getDirectory();
+
+    if (worldprovider.getSaveFolder() != null)
     {
-        super(var1, var2, var3);
+      File file2 = new File(file1, worldprovider.getSaveFolder());
+      file2.mkdirs();
+      return new ChunkRegionLoader(file2);
     }
 
-    /**
-     * initializes and returns the chunk loader for the specified world provider
-     */
-    public IChunkLoader createChunkLoader(WorldProvider var1)
-    {
-        File var2 = this.getDirectory();
-        File var3;
+    return new ChunkRegionLoader(file1);
+  }
 
-        if (var1 instanceof WorldProviderHell)
-        {
-            var3 = new File(var2, "DIM-1");
-            var3.mkdirs();
-            return new ChunkRegionLoader(var3);
-        }
-        else if (var1 instanceof WorldProviderTheEnd)
-        {
-            var3 = new File(var2, "DIM1");
-            var3.mkdirs();
-            return new ChunkRegionLoader(var3);
-        }
-        else
-        {
-            return new ChunkRegionLoader(var2);
-        }
+  public void saveWorldData(WorldData worlddata, List list)
+  {
+    worlddata.a(19133);
+    super.saveWorldData(worlddata, list);
+  }
+
+  public void e() {
+    try {
+      FileIOThread.a.a();
+    }
+    catch (InterruptedException interruptedexception) {
+      interruptedexception.printStackTrace();
     }
 
-    /**
-     * Saves the given World Info with the given NBTTagCompound as the Player.
-     */
-    public void saveWorldData(WorldData var1, NBTTagCompound var2)
-    {
-        var1.e(19133);
-        super.saveWorldData(var1, var2);
-    }
-
-    /**
-     * Called to flush all changes to disk, waiting for them to complete.
-     */
-    public void a()
-    {
-        try
-        {
-            FileIOThread.a.a();
-        }
-        catch (InterruptedException var2)
-        {
-            var2.printStackTrace();
-        }
-
-        RegionFileCache.a();
-    }
+    RegionFileCache.a();
+  }
 }
+

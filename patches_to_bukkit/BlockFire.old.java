@@ -1,346 +1,302 @@
 package net.minecraft.server;
 
 import java.util.Random;
+import org.bukkit.Server;
+import org.bukkit.block.BlockState;
+import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.CraftWorld;
+import org.bukkit.craftbukkit.event.CraftEventFactory;
+import org.bukkit.event.block.BlockBurnEvent;
+import org.bukkit.event.block.BlockFadeEvent;
+import org.bukkit.event.block.BlockIgniteEvent;
+import org.bukkit.event.block.BlockIgniteEvent.IgniteCause;
+import org.bukkit.event.block.BlockSpreadEvent;
+import org.bukkit.material.MaterialData;
+import org.bukkit.plugin.PluginManager;
 
 public class BlockFire extends Block
 {
-    /** The chance this block will encourage nearby blocks to catch on fire */
-    private int[] a = new int[256];
+  private int[] a = new int[256];
+  private int[] b = new int[256];
 
-    /**
-     * This is an array indexed by block ID the larger the number in the array the more likely a block type will catch
-     * fires
-     */
-    private int[] b = new int[256];
+  protected BlockFire(int i, int j) {
+    super(i, j, Material.FIRE);
+    a(true);
+  }
 
-    protected BlockFire(int var1, int var2)
-    {
-        super(var1, var2, Material.FIRE);
-        this.b(true);
+  public void k() {
+    this.a = Block.blockFireSpreadSpeed;
+    this.b = Block.blockFlammability;
+    a(Block.WOOD.id, 5, 20);
+    a(Block.FENCE.id, 5, 20);
+    a(Block.WOOD_STAIRS.id, 5, 20);
+    a(Block.LOG.id, 5, 5);
+    a(Block.LEAVES.id, 30, 60);
+    a(Block.BOOKSHELF.id, 30, 20);
+    a(Block.TNT.id, 15, 100);
+    a(Block.LONG_GRASS.id, 60, 100);
+    a(Block.WOOL.id, 30, 60);
+    a(Block.VINE.id, 15, 100);
+  }
+
+  private void a(int i, int j, int k)
+  {
+    Block.setBurnProperties(i, j, k);
+  }
+
+  public AxisAlignedBB e(World world, int i, int j, int k) {
+    return null;
+  }
+
+  public boolean a() {
+    return false;
+  }
+
+  public boolean b() {
+    return false;
+  }
+
+  public int c() {
+    return 3;
+  }
+
+  public int a(Random random) {
+    return 0;
+  }
+
+  public int d() {
+    return 30;
+  }
+
+  public void a(World world, int i, int j, int k, Random random)
+  {
+    Block base = Block.byId[world.getTypeId(i, j - 1, k)];
+    boolean flag = (base != null) && (base.isFireSource(world, i, j - 1, k, world.getData(i, j - 1, k), 0));
+
+    if (((world.worldProvider instanceof WorldProviderTheEnd)) && (world.getTypeId(i, j - 1, k) == Block.BEDROCK.id)) {
+      flag = true;
     }
 
-    /**
-     * This method is called on a block after all other blocks gets already created. You can use it to reference and
-     * configure something on the block that needs the others ones.
-     */
-    public void t_()
-    {
-        this.a(Block.WOOD.id, 5, 20);
-        this.a(Block.WOOD_DOUBLE_STEP.id, 5, 20);
-        this.a(Block.WOOD_STEP.id, 5, 20);
-        this.a(Block.FENCE.id, 5, 20);
-        this.a(Block.WOOD_STAIRS.id, 5, 20);
-        this.a(Block.BIRCH_WOOD_STAIRS.id, 5, 20);
-        this.a(Block.SPRUCE_WOOD_STAIRS.id, 5, 20);
-        this.a(Block.JUNGLE_WOOD_STAIRS.id, 5, 20);
-        this.a(Block.LOG.id, 5, 5);
-        this.a(Block.LEAVES.id, 30, 60);
-        this.a(Block.BOOKSHELF.id, 30, 20);
-        this.a(Block.TNT.id, 15, 100);
-        this.a(Block.LONG_GRASS.id, 60, 100);
-        this.a(Block.WOOL.id, 30, 60);
-        this.a(Block.VINE.id, 15, 100);
+    if (!canPlace(world, i, j, k)) {
+      fireExtinguished(world, i, j, k);
     }
 
-    /**
-     * Sets the burn rate for a block. The larger abilityToCatchFire the more easily it will catch. The larger
-     * chanceToEncourageFire the faster it will burn and spread to other blocks. Args: blockID, chanceToEncourageFire,
-     * abilityToCatchFire
-     */
-    private void a(int var1, int var2, int var3)
-    {
-        this.a[var1] = var2;
-        this.b[var1] = var3;
-    }
+    if ((!flag) && (world.x()) && ((world.y(i, j, k)) || (world.y(i - 1, j, k)) || (world.y(i + 1, j, k)) || (world.y(i, j, k - 1)) || (world.y(i, j, k + 1)))) {
+      fireExtinguished(world, i, j, k);
+    } else {
+      int l = world.getData(i, j, k);
 
-    /**
-     * Returns a bounding box from the pool of bounding boxes (this means this box can change after the pool has been
-     * cleared to be reused)
-     */
-    public AxisAlignedBB e(World var1, int var2, int var3, int var4)
-    {
-        return null;
-    }
+      if (l < 15) {
+        world.setRawData(i, j, k, l + random.nextInt(3) / 2);
+      }
 
-    /**
-     * Is this block (a) opaque and (b) a full 1m cube?  This determines whether or not to render the shared face of two
-     * adjacent blocks and also whether the player can attach torches, redstone wire, etc to this block.
-     */
-    public boolean c()
-    {
-        return false;
-    }
+      world.c(i, j, k, this.id, d() + random.nextInt(10));
+      if ((!flag) && (!g(world, i, j, k))) {
+        if ((!world.isBlockSolidOnSide(i, j - 1, k, 1)) || (l > 3))
+          fireExtinguished(world, i, j, k);
+      }
+      else if ((!flag) && (!canBlockCatchFire(world, i, j - 1, k, 1)) && (l == 15) && (random.nextInt(4) == 0)) {
+        fireExtinguished(world, i, j, k);
+      } else {
+        boolean flag1 = world.z(i, j, k);
+        byte b0 = 0;
 
-    /**
-     * If this block doesn't render as an ordinary block it will return False (examples: signs, buttons, stairs, etc)
-     */
-    public boolean b()
-    {
-        return false;
-    }
+        if (flag1) {
+          b0 = -50;
+        }
 
-    /**
-     * The type of render function that is called for this block
-     */
-    public int d()
-    {
-        return 3;
-    }
+        tryToCatchBlockOnFire(world, i + 1, j, k, 300 + b0, random, l, 4);
+        tryToCatchBlockOnFire(world, i - 1, j, k, 300 + b0, random, l, 5);
+        tryToCatchBlockOnFire(world, i, j - 1, k, 250 + b0, random, l, 1);
+        tryToCatchBlockOnFire(world, i, j + 1, k, 250 + b0, random, l, 0);
+        tryToCatchBlockOnFire(world, i, j, k - 1, 300 + b0, random, l, 3);
+        tryToCatchBlockOnFire(world, i, j, k + 1, 300 + b0, random, l, 2);
 
-    /**
-     * Returns the quantity of items to drop on block destruction.
-     */
-    public int a(Random var1)
-    {
-        return 0;
-    }
+        Server server = world.getServer();
+        org.bukkit.World bworld = world.getWorld();
 
-    /**
-     * How many world ticks before ticking
-     */
-    public int r_()
-    {
-        return 30;
-    }
+        BlockIgniteEvent.IgniteCause igniteCause = BlockIgniteEvent.IgniteCause.SPREAD;
+        org.bukkit.block.Block fromBlock = bworld.getBlockAt(i, j, k);
 
-    /**
-     * Ticks the block if it's been scheduled
-     */
-    public void b(World var1, int var2, int var3, int var4, Random var5)
-    {
-        if (var1.getGameRules().getBoolean("doFireTick"))
-        {
-            boolean var6 = var1.getTypeId(var2, var3 - 1, var4) == Block.NETHERRACK.id;
+        for (int i1 = i - 1; i1 <= i + 1; i1++)
+          for (int j1 = k - 1; j1 <= k + 1; j1++)
+            for (int k1 = j - 1; k1 <= j + 4; k1++)
+              if ((i1 != i) || (k1 != j) || (j1 != k)) {
+                int l1 = 100;
 
-            if (var1.worldProvider instanceof WorldProviderTheEnd && var1.getTypeId(var2, var3 - 1, var4) == Block.BEDROCK.id)
-            {
-                var6 = true;
-            }
-
-            if (!this.canPlace(var1, var2, var3, var4))
-            {
-                var1.setTypeId(var2, var3, var4, 0);
-            }
-
-            if (!var6 && var1.M() && (var1.B(var2, var3, var4) || var1.B(var2 - 1, var3, var4) || var1.B(var2 + 1, var3, var4) || var1.B(var2, var3, var4 - 1) || var1.B(var2, var3, var4 + 1)))
-            {
-                var1.setTypeId(var2, var3, var4, 0);
-            }
-            else
-            {
-                int var7 = var1.getData(var2, var3, var4);
-
-                if (var7 < 15)
-                {
-                    var1.setRawData(var2, var3, var4, var7 + var5.nextInt(3) / 2);
+                if (k1 > j + 1) {
+                  l1 += (k1 - (j + 1)) * 100;
                 }
 
-                var1.a(var2, var3, var4, this.id, this.r_() + var5.nextInt(10));
+                int i2 = h(world, i1, k1, j1);
 
-                if (!var6 && !this.l(var1, var2, var3, var4))
-                {
-                    if (!var1.t(var2, var3 - 1, var4) || var7 > 3)
-                    {
-                        var1.setTypeId(var2, var3, var4, 0);
-                    }
-                }
-                else if (!var6 && !this.d(var1, var2, var3 - 1, var4) && var7 == 15 && var5.nextInt(4) == 0)
-                {
-                    var1.setTypeId(var2, var3, var4, 0);
-                }
-                else
-                {
-                    boolean var8 = var1.C(var2, var3, var4);
-                    byte var9 = 0;
+                if (i2 > 0) {
+                  int j2 = (i2 + 40) / (l + 30);
 
-                    if (var8)
-                    {
-                        var9 = -50;
+                  if (flag1) {
+                    j2 /= 2;
+                  }
+
+                  if ((j2 > 0) && (random.nextInt(l1) <= j2) && ((!world.x()) || (!world.y(i1, k1, j1))) && (!world.y(i1 - 1, k1, k)) && (!world.y(i1 + 1, k1, j1)) && (!world.y(i1, k1, j1 - 1)) && (!world.y(i1, k1, j1 + 1))) {
+                    int k2 = l + random.nextInt(5) / 4;
+
+                    if (k2 > 15) {
+                      k2 = 15;
                     }
 
-                    this.a(var1, var2 + 1, var3, var4, 300 + var9, var5, var7);
-                    this.a(var1, var2 - 1, var3, var4, 300 + var9, var5, var7);
-                    this.a(var1, var2, var3 - 1, var4, 250 + var9, var5, var7);
-                    this.a(var1, var2, var3 + 1, var4, 250 + var9, var5, var7);
-                    this.a(var1, var2, var3, var4 - 1, 300 + var9, var5, var7);
-                    this.a(var1, var2, var3, var4 + 1, 300 + var9, var5, var7);
+                    org.bukkit.block.Block block = bworld.getBlockAt(i1, k1, j1);
 
-                    for (int var10 = var2 - 1; var10 <= var2 + 1; ++var10)
-                    {
-                        for (int var11 = var4 - 1; var11 <= var4 + 1; ++var11)
-                        {
-                            for (int var12 = var3 - 1; var12 <= var3 + 4; ++var12)
-                            {
-                                if (var10 != var2 || var12 != var3 || var11 != var4)
-                                {
-                                    int var13 = 100;
+                    if (block.getTypeId() != Block.FIRE.id) {
+                      BlockIgniteEvent event = new BlockIgniteEvent(block, igniteCause, null);
+                      server.getPluginManager().callEvent(event);
 
-                                    if (var12 > var3 + 1)
-                                    {
-                                        var13 += (var12 - (var3 + 1)) * 100;
-                                    }
+                      if (!event.isCancelled())
+                      {
+                        BlockState blockState = bworld.getBlockAt(i1, k1, j1).getState();
+                        blockState.setTypeId(this.id);
+                        blockState.setData(new MaterialData(this.id, (byte)k2));
 
-                                    int var14 = this.n(var1, var10, var12, var11);
+                        BlockSpreadEvent spreadEvent = new BlockSpreadEvent(blockState.getBlock(), fromBlock, blockState);
+                        server.getPluginManager().callEvent(spreadEvent);
 
-                                    if (var14 > 0)
-                                    {
-                                        int var15 = (var14 + 40 + var1.difficulty * 7) / (var7 + 30);
-
-                                        if (var8)
-                                        {
-                                            var15 /= 2;
-                                        }
-
-                                        if (var15 > 0 && var5.nextInt(var13) <= var15 && (!var1.M() || !var1.B(var10, var12, var11)) && !var1.B(var10 - 1, var12, var4) && !var1.B(var10 + 1, var12, var11) && !var1.B(var10, var12, var11 - 1) && !var1.B(var10, var12, var11 + 1))
-                                        {
-                                            int var16 = var7 + var5.nextInt(5) / 4;
-
-                                            if (var16 > 15)
-                                            {
-                                                var16 = 15;
-                                            }
-
-                                            var1.setTypeIdAndData(var10, var12, var11, this.id, var16);
-                                        }
-                                    }
-                                }
-                            }
-                        }
+                        if (!spreadEvent.isCancelled())
+                          blockState.update(true);
+                      }
                     }
+                  }
                 }
-            }
+              }
+      }
+    }
+  }
+
+  @Deprecated
+  private void a(World world, int i, int j, int k, int l, Random random, int i1)
+  {
+    tryToCatchBlockOnFire(world, i, j, k, l, random, i1, 0);
+  }
+
+  private void tryToCatchBlockOnFire(World world, int i, int j, int k, int l, Random random, int i1, int face)
+  {
+    int j1 = 0;
+    Block block = Block.byId[world.getTypeId(i, j, k)];
+    if (block != null)
+    {
+      j1 = block.getFlammability(world, i, j, k, world.getData(i, j, k), face);
+    }
+
+    if (random.nextInt(l) < j1) {
+      boolean flag = world.getTypeId(i, j, k) == Block.TNT.id;
+
+      org.bukkit.block.Block theBlock = world.getWorld().getBlockAt(i, j, k);
+
+      BlockBurnEvent event = new BlockBurnEvent(theBlock);
+      world.getServer().getPluginManager().callEvent(event);
+
+      if (event.isCancelled()) {
+        return;
+      }
+
+      if ((random.nextInt(i1 + 10) < 5) && (!world.y(i, j, k))) {
+        int k1 = i1 + random.nextInt(5) / 4;
+
+        if (k1 > 15) {
+          k1 = 15;
         }
+
+        world.setTypeIdAndData(i, j, k, this.id, k1);
+      } else {
+        world.setTypeId(i, j, k, 0);
+      }
+
+      if (flag)
+        Block.TNT.postBreak(world, i, j, k, 1);
+    }
+  }
+
+  private boolean g(World par1World, int par2, int par3, int par4)
+  {
+    return (canBlockCatchFire(par1World, par2 + 1, par3, par4, 4)) || (canBlockCatchFire(par1World, par2 - 1, par3, par4, 5)) || (canBlockCatchFire(par1World, par2, par3 - 1, par4, 1)) || (canBlockCatchFire(par1World, par2, par3 + 1, par4, 0)) || (canBlockCatchFire(par1World, par2, par3, par4 - 1, 3)) || (canBlockCatchFire(par1World, par2, par3, par4 + 1, 2));
+  }
+
+  private int h(World world, int i, int j, int k)
+  {
+    byte b0 = 0;
+
+    if (!world.isEmpty(i, j, k)) {
+      return 0;
     }
 
-    public boolean func_82506_l()
+    int var6 = getChanceToEncourageFire(world, i + 1, j, k, b0, 4);
+    var6 = getChanceToEncourageFire(world, i - 1, j, k, var6, 5);
+    var6 = getChanceToEncourageFire(world, i, j - 1, k, var6, 1);
+    var6 = getChanceToEncourageFire(world, i, j + 1, k, var6, 0);
+    var6 = getChanceToEncourageFire(world, i, j, k - 1, var6, 3);
+    var6 = getChanceToEncourageFire(world, i, j, k + 1, var6, 2);
+
+    return var6;
+  }
+
+  public boolean E_()
+  {
+    return false;
+  }
+
+  @Deprecated
+  public boolean c(IBlockAccess iblockaccess, int i, int j, int k)
+  {
+    return canBlockCatchFire(iblockaccess, i, j, k, 0);
+  }
+
+  @Deprecated
+  public int f(World world, int i, int j, int k, int l)
+  {
+    return getChanceToEncourageFire(world, i, j, k, l, 0);
+  }
+
+  public boolean canPlace(World world, int i, int j, int k) {
+    return (world.isBlockSolidOnSide(i, j - 1, k, 1)) || (g(world, i, j, k));
+  }
+
+  public void doPhysics(World world, int i, int j, int k, int l) {
+    if ((!world.isBlockSolidOnSide(i, j - 1, k, 1)) && (!g(world, i, j, k)))
+      fireExtinguished(world, i, j, k);
+  }
+
+  public void onPlace(World world, int i, int j, int k)
+  {
+    if ((world.worldProvider.dimension == 1) || (world.getTypeId(i, j - 1, k) != Block.OBSIDIAN.id) || (!Block.PORTAL.b_(world, i, j, k)))
+      if ((!world.isBlockSolidOnSide(i, j - 1, k, 1)) && (!g(world, i, j, k)))
+        fireExtinguished(world, i, j, k);
+      else
+        world.c(i, j, k, this.id, d() + world.random.nextInt(10));
+  }
+
+  private void fireExtinguished(World world, int x, int y, int z)
+  {
+    if (!CraftEventFactory.callBlockFadeEvent(world.getWorld().getBlockAt(x, y, z), 0).isCancelled())
+      world.setTypeId(x, y, z, 0);
+  }
+
+  public boolean canBlockCatchFire(IBlockAccess world, int x, int y, int z, int face)
+  {
+    Block block = Block.byId[world.getTypeId(x, y, z)];
+    if (block != null)
     {
-        return false;
+      return block.isFlammable(world, x, y, z, world.getData(x, y, z), face);
     }
+    return false;
+  }
 
-    private void a(World var1, int var2, int var3, int var4, int var5, Random var6, int var7)
+  public int getChanceToEncourageFire(World world, int x, int y, int z, int oldChance, int face)
+  {
+    int newChance = 0;
+    Block block = Block.byId[world.getTypeId(x, y, z)];
+    if (block != null)
     {
-        int var8 = this.b[var1.getTypeId(var2, var3, var4)];
-
-        if (var6.nextInt(var5) < var8)
-        {
-            boolean var9 = var1.getTypeId(var2, var3, var4) == Block.TNT.id;
-
-            if (var6.nextInt(var7 + 10) < 5 && !var1.B(var2, var3, var4))
-            {
-                int var10 = var7 + var6.nextInt(5) / 4;
-
-                if (var10 > 15)
-                {
-                    var10 = 15;
-                }
-
-                var1.setTypeIdAndData(var2, var3, var4, this.id, var10);
-            }
-            else
-            {
-                var1.setTypeId(var2, var3, var4, 0);
-            }
-
-            if (var9)
-            {
-                Block.TNT.postBreak(var1, var2, var3, var4, 1);
-            }
-        }
+      newChance = block.getFireSpreadSpeed(world, x, y, z, world.getData(x, y, z), face);
     }
-
-    /**
-     * Returns true if at least one block next to this one can burn.
-     */
-    private boolean l(World var1, int var2, int var3, int var4)
-    {
-        return this.d(var1, var2 + 1, var3, var4) ? true : (this.d(var1, var2 - 1, var3, var4) ? true : (this.d(var1, var2, var3 - 1, var4) ? true : (this.d(var1, var2, var3 + 1, var4) ? true : (this.d(var1, var2, var3, var4 - 1) ? true : this.d(var1, var2, var3, var4 + 1)))));
-    }
-
-    /**
-     * Gets the highest chance of a neighbor block encouraging this block to catch fire
-     */
-    private int n(World var1, int var2, int var3, int var4)
-    {
-        byte var5 = 0;
-
-        if (!var1.isEmpty(var2, var3, var4))
-        {
-            return 0;
-        }
-        else
-        {
-            int var6 = this.d(var1, var2 + 1, var3, var4, var5);
-            var6 = this.d(var1, var2 - 1, var3, var4, var6);
-            var6 = this.d(var1, var2, var3 - 1, var4, var6);
-            var6 = this.d(var1, var2, var3 + 1, var4, var6);
-            var6 = this.d(var1, var2, var3, var4 - 1, var6);
-            var6 = this.d(var1, var2, var3, var4 + 1, var6);
-            return var6;
-        }
-    }
-
-    /**
-     * Returns if this block is collidable (only used by Fire). Args: x, y, z
-     */
-    public boolean m()
-    {
-        return false;
-    }
-
-    /**
-     * Checks the specified block coordinate to see if it can catch fire.  Args: blockAccess, x, y, z
-     */
-    public boolean d(IBlockAccess var1, int var2, int var3, int var4)
-    {
-        return this.a[var1.getTypeId(var2, var3, var4)] > 0;
-    }
-
-    /**
-     * Retrieves a specified block's chance to encourage their neighbors to burn and if the number is greater than the
-     * current number passed in it will return its number instead of the passed in one.  Args: world, x, y, z,
-     * curChanceToEncourageFire
-     */
-    public int d(World var1, int var2, int var3, int var4, int var5)
-    {
-        int var6 = this.a[var1.getTypeId(var2, var3, var4)];
-        return var6 > var5 ? var6 : var5;
-    }
-
-    /**
-     * Checks to see if its valid to put this block at the specified coordinates. Args: world, x, y, z
-     */
-    public boolean canPlace(World var1, int var2, int var3, int var4)
-    {
-        return var1.t(var2, var3 - 1, var4) || this.l(var1, var2, var3, var4);
-    }
-
-    /**
-     * Lets the block know when one of its neighbor changes. Doesn't know which neighbor changed (coordinates passed are
-     * their own) Args: x, y, z, neighbor blockID
-     */
-    public void doPhysics(World var1, int var2, int var3, int var4, int var5)
-    {
-        if (!var1.t(var2, var3 - 1, var4) && !this.l(var1, var2, var3, var4))
-        {
-            var1.setTypeId(var2, var3, var4, 0);
-        }
-    }
-
-    /**
-     * Called whenever the block is added into the world. Args: world, x, y, z
-     */
-    public void onPlace(World var1, int var2, int var3, int var4)
-    {
-        if (var1.worldProvider.dimension > 0 || var1.getTypeId(var2, var3 - 1, var4) != Block.OBSIDIAN.id || !Block.PORTAL.i_(var1, var2, var3, var4))
-        {
-            if (!var1.t(var2, var3 - 1, var4) && !this.l(var1, var2, var3, var4))
-            {
-                var1.setTypeId(var2, var3, var4, 0);
-            }
-            else
-            {
-                var1.a(var2, var3, var4, this.id, this.r_() + var1.random.nextInt(10));
-            }
-        }
-    }
+    return newChance > oldChance ? newChance : oldChance;
+  }
 }
+

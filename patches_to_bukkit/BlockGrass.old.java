@@ -1,59 +1,66 @@
 package net.minecraft.server;
 
 import java.util.Random;
+import org.bukkit.block.BlockState;
+import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.event.block.BlockFadeEvent;
+import org.bukkit.event.block.BlockSpreadEvent;
+import org.bukkit.plugin.PluginManager;
 
 public class BlockGrass extends Block
 {
-    protected BlockGrass(int var1)
-    {
-        super(var1, Material.GRASS);
-        this.textureId = 3;
-        this.b(true);
-        this.a(CreativeModeTab.b);
-    }
+  protected BlockGrass(int i)
+  {
+    super(i, Material.GRASS);
+    this.textureId = 3;
+    a(true);
+  }
 
-    /**
-     * From the specified side and block metadata retrieves the blocks texture. Args: side, metadata
-     */
-    public int a(int var1, int var2)
-    {
-        return var1 == 1 ? 0 : (var1 == 0 ? 2 : 3);
-    }
+  public int a(int i, int j) {
+    return i == 0 ? 2 : i == 1 ? 0 : 3;
+  }
 
-    /**
-     * Ticks the block if it's been scheduled
-     */
-    public void b(World var1, int var2, int var3, int var4, Random var5)
-    {
-        if (!var1.isStatic)
-        {
-            if (var1.getLightLevel(var2, var3 + 1, var4) < 4 && Block.lightBlock[var1.getTypeId(var2, var3 + 1, var4)] > 2)
-            {
-                var1.setTypeId(var2, var3, var4, Block.DIRT.id);
-            }
-            else if (var1.getLightLevel(var2, var3 + 1, var4) >= 9)
-            {
-                for (int var6 = 0; var6 < 4; ++var6)
-                {
-                    int var7 = var2 + var5.nextInt(3) - 1;
-                    int var8 = var3 + var5.nextInt(5) - 3;
-                    int var9 = var4 + var5.nextInt(3) - 1;
-                    int var10 = var1.getTypeId(var7, var8 + 1, var9);
+  public void a(World world, int i, int j, int k, Random random) {
+    if (!world.isStatic)
+      if ((world.getLightLevel(i, j + 1, k) < 4) && (Block.lightBlock[world.getTypeId(i, j + 1, k)] > 2))
+      {
+        org.bukkit.World bworld = world.getWorld();
+        BlockState blockState = bworld.getBlockAt(i, j, k).getState();
+        blockState.setTypeId(Block.DIRT.id);
 
-                    if (var1.getTypeId(var7, var8, var9) == Block.DIRT.id && var1.getLightLevel(var7, var8 + 1, var9) >= 4 && Block.lightBlock[var10] <= 2)
-                    {
-                        var1.setTypeId(var7, var8, var9, Block.GRASS.id);
-                    }
-                }
-            }
+        BlockFadeEvent event = new BlockFadeEvent(blockState.getBlock(), blockState);
+        world.getServer().getPluginManager().callEvent(event);
+
+        if (!event.isCancelled()) {
+          blockState.update(true);
         }
-    }
+      }
+      else if (world.getLightLevel(i, j + 1, k) >= 9) {
+        for (int l = 0; l < 4; l++) {
+          int i1 = i + random.nextInt(3) - 1;
+          int j1 = j + random.nextInt(5) - 3;
+          int k1 = k + random.nextInt(3) - 1;
+          int l1 = world.getTypeId(i1, j1 + 1, k1);
 
-    /**
-     * Returns the ID of the items to drop on destruction.
-     */
-    public int getDropType(int var1, Random var2, int var3)
-    {
-        return Block.DIRT.getDropType(0, var2, var3);
-    }
+          if ((world.getTypeId(i1, j1, k1) == Block.DIRT.id) && (world.getLightLevel(i1, j1 + 1, k1) >= 4) && (Block.lightBlock[l1] <= 2))
+          {
+            org.bukkit.World bworld = world.getWorld();
+            BlockState blockState = bworld.getBlockAt(i1, j1, k1).getState();
+            blockState.setTypeId(this.id);
+
+            BlockSpreadEvent event = new BlockSpreadEvent(blockState.getBlock(), bworld.getBlockAt(i, j, k), blockState);
+            world.getServer().getPluginManager().callEvent(event);
+
+            if (!event.isCancelled())
+              blockState.update(true);
+          }
+        }
+      }
+  }
+
+  public int getDropType(int i, Random random, int j)
+  {
+    return Block.DIRT.getDropType(0, random, j);
+  }
 }
+

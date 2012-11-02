@@ -1,541 +1,381 @@
 package net.minecraft.server;
 
+import forge.IConnectRedstone;
 import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.Random;
 import java.util.Set;
+import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.CraftWorld;
+import org.bukkit.event.block.BlockRedstoneEvent;
+import org.bukkit.plugin.PluginManager;
 
 public class BlockRedstoneWire extends Block
 {
-    /**
-     * When false, power transmission methods do not look at other redstone wires. Used internally during
-     * updateCurrentStrength.
-     */
-    private boolean a = true;
-    private Set b = new HashSet();
+  private boolean a = true;
+  private Set b = new LinkedHashSet();
 
-    public BlockRedstoneWire(int var1, int var2)
-    {
-        super(var1, var2, Material.ORIENTABLE);
-        this.a(0.0F, 0.0F, 0.0F, 1.0F, 0.0625F, 1.0F);
+  public BlockRedstoneWire(int i, int j) {
+    super(i, j, Material.ORIENTABLE);
+    a(0.0F, 0.0F, 0.0F, 1.0F, 0.0625F, 1.0F);
+  }
+
+  public int a(int i, int j) {
+    return this.textureId;
+  }
+
+  public AxisAlignedBB e(World world, int i, int j, int k) {
+    return null;
+  }
+
+  public boolean a() {
+    return false;
+  }
+
+  public boolean b() {
+    return false;
+  }
+
+  public int c() {
+    return 5;
+  }
+
+  public boolean canPlace(World world, int i, int j, int k) {
+    return (world.isBlockSolidOnSide(i, j - 1, k, 1)) || (world.getTypeId(i, j - 1, k) == Block.GLOWSTONE.id);
+  }
+
+  private void g(World world, int i, int j, int k) {
+    a(world, i, j, k, i, j, k);
+    ArrayList arraylist = new ArrayList(this.b);
+
+    this.b.clear();
+
+    for (int l = 0; l < arraylist.size(); l++) {
+      ChunkPosition chunkposition = (ChunkPosition)arraylist.get(l);
+
+      world.applyPhysics(chunkposition.x, chunkposition.y, chunkposition.z, this.id);
     }
+  }
 
-    /**
-     * From the specified side and block metadata retrieves the blocks texture. Args: side, metadata
-     */
-    public int a(int var1, int var2)
-    {
-        return this.textureId;
-    }
+  private void a(World world, int i, int j, int k, int l, int i1, int j1) {
+    int k1 = world.getData(i, j, k);
+    int l1 = 0;
 
-    /**
-     * Returns a bounding box from the pool of bounding boxes (this means this box can change after the pool has been
-     * cleared to be reused)
-     */
-    public AxisAlignedBB e(World var1, int var2, int var3, int var4)
-    {
-        return null;
-    }
+    this.a = false;
+    boolean flag = world.isBlockIndirectlyPowered(i, j, k);
 
-    /**
-     * Is this block (a) opaque and (b) a full 1m cube?  This determines whether or not to render the shared face of two
-     * adjacent blocks and also whether the player can attach torches, redstone wire, etc to this block.
-     */
-    public boolean c()
-    {
-        return false;
-    }
+    this.a = true;
 
-    /**
-     * If this block doesn't render as an ordinary block it will return False (examples: signs, buttons, stairs, etc)
-     */
-    public boolean b()
-    {
-        return false;
-    }
-
-    /**
-     * The type of render function that is called for this block
-     */
-    public int d()
-    {
-        return 5;
-    }
-
-    /**
-     * Checks to see if its valid to put this block at the specified coordinates. Args: world, x, y, z
-     */
-    public boolean canPlace(World var1, int var2, int var3, int var4)
-    {
-        return var1.t(var2, var3 - 1, var4) || var1.getTypeId(var2, var3 - 1, var4) == Block.GLOWSTONE.id;
-    }
-
-    /**
-     * Sets the strength of the wire current (0-15) for this block based on neighboring blocks and propagates to
-     * neighboring redstone wires
-     */
-    private void l(World var1, int var2, int var3, int var4)
-    {
-        this.a(var1, var2, var3, var4, var2, var3, var4);
-        ArrayList var5 = new ArrayList(this.b);
-        this.b.clear();
-        Iterator var6 = var5.iterator();
-
-        while (var6.hasNext())
-        {
-            ChunkPosition var7 = (ChunkPosition)var6.next();
-            var1.applyPhysics(var7.x, var7.y, var7.z, this.id);
-        }
-    }
-
-    private void a(World var1, int var2, int var3, int var4, int var5, int var6, int var7)
-    {
-        int var8 = var1.getData(var2, var3, var4);
-        int var9 = 0;
-        this.a = false;
-        boolean var10 = var1.isBlockIndirectlyPowered(var2, var3, var4);
-        this.a = true;
-        int var11;
-        int var12;
-        int var13;
-
-        if (var10)
-        {
-            var9 = 15;
-        }
-        else
-        {
-            for (var11 = 0; var11 < 4; ++var11)
-            {
-                var12 = var2;
-                var13 = var4;
-
-                if (var11 == 0)
-                {
-                    var12 = var2 - 1;
-                }
-
-                if (var11 == 1)
-                {
-                    ++var12;
-                }
-
-                if (var11 == 2)
-                {
-                    var13 = var4 - 1;
-                }
-
-                if (var11 == 3)
-                {
-                    ++var13;
-                }
-
-                if (var12 != var5 || var3 != var6 || var13 != var7)
-                {
-                    var9 = this.getPower(var1, var12, var3, var13, var9);
-                }
-
-                if (var1.s(var12, var3, var13) && !var1.s(var2, var3 + 1, var4))
-                {
-                    if (var12 != var5 || var3 + 1 != var6 || var13 != var7)
-                    {
-                        var9 = this.getPower(var1, var12, var3 + 1, var13, var9);
-                    }
-                }
-                else if (!var1.s(var12, var3, var13) && (var12 != var5 || var3 - 1 != var6 || var13 != var7))
-                {
-                    var9 = this.getPower(var1, var12, var3 - 1, var13, var9);
-                }
-            }
-
-            if (var9 > 0)
-            {
-                --var9;
-            }
-            else
-            {
-                var9 = 0;
-            }
+    if (flag) {
+      l1 = 15;
+    } else {
+      for (int i2 = 0; i2 < 4; i2++) {
+        int j2 = i;
+        int k2 = k;
+        if (i2 == 0) {
+          j2 = i - 1;
         }
 
-        if (var8 != var9)
-        {
-            var1.suppressPhysics = true;
-            var1.setData(var2, var3, var4, var9);
-            var1.e(var2, var3, var4, var2, var3, var4);
-            var1.suppressPhysics = false;
-
-            for (var11 = 0; var11 < 4; ++var11)
-            {
-                var12 = var2;
-                var13 = var4;
-                int var14 = var3 - 1;
-
-                if (var11 == 0)
-                {
-                    var12 = var2 - 1;
-                }
-
-                if (var11 == 1)
-                {
-                    ++var12;
-                }
-
-                if (var11 == 2)
-                {
-                    var13 = var4 - 1;
-                }
-
-                if (var11 == 3)
-                {
-                    ++var13;
-                }
-
-                if (var1.s(var12, var3, var13))
-                {
-                    var14 += 2;
-                }
-
-                boolean var15 = false;
-                int var16 = this.getPower(var1, var12, var3, var13, -1);
-                var9 = var1.getData(var2, var3, var4);
-
-                if (var9 > 0)
-                {
-                    --var9;
-                }
-
-                if (var16 >= 0 && var16 != var9)
-                {
-                    this.a(var1, var12, var3, var13, var2, var3, var4);
-                }
-
-                var16 = this.getPower(var1, var12, var14, var13, -1);
-                var9 = var1.getData(var2, var3, var4);
-
-                if (var9 > 0)
-                {
-                    --var9;
-                }
-
-                if (var16 >= 0 && var16 != var9)
-                {
-                    this.a(var1, var12, var14, var13, var2, var3, var4);
-                }
-            }
-
-            if (var8 < var9 || var9 == 0)
-            {
-                this.b.add(new ChunkPosition(var2, var3, var4));
-                this.b.add(new ChunkPosition(var2 - 1, var3, var4));
-                this.b.add(new ChunkPosition(var2 + 1, var3, var4));
-                this.b.add(new ChunkPosition(var2, var3 - 1, var4));
-                this.b.add(new ChunkPosition(var2, var3 + 1, var4));
-                this.b.add(new ChunkPosition(var2, var3, var4 - 1));
-                this.b.add(new ChunkPosition(var2, var3, var4 + 1));
-            }
+        if (i2 == 1) {
+          j2++;
         }
+
+        if (i2 == 2) {
+          k2 = k - 1;
+        }
+
+        if (i2 == 3) {
+          k2++;
+        }
+
+        if ((j2 != l) || (j != i1) || (k2 != j1)) {
+          l1 = getPower(world, j2, j, k2, l1);
+        }
+
+        if ((world.e(j2, j, k2)) && (!world.e(i, j + 1, k))) {
+          if ((j2 != l) || (j + 1 != i1) || (k2 != j1))
+            l1 = getPower(world, j2, j + 1, k2, l1);
+        }
+        else if ((!world.e(j2, j, k2)) && ((j2 != l) || (j - 1 != i1) || (k2 != j1))) {
+          l1 = getPower(world, j2, j - 1, k2, l1);
+        }
+      }
+
+      if (l1 > 0)
+        l1--;
+      else {
+        l1 = 0;
+      }
+
     }
 
-    /**
-     * Calls World.notifyBlocksOfNeighborChange() for all neighboring blocks, but only if the given block is a redstone
-     * wire.
-     */
-    private void n(World var1, int var2, int var3, int var4)
+    if (k1 != l1) {
+      BlockRedstoneEvent event = new BlockRedstoneEvent(world.getWorld().getBlockAt(i, j, k), k1, l1);
+      world.getServer().getPluginManager().callEvent(event);
+
+      l1 = event.getNewCurrent();
+    }
+
+    if (k1 != l1) {
+      world.suppressPhysics = true;
+      world.setData(i, j, k, l1);
+      world.b(i, j, k, i, j, k);
+      world.suppressPhysics = false;
+
+      for (int i2 = 0; i2 < 4; i2++) {
+        int j2 = i;
+        int k2 = k;
+        int l2 = j - 1;
+
+        if (i2 == 0) {
+          j2 = i - 1;
+        }
+
+        if (i2 == 1) {
+          j2++;
+        }
+
+        if (i2 == 2) {
+          k2 = k - 1;
+        }
+
+        if (i2 == 3) {
+          k2++;
+        }
+
+        if (world.e(j2, j, k2)) {
+          l2 += 2;
+        }
+
+        boolean flag1 = false;
+        int i3 = getPower(world, j2, j, k2, -1);
+
+        l1 = world.getData(i, j, k);
+        if (l1 > 0) {
+          l1--;
+        }
+
+        if ((i3 >= 0) && (i3 != l1)) {
+          a(world, j2, j, k2, i, j, k);
+        }
+
+        i3 = getPower(world, j2, l2, k2, -1);
+        l1 = world.getData(i, j, k);
+        if (l1 > 0) {
+          l1--;
+        }
+
+        if ((i3 >= 0) && (i3 != l1)) {
+          a(world, j2, l2, k2, i, j, k);
+        }
+      }
+
+      if ((k1 < l1) || (l1 == 0)) {
+        this.b.add(new ChunkPosition(i, j, k));
+        this.b.add(new ChunkPosition(i - 1, j, k));
+        this.b.add(new ChunkPosition(i + 1, j, k));
+        this.b.add(new ChunkPosition(i, j - 1, k));
+        this.b.add(new ChunkPosition(i, j + 1, k));
+        this.b.add(new ChunkPosition(i, j, k - 1));
+        this.b.add(new ChunkPosition(i, j, k + 1));
+      }
+    }
+  }
+
+  private void h(World world, int i, int j, int k) {
+    if (world.getTypeId(i, j, k) == this.id) {
+      world.applyPhysics(i, j, k, this.id);
+      world.applyPhysics(i - 1, j, k, this.id);
+      world.applyPhysics(i + 1, j, k, this.id);
+      world.applyPhysics(i, j, k - 1, this.id);
+      world.applyPhysics(i, j, k + 1, this.id);
+      world.applyPhysics(i, j - 1, k, this.id);
+      world.applyPhysics(i, j + 1, k, this.id);
+    }
+  }
+
+  public void onPlace(World world, int i, int j, int k) {
+    if (world.suppressPhysics) return;
+    super.onPlace(world, i, j, k);
+    if (!world.isStatic) {
+      g(world, i, j, k);
+      world.applyPhysics(i, j + 1, k, this.id);
+      world.applyPhysics(i, j - 1, k, this.id);
+      h(world, i - 1, j, k);
+      h(world, i + 1, j, k);
+      h(world, i, j, k - 1);
+      h(world, i, j, k + 1);
+      if (world.e(i - 1, j, k))
+        h(world, i - 1, j + 1, k);
+      else {
+        h(world, i - 1, j - 1, k);
+      }
+
+      if (world.e(i + 1, j, k))
+        h(world, i + 1, j + 1, k);
+      else {
+        h(world, i + 1, j - 1, k);
+      }
+
+      if (world.e(i, j, k - 1))
+        h(world, i, j + 1, k - 1);
+      else {
+        h(world, i, j - 1, k - 1);
+      }
+
+      if (world.e(i, j, k + 1))
+        h(world, i, j + 1, k + 1);
+      else
+        h(world, i, j - 1, k + 1);
+    }
+  }
+
+  public void remove(World world, int i, int j, int k)
+  {
+    super.remove(world, i, j, k);
+    if (!world.isStatic) {
+      world.applyPhysics(i, j + 1, k, this.id);
+      world.applyPhysics(i, j - 1, k, this.id);
+      world.applyPhysics(i + 1, j, k, this.id);
+      world.applyPhysics(i - 1, j, k, this.id);
+      world.applyPhysics(i, j, k + 1, this.id);
+      world.applyPhysics(i, j, k - 1, this.id);
+      g(world, i, j, k);
+      h(world, i - 1, j, k);
+      h(world, i + 1, j, k);
+      h(world, i, j, k - 1);
+      h(world, i, j, k + 1);
+      if (world.e(i - 1, j, k))
+        h(world, i - 1, j + 1, k);
+      else {
+        h(world, i - 1, j - 1, k);
+      }
+
+      if (world.e(i + 1, j, k))
+        h(world, i + 1, j + 1, k);
+      else {
+        h(world, i + 1, j - 1, k);
+      }
+
+      if (world.e(i, j, k - 1))
+        h(world, i, j + 1, k - 1);
+      else {
+        h(world, i, j - 1, k - 1);
+      }
+
+      if (world.e(i, j, k + 1))
+        h(world, i, j + 1, k + 1);
+      else
+        h(world, i, j - 1, k + 1);
+    }
+  }
+
+  public int getPower(World world, int i, int j, int k, int l)
+  {
+    if (world.getTypeId(i, j, k) != this.id) {
+      return l;
+    }
+    int i1 = world.getData(i, j, k);
+
+    return i1 > l ? i1 : l;
+  }
+
+  public void doPhysics(World world, int i, int j, int k, int l)
+  {
+    if (!world.isStatic) {
+      int i1 = world.getData(i, j, k);
+      boolean flag = canPlace(world, i, j, k);
+
+      if (!flag) {
+        b(world, i, j, k, i1, 0);
+        world.setTypeId(i, j, k, 0);
+      } else {
+        g(world, i, j, k);
+      }
+
+      super.doPhysics(world, i, j, k, l);
+    }
+  }
+
+  public int getDropType(int i, Random random, int j) {
+    return Item.REDSTONE.id;
+  }
+
+  public boolean d(World world, int i, int j, int k, int l) {
+    return !this.a ? false : a(world, i, j, k, l);
+  }
+
+  public boolean a(IBlockAccess iblockaccess, int i, int j, int k, int l) {
+    if (!this.a)
+      return false;
+    if (iblockaccess.getData(i, j, k) == 0)
+      return false;
+    if (l == 1) {
+      return true;
+    }
+    boolean flag = (d(iblockaccess, i - 1, j, k, 1)) || ((!iblockaccess.e(i - 1, j, k)) && (d(iblockaccess, i - 1, j - 1, k, -1)));
+    boolean flag1 = (d(iblockaccess, i + 1, j, k, 3)) || ((!iblockaccess.e(i + 1, j, k)) && (d(iblockaccess, i + 1, j - 1, k, -1)));
+    boolean flag2 = (d(iblockaccess, i, j, k - 1, 2)) || ((!iblockaccess.e(i, j, k - 1)) && (d(iblockaccess, i, j - 1, k - 1, -1)));
+    boolean flag3 = (d(iblockaccess, i, j, k + 1, 0)) || ((!iblockaccess.e(i, j, k + 1)) && (d(iblockaccess, i, j - 1, k + 1, -1)));
+
+    if (!iblockaccess.e(i, j + 1, k)) {
+      if ((iblockaccess.e(i - 1, j, k)) && (d(iblockaccess, i - 1, j + 1, k, -1))) {
+        flag = true;
+      }
+
+      if ((iblockaccess.e(i + 1, j, k)) && (d(iblockaccess, i + 1, j + 1, k, -1))) {
+        flag1 = true;
+      }
+
+      if ((iblockaccess.e(i, j, k - 1)) && (d(iblockaccess, i, j + 1, k - 1, -1))) {
+        flag2 = true;
+      }
+
+      if ((iblockaccess.e(i, j, k + 1)) && (d(iblockaccess, i, j + 1, k + 1, -1))) {
+        flag3 = true;
+      }
+    }
+
+    return (!flag2) && (!flag1) && (!flag) && (!flag3) && (l >= 2) && (l <= 5);
+  }
+
+  public boolean isPowerSource()
+  {
+    return this.a;
+  }
+
+  public static boolean c(IBlockAccess iblockaccess, int i, int j, int k, int l) {
+    int i1 = iblockaccess.getTypeId(i, j, k);
+
+    if (i1 == Block.REDSTONE_WIRE.id)
+      return true;
+    if (i1 == 0)
+      return false;
+    if ((i1 != Block.DIODE_OFF.id) && (i1 != Block.DIODE_ON.id))
     {
-        if (var1.getTypeId(var2, var3, var4) == this.id)
-        {
-            var1.applyPhysics(var2, var3, var4, this.id);
-            var1.applyPhysics(var2 - 1, var3, var4, this.id);
-            var1.applyPhysics(var2 + 1, var3, var4, this.id);
-            var1.applyPhysics(var2, var3, var4 - 1, this.id);
-            var1.applyPhysics(var2, var3, var4 + 1, this.id);
-            var1.applyPhysics(var2, var3 - 1, var4, this.id);
-            var1.applyPhysics(var2, var3 + 1, var4, this.id);
-        }
+      if ((Block.byId[i1] instanceof IConnectRedstone)) {
+        return ((IConnectRedstone)Block.byId[i1]).canConnectRedstone(iblockaccess, i, j, k, l);
+      }
+      return (Block.byId[i1].isPowerSource()) && (l != -1);
     }
+    int j1 = iblockaccess.getData(i, j, k);
 
-    /**
-     * Called whenever the block is added into the world. Args: world, x, y, z
-     */
-    public void onPlace(World var1, int var2, int var3, int var4)
-    {
-        super.onPlace(var1, var2, var3, var4);
+    return (l == (j1 & 0x3)) || (l == Direction.e[(j1 & 0x3)]);
+  }
 
-        if (!var1.isStatic)
-        {
-            this.l(var1, var2, var3, var4);
-            var1.applyPhysics(var2, var3 + 1, var4, this.id);
-            var1.applyPhysics(var2, var3 - 1, var4, this.id);
-            this.n(var1, var2 - 1, var3, var4);
-            this.n(var1, var2 + 1, var3, var4);
-            this.n(var1, var2, var3, var4 - 1);
-            this.n(var1, var2, var3, var4 + 1);
-
-            if (var1.s(var2 - 1, var3, var4))
-            {
-                this.n(var1, var2 - 1, var3 + 1, var4);
-            }
-            else
-            {
-                this.n(var1, var2 - 1, var3 - 1, var4);
-            }
-
-            if (var1.s(var2 + 1, var3, var4))
-            {
-                this.n(var1, var2 + 1, var3 + 1, var4);
-            }
-            else
-            {
-                this.n(var1, var2 + 1, var3 - 1, var4);
-            }
-
-            if (var1.s(var2, var3, var4 - 1))
-            {
-                this.n(var1, var2, var3 + 1, var4 - 1);
-            }
-            else
-            {
-                this.n(var1, var2, var3 - 1, var4 - 1);
-            }
-
-            if (var1.s(var2, var3, var4 + 1))
-            {
-                this.n(var1, var2, var3 + 1, var4 + 1);
-            }
-            else
-            {
-                this.n(var1, var2, var3 - 1, var4 + 1);
-            }
-        }
+  public static boolean d(IBlockAccess iblockaccess, int i, int j, int k, int l)
+  {
+    if (c(iblockaccess, i, j, k, l)) {
+      return true;
     }
+    int i1 = iblockaccess.getTypeId(i, j, k);
 
-    /**
-     * ejects contained items into the world, and notifies neighbours of an update, as appropriate
-     */
-    public void remove(World var1, int var2, int var3, int var4, int var5, int var6)
-    {
-        super.remove(var1, var2, var3, var4, var5, var6);
+    if (i1 == Block.DIODE_ON.id) {
+      int j1 = iblockaccess.getData(i, j, k);
 
-        if (!var1.isStatic)
-        {
-            var1.applyPhysics(var2, var3 + 1, var4, this.id);
-            var1.applyPhysics(var2, var3 - 1, var4, this.id);
-            var1.applyPhysics(var2 + 1, var3, var4, this.id);
-            var1.applyPhysics(var2 - 1, var3, var4, this.id);
-            var1.applyPhysics(var2, var3, var4 + 1, this.id);
-            var1.applyPhysics(var2, var3, var4 - 1, this.id);
-            this.l(var1, var2, var3, var4);
-            this.n(var1, var2 - 1, var3, var4);
-            this.n(var1, var2 + 1, var3, var4);
-            this.n(var1, var2, var3, var4 - 1);
-            this.n(var1, var2, var3, var4 + 1);
-
-            if (var1.s(var2 - 1, var3, var4))
-            {
-                this.n(var1, var2 - 1, var3 + 1, var4);
-            }
-            else
-            {
-                this.n(var1, var2 - 1, var3 - 1, var4);
-            }
-
-            if (var1.s(var2 + 1, var3, var4))
-            {
-                this.n(var1, var2 + 1, var3 + 1, var4);
-            }
-            else
-            {
-                this.n(var1, var2 + 1, var3 - 1, var4);
-            }
-
-            if (var1.s(var2, var3, var4 - 1))
-            {
-                this.n(var1, var2, var3 + 1, var4 - 1);
-            }
-            else
-            {
-                this.n(var1, var2, var3 - 1, var4 - 1);
-            }
-
-            if (var1.s(var2, var3, var4 + 1))
-            {
-                this.n(var1, var2, var3 + 1, var4 + 1);
-            }
-            else
-            {
-                this.n(var1, var2, var3 - 1, var4 + 1);
-            }
-        }
+      return l == (j1 & 0x3);
     }
-
-    /**
-     * Returns the current strength at the specified block if it is greater than the passed value, or the passed value
-     * otherwise. Signature: (world, x, y, z, strength)
-     */
-    private int getPower(World var1, int var2, int var3, int var4, int var5)
-    {
-        if (var1.getTypeId(var2, var3, var4) != this.id)
-        {
-            return var5;
-        }
-        else
-        {
-            int var6 = var1.getData(var2, var3, var4);
-            return var6 > var5 ? var6 : var5;
-        }
-    }
-
-    /**
-     * Lets the block know when one of its neighbor changes. Doesn't know which neighbor changed (coordinates passed are
-     * their own) Args: x, y, z, neighbor blockID
-     */
-    public void doPhysics(World var1, int var2, int var3, int var4, int var5)
-    {
-        if (!var1.isStatic)
-        {
-            int var6 = var1.getData(var2, var3, var4);
-            boolean var7 = this.canPlace(var1, var2, var3, var4);
-
-            if (var7)
-            {
-                this.l(var1, var2, var3, var4);
-            }
-            else
-            {
-                this.c(var1, var2, var3, var4, var6, 0);
-                var1.setTypeId(var2, var3, var4, 0);
-            }
-
-            super.doPhysics(var1, var2, var3, var4, var5);
-        }
-    }
-
-    /**
-     * Returns the ID of the items to drop on destruction.
-     */
-    public int getDropType(int var1, Random var2, int var3)
-    {
-        return Item.REDSTONE.id;
-    }
-
-    /**
-     * Is this block indirectly powering the block on the specified side
-     */
-    public boolean c(IBlockAccess var1, int var2, int var3, int var4, int var5)
-    {
-        return !this.a ? false : this.b(var1, var2, var3, var4, var5);
-    }
-
-    /**
-     * Is this block powering the block on the specified side
-     */
-    public boolean b(IBlockAccess var1, int var2, int var3, int var4, int var5)
-    {
-        if (!this.a)
-        {
-            return false;
-        }
-        else if (var1.getData(var2, var3, var4) == 0)
-        {
-            return false;
-        }
-        else if (var5 == 1)
-        {
-            return true;
-        }
-        else
-        {
-            boolean var6 = g(var1, var2 - 1, var3, var4, 1) || !var1.s(var2 - 1, var3, var4) && g(var1, var2 - 1, var3 - 1, var4, -1);
-            boolean var7 = g(var1, var2 + 1, var3, var4, 3) || !var1.s(var2 + 1, var3, var4) && g(var1, var2 + 1, var3 - 1, var4, -1);
-            boolean var8 = g(var1, var2, var3, var4 - 1, 2) || !var1.s(var2, var3, var4 - 1) && g(var1, var2, var3 - 1, var4 - 1, -1);
-            boolean var9 = g(var1, var2, var3, var4 + 1, 0) || !var1.s(var2, var3, var4 + 1) && g(var1, var2, var3 - 1, var4 + 1, -1);
-
-            if (!var1.s(var2, var3 + 1, var4))
-            {
-                if (var1.s(var2 - 1, var3, var4) && g(var1, var2 - 1, var3 + 1, var4, -1))
-                {
-                    var6 = true;
-                }
-
-                if (var1.s(var2 + 1, var3, var4) && g(var1, var2 + 1, var3 + 1, var4, -1))
-                {
-                    var7 = true;
-                }
-
-                if (var1.s(var2, var3, var4 - 1) && g(var1, var2, var3 + 1, var4 - 1, -1))
-                {
-                    var8 = true;
-                }
-
-                if (var1.s(var2, var3, var4 + 1) && g(var1, var2, var3 + 1, var4 + 1, -1))
-                {
-                    var9 = true;
-                }
-            }
-
-            return !var8 && !var7 && !var6 && !var9 && var5 >= 2 && var5 <= 5 ? true : (var5 == 2 && var8 && !var6 && !var7 ? true : (var5 == 3 && var9 && !var6 && !var7 ? true : (var5 == 4 && var6 && !var8 && !var9 ? true : var5 == 5 && var7 && !var8 && !var9)));
-        }
-    }
-
-    /**
-     * Can this block provide power. Only wire currently seems to have this change based on its state.
-     */
-    public boolean isPowerSource()
-    {
-        return this.a;
-    }
-
-    /**
-     * Returns true if the block coordinate passed can provide power, or is a redstone wire.
-     */
-    public static boolean f(IBlockAccess var0, int var1, int var2, int var3, int var4)
-    {
-        int var5 = var0.getTypeId(var1, var2, var3);
-
-        if (var5 == Block.REDSTONE_WIRE.id)
-        {
-            return true;
-        }
-        else if (var5 == 0)
-        {
-            return false;
-        }
-        else if (var5 != Block.DIODE_OFF.id && var5 != Block.DIODE_ON.id)
-        {
-            return Block.byId[var5].isPowerSource() && var4 != -1;
-        }
-        else
-        {
-            int var6 = var0.getData(var1, var2, var3);
-            return var4 == (var6 & 3) || var4 == Direction.f[var6 & 3];
-        }
-    }
-
-    /**
-     * Returns true if the block coordinate passed can provide power, or is a redstone wire, or if its a repeater that
-     * is powered.
-     */
-    public static boolean g(IBlockAccess var0, int var1, int var2, int var3, int var4)
-    {
-        if (f(var0, var1, var2, var3, var4))
-        {
-            return true;
-        }
-        else
-        {
-            int var5 = var0.getTypeId(var1, var2, var3);
-
-            if (var5 == Block.DIODE_ON.id)
-            {
-                int var6 = var0.getData(var1, var2, var3);
-                return var4 == (var6 & 3);
-            }
-            else
-            {
-                return false;
-            }
-        }
-    }
+    return false;
+  }
 }
+

@@ -18,7 +18,7 @@ public class ItemMilkBucket extends Item
 
         if (!var2.isStatic)
         {
-            var3.bv();
+            var3.curePotionEffects(var1);
         }
 
         return var1.count <= 0 ? new ItemStack(Item.BUCKET) : var1;

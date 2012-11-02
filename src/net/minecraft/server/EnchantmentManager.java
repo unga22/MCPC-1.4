@@ -414,7 +414,7 @@ public class EnchantmentManager
         {
             Enchantment var7 = var4[var6];
 
-            if (var7 != null && var7.slot.canEnchant(var2))
+            if (var7 != null && var7.canEnchantItem(var1))
             {
                 for (int var8 = var7.getStartLevel(); var8 <= var7.getMaxLevel(); ++var8)
                 {

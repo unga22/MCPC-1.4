@@ -1,12 +1,16 @@
 package net.minecraft.server;
 
+import cpw.mods.fml.common.Side;
+import cpw.mods.fml.common.asm.SideOnly;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.text.DecimalFormat;
 import javax.swing.JComponent;
 import javax.swing.Timer;
+import net.minecraftforge.common.DimensionManager;
 
+@SideOnly(Side.SERVER)
 public class GuiStatsComponent extends JComponent
 {
     private static final DecimalFormat field_79020_a = new DecimalFormat("########0.000");
@@ -38,6 +42,7 @@ public class GuiStatsComponent extends JComponent
      */
     private void a()
     {
+        this.d = new String[5 + DimensionManager.getIDs().length];
         long var1 = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
         System.gc();
         this.d[0] = "Memory use: " + var1 / 1024L / 1024L + " mb (" + Runtime.getRuntime().freeMemory() * 100L / Runtime.getRuntime().maxMemory() + "% free)";
@@ -48,15 +53,23 @@ public class GuiStatsComponent extends JComponent
 
         if (this.field_79017_e.worldServer != null)
         {
-            for (int var3 = 0; var3 < this.field_79017_e.worldServer.length; ++var3)
-            {
-                this.d[5 + var3] = "Lvl " + var3 + " tick: " + field_79020_a.format(this.func_79015_a(this.field_79017_e.k[var3]) * 1.0E-6D) + " ms";
+            int var3 = 0;
+            Integer[] var4 = DimensionManager.getIDs();
+            int var5 = var4.length;
 
-                if (this.field_79017_e.worldServer[var3] != null && this.field_79017_e.worldServer[var3].chunkProviderServer != null)
+            for (int var6 = 0; var6 < var5; ++var6)
+            {
+                Integer var7 = var4[var6];
+                this.d[5 + var3] = "Lvl " + var7 + " tick: " + field_79020_a.format(this.func_79015_a((long[])this.field_79017_e.worldTickTimes.get(var7)) * 1.0E-6D) + " ms";
+                WorldServer var8 = DimensionManager.getWorld(var7.intValue());
+
+                if (var8 != null && var8.chunkProviderServer != null)
                 {
-                    this.d[5 + var3] = this.d[5 + var3] + ", " + this.field_79017_e.worldServer[var3].chunkProviderServer.getName();
-                    this.d[5 + var3] = this.d[5 + var3] + ", Vec3: " + this.field_79017_e.worldServer[var3].getVec3DPool().func_82590_d() + " / " + this.field_79017_e.worldServer[var3].getVec3DPool().func_82591_c();
+                    this.d[5 + var3] = this.d[5 + var3] + ", " + var8.chunkProviderServer.getName();
+                    this.d[5 + var3] = this.d[5 + var3] + ", Vec3: " + var8.getVec3DPool().func_82590_d() + " / " + var8.getVec3DPool().func_82591_c();
                 }
+
+                ++var3;
             }
         }
 

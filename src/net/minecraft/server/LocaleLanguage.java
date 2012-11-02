@@ -1,5 +1,8 @@
 package net.minecraft.server;
 
+import cpw.mods.fml.common.Side;
+import cpw.mods.fml.common.asm.SideOnly;
+import cpw.mods.fml.common.registry.LanguageRegistry;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -17,9 +20,9 @@ public class LocaleLanguage
      * Contains all key/value pairs to be translated - is loaded from '/lang/en_US.lang' when the StringTranslate is
      * created.
      */
-    private Properties b = new Properties();
+    public Properties b = new Properties();
     private TreeMap c;
-    private String d;
+    public String d;
     private boolean e;
 
     public LocaleLanguage(String var1)
@@ -69,7 +72,7 @@ public class LocaleLanguage
         return this.c;
     }
 
-    private void a(Properties var1, String var2)
+    private void a(Properties var1, String var2) throws IOException
     {
         BufferedReader var3 = new BufferedReader(new InputStreamReader(LocaleLanguage.class.getResourceAsStream("/lang/" + var2 + ".lang"), "UTF-8"));
 
@@ -87,6 +90,8 @@ public class LocaleLanguage
                 }
             }
         }
+
+        LanguageRegistry.instance().loadLanguageTable(var1, var2);
     }
 
     public void a(String var1)
@@ -145,6 +150,17 @@ public class LocaleLanguage
         }
     }
 
+    public String c()
+    {
+        return this.d;
+    }
+
+    @SideOnly(Side.CLIENT)
+    public boolean d()
+    {
+        return this.e;
+    }
+
     /**
      * Translate a key to current language.
      */
@@ -173,5 +189,11 @@ public class LocaleLanguage
     public String func_74809_c(String var1)
     {
         return this.b.getProperty(var1 + ".name", "");
+    }
+
+    @SideOnly(Side.CLIENT)
+    public static boolean e(String var0)
+    {
+        return "ar_SA".equals(var0) || "he_IL".equals(var0);
     }
 }

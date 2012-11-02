@@ -1,5 +1,9 @@
 package net.minecraft.server;
 
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+
 public class MobEffect
 {
     /** ID value of the potion this effect matches. */
@@ -12,6 +16,7 @@ public class MobEffect
     private int amplification;
     private boolean field_82723_d;
     private boolean field_82724_e;
+    private List curativeItems;
 
     public MobEffect(int var1, int var2)
     {
@@ -29,6 +34,8 @@ public class MobEffect
         this.duration = var2;
         this.amplification = var3;
         this.field_82724_e = var4;
+        this.curativeItems = new ArrayList();
+        this.curativeItems.add(new ItemStack(Item.MILK_BUCKET));
     }
 
     public MobEffect(MobEffect var1)
@@ -36,6 +43,7 @@ public class MobEffect
         this.effectId = var1.effectId;
         this.duration = var1.duration;
         this.amplification = var1.amplification;
+        this.curativeItems = var1.getCurativeItems();
     }
 
     /**
@@ -80,6 +88,55 @@ public class MobEffect
     public int getAmplifier()
     {
         return this.amplification;
+    }
+
+    public List getCurativeItems()
+    {
+        return this.curativeItems;
+    }
+
+    public boolean isCurativeItem(ItemStack var1)
+    {
+        boolean var2 = false;
+        Iterator var3 = this.curativeItems.iterator();
+
+        while (var3.hasNext())
+        {
+            ItemStack var4 = (ItemStack)var3.next();
+
+            if (var4.doMaterialsMatch(var1))
+            {
+                var2 = true;
+            }
+        }
+
+        return var2;
+    }
+
+    public void setCurativeItems(List var1)
+    {
+        this.curativeItems = var1;
+    }
+
+    public void addCurativeItem(ItemStack var1)
+    {
+        boolean var2 = false;
+        Iterator var3 = this.curativeItems.iterator();
+
+        while (var3.hasNext())
+        {
+            ItemStack var4 = (ItemStack)var3.next();
+
+            if (var4.doMaterialsMatch(var1))
+            {
+                var2 = true;
+            }
+        }
+
+        if (!var2)
+        {
+            this.curativeItems.add(var1);
+        }
     }
 
     /**

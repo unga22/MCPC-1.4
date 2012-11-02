@@ -1,7 +1,9 @@
 package net.minecraft.server;
 
+import cpw.mods.fml.common.network.FMLNetworkHandler;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.IOException;
 
 public class Packet1Login extends Packet
 {
@@ -22,8 +24,12 @@ public class Packet1Login extends Packet
 
     /** The maximum players. */
     public byte h;
+    private boolean vanillaCompatible;
 
-    public Packet1Login() {}
+    public Packet1Login()
+    {
+        this.vanillaCompatible = FMLNetworkHandler.vanillaLoginPacketCompatibility();
+    }
 
     public Packet1Login(int var1, WorldType var2, EnumGamemode var3, boolean var4, int var5, int var6, int var7, int var8)
     {
@@ -35,12 +41,13 @@ public class Packet1Login extends Packet
         this.g = (byte)var7;
         this.h = (byte)var8;
         this.field_73560_c = var4;
+        this.vanillaCompatible = false;
     }
 
     /**
      * Abstract. Reads the raw packet data from the data stream.
      */
-    public void a(DataInputStream var1)
+    public void a(DataInputStream var1) throws IOException
     {
         this.a = var1.readInt();
         String var2 = a(var1, 16);
@@ -55,7 +62,16 @@ public class Packet1Login extends Packet
         this.field_73560_c = (var3 & 8) == 8;
         int var4 = var3 & -9;
         this.d = EnumGamemode.a(var4);
-        this.e = var1.readByte();
+
+        if (this.vanillaCompatible)
+        {
+            this.e = var1.readByte();
+        }
+        else
+        {
+            this.e = var1.readInt();
+        }
+
         this.f = var1.readByte();
         this.g = var1.readByte();
         this.h = var1.readByte();
@@ -64,7 +80,7 @@ public class Packet1Login extends Packet
     /**
      * Abstract. Writes the raw packet data to the data stream.
      */
-    public void a(DataOutputStream var1)
+    public void a(DataOutputStream var1) throws IOException
     {
         var1.writeInt(this.a);
         a(this.b == null ? "" : this.b.name(), var1);
@@ -76,7 +92,16 @@ public class Packet1Login extends Packet
         }
 
         var1.writeByte(var2);
-        var1.writeByte(this.e);
+
+        if (this.vanillaCompatible)
+        {
+            var1.writeByte(this.e);
+        }
+        else
+        {
+            var1.writeInt(this.e);
+        }
+
         var1.writeByte(this.f);
         var1.writeByte(this.g);
         var1.writeByte(this.h);
@@ -102,6 +127,6 @@ public class Packet1Login extends Packet
             var1 = this.b.name().length();
         }
 
-        return 6 + 2 * var1 + 4 + 4 + 1 + 1 + 1;
+        return 6 + 2 * var1 + 4 + 4 + 1 + 1 + 1 + (this.vanillaCompatible ? 0 : 3);
     }
 }

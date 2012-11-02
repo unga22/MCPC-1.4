@@ -6,14 +6,22 @@ public class WorldGenMinable extends WorldGenerator
 {
     /** The block ID of the ore to be placed using this generator. */
     private int a;
+    private int minableBlockMeta;
 
     /** The number of blocks to generate. */
     private int b;
 
     public WorldGenMinable(int var1, int var2)
     {
+        this.minableBlockMeta = 0;
         this.a = var1;
         this.b = var2;
+    }
+
+    public WorldGenMinable(int var1, int var2, int var3)
+    {
+        this(var1, var3);
+        this.minableBlockMeta = var2;
     }
 
     public boolean a(World var1, Random var2, int var3, int var4, int var5)
@@ -56,10 +64,11 @@ public class WorldGenMinable extends WorldGenerator
                             for (int var44 = var34; var44 <= var37; ++var44)
                             {
                                 double var45 = ((double)var44 + 0.5D - var24) / (var28 / 2.0D);
+                                Block var47 = Block.byId[var1.getTypeId(var38, var41, var44)];
 
-                                if (var39 * var39 + var42 * var42 + var45 * var45 < 1.0D && var1.getTypeId(var38, var41, var44) == Block.STONE.id)
+                                if (var39 * var39 + var42 * var42 + var45 * var45 < 1.0D && var47 != null && var47.isGenMineableReplaceable(var1, var38, var41, var44))
                                 {
-                                    var1.setRawTypeId(var38, var41, var44, this.a);
+                                    var1.setRawTypeIdAndData(var38, var41, var44, this.a, this.minableBlockMeta);
                                 }
                             }
                         }

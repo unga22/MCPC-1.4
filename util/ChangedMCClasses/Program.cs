@@ -14,14 +14,16 @@ namespace ChangedMCClasses
 
 
         static string bukkitSource = @"D:\Git\CraftBukkit\src\main\java\net\minecraft\server"; // From Bukkit Github
-        static string secondBukkitSource = @"D:\Git\MCP 7 - clean\src\minecraft_server\net\minecraft\server"; // Decompiled forge from 6.0 universal using Bukkit mappings
-        static string forgeSource = @"D:\Git\MCP 7 - clean\src\minecraft_server\net\minecraft\server";
+        static string secondBukkitSource = @"D:\Git\MCP-generated sources\minecraft_server and forge univ 6\net\minecraft\server"; // Decompiled forge from 6.0 universal using Bukkit mappings
+        static string forgeSource = @"D:\Git\MCP-generated sources\minecraft_server and forge univ 6\net\minecraft\server";
         static string oldFilesSource = @"D:\Git\craftbukkit-1.2.5-R5.0-MCPC-SNAPSHOT-183.src\net\minecraft\server";
+        static string origMCFiles = @"D:\Git\MCP-generated sources\minecraft_server orig\net\minecraft\server";
 
         static string workFolder = @"D:\Git\MCPC-1.4\src\net\minecraft\server"; // Copy bukkit files here which need to be changed (e.g. theres a forge patch for it)
         static string targetPatches = @"D:\Git\MCPC-1.4\patches_to_bukkit"; // Copy patches with bukkit class names here
-        static string forgeFilesDest = @"D:\Git\MCPC-1.4\patches_to_bukkit";
+        static string forgeFilesDest = @"D:\Git\MCPC-1.4\patches_to_bukkit\diff\forge";
         static string oldFilesDest = @"D:\Git\MCPC-1.4\patches_to_bukkit";
+        static string origFilesDest = @"D:\Git\MCPC-1.4\patches_to_bukkit\diff\orig";
 
         static List<Mapping> mappings = new List<Mapping>();
         static List<Mapping> done_mappings = new List<Mapping>();
@@ -39,7 +41,7 @@ namespace ChangedMCClasses
 
         static void ListPatchesInBukkit()
         {
-            foreach (string f in Directory.GetFiles(targetPatches))
+            foreach (string f in Directory.GetFiles(targetPatches, "*", SearchOption.AllDirectories))
                 File.Delete(f);
 
             CreateMappings();
@@ -99,11 +101,16 @@ namespace ChangedMCClasses
                 bukkitSourceFile = Path.Combine(secondBukkitSource, cleanPacket(map.Bukkit) + ".java");
 
             string forgeFile = Path.Combine(forgeSource, cleanPacket(map.Bukkit) + ".java");
-            File.Copy(forgeFile, Path.Combine(forgeFilesDest, formatIfForge(cleanPacket(map.Bukkit), isBukkitChanged) + ".forge.java"));
+            if (File.Exists(forgeFile) && isBukkitChanged)
+                File.Copy(forgeFile, Path.Combine(forgeFilesDest, formatIfForge(cleanPacket(map.Bukkit), isBukkitChanged) + ".java"));
 
             string oldFile = Path.Combine(oldFilesSource, cleanPacket(map.Bukkit) + ".java");
             if (File.Exists(oldFile))
-                File.Copy(forgeFile, Path.Combine(oldFilesDest, formatIfForge(cleanPacket(map.Bukkit), isBukkitChanged) + ".old.java"));
+                File.Copy(oldFile, Path.Combine(oldFilesDest, formatIfForge(cleanPacket(map.Bukkit), isBukkitChanged) + ".old.java"));
+
+            string origFile = Path.Combine(origMCFiles, cleanPacket(map.Bukkit) + ".java");
+            if (File.Exists(origFile) && isBukkitChanged)
+                File.Copy(origFile, Path.Combine(origFilesDest, formatIfForge(cleanPacket(map.Bukkit), isBukkitChanged) + ".java"));
 
             File.Copy(bukkitSourceFile, destinationSourceFile, true);
 

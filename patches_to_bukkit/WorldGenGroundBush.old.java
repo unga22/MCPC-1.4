@@ -1,56 +1,69 @@
 package net.minecraft.server;
 
 import java.util.Random;
+import org.bukkit.BlockChangeDelegate;
 
 public class WorldGenGroundBush extends WorldGenerator
+  implements BlockSapling.TreeGenerator
 {
-    private int field_76527_a;
-    private int field_76526_b;
+  private int a;
+  private int b;
 
-    public WorldGenGroundBush(int var1, int var2)
+  public WorldGenGroundBush(int i, int j)
+  {
+    this.b = i;
+    this.a = j;
+  }
+
+  public boolean a(World world, Random random, int i, int j, int k)
+  {
+    return generate((BlockChangeDelegate)world, random, i, j, k);
+  }
+
+  public boolean generate(BlockChangeDelegate world, Random random, int i, int j, int k)
+  {
+    Block block = null;
+    do
     {
-        this.field_76526_b = var1;
-        this.field_76527_a = var2;
+      block = Block.byId[world.getTypeId(i, j, k)];
+      if ((block != null) && (!block.isLeaves(world, i, j, k)))
+      {
+        break;
+      }
+      j--;
+    }
+    while (j > 0);
+
+    int i1 = world.getTypeId(i, j, k);
+
+    if ((i1 == Block.DIRT.id) || (i1 == Block.GRASS.id)) {
+      j++;
+      setTypeAndData(world, i, j, k, Block.LOG.id, this.b);
+
+      for (int j1 = j; j1 <= j + 2; j1++) {
+        int k1 = j1 - j;
+        int l1 = 2 - k1;
+
+        for (int i2 = i - l1; i2 <= i + l1; i2++) {
+          int j2 = i2 - i;
+
+          for (int k2 = k - l1; k2 <= k + l1; k2++) {
+            int l2 = k2 - k;
+
+            Block bl = Block.byId[world.getTypeId(i2, j1, k2)];
+
+            if (((Math.abs(j2) != l1) || (Math.abs(l2) != l1) || (random.nextInt(2) != 0)) && ((bl == null) || (bl.canBeReplacedByLeaves(world, i2, j1, k2))))
+              setTypeAndData(world, i2, j1, k2, Block.LEAVES.id, this.a);
+          }
+        }
+      }
+    }
+    else
+    {
+      return false;
     }
 
-    public boolean a(World var1, Random var2, int var3, int var4, int var5)
-    {
-        int var15;
-
-        for (boolean var6 = false; ((var15 = var1.getTypeId(var3, var4, var5)) == 0 || var15 == Block.LEAVES.id) && var4 > 0; --var4)
-        {
-            ;
-        }
-
-        int var7 = var1.getTypeId(var3, var4, var5);
-
-        if (var7 == Block.DIRT.id || var7 == Block.GRASS.id)
-        {
-            ++var4;
-            this.setTypeAndData(var1, var3, var4, var5, Block.LOG.id, this.field_76526_b);
-
-            for (int var8 = var4; var8 <= var4 + 2; ++var8)
-            {
-                int var9 = var8 - var4;
-                int var10 = 2 - var9;
-
-                for (int var11 = var3 - var10; var11 <= var3 + var10; ++var11)
-                {
-                    int var12 = var11 - var3;
-
-                    for (int var13 = var5 - var10; var13 <= var5 + var10; ++var13)
-                    {
-                        int var14 = var13 - var5;
-
-                        if ((Math.abs(var12) != var10 || Math.abs(var14) != var10 || var2.nextInt(2) != 0) && !Block.q[var1.getTypeId(var11, var8, var13)])
-                        {
-                            this.setTypeAndData(var1, var11, var8, var13, Block.LEAVES.id, this.field_76527_a);
-                        }
-                    }
-                }
-            }
-        }
-
-        return true;
-    }
+    return true;
+  }
 }
+

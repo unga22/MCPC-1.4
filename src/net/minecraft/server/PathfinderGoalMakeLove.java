@@ -1,5 +1,7 @@
 package net.minecraft.server;
 
+import cpw.mods.fml.common.registry.VillagerRegistry;
+
 public class PathfinderGoalMakeLove extends PathfinderGoal
 {
     private EntityVillager b;
@@ -126,7 +128,7 @@ public class PathfinderGoalMakeLove extends PathfinderGoal
         this.c.setAge(6000);
         this.b.setAge(6000);
         var1.setAge(-24000);
-        var1.setProfession(this.b.aA().nextInt(5));
+        VillagerRegistry.applyRandomTrade(var1, this.b.aA());
         var1.setPositionRotation(this.b.locX, this.b.locY, this.b.locZ, 0.0F, 0.0F);
         this.d.addEntity(var1);
         this.d.broadcastEntityEffect(var1, (byte)12);

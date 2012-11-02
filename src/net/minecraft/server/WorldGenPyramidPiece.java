@@ -1,13 +1,14 @@
 package net.minecraft.server;
 
 import java.util.Random;
+import net.minecraftforge.common.ChestGenHooks;
 
 public class WorldGenPyramidPiece extends WorldGenScatteredPiece
 {
     private boolean[] field_74940_h = new boolean[4];
 
     /** List of items to generate in chests of Temples. */
-    private static final StructurePieceTreasure[] i = new StructurePieceTreasure[] {new StructurePieceTreasure(Item.DIAMOND.id, 0, 1, 3, 3), new StructurePieceTreasure(Item.IRON_INGOT.id, 0, 1, 5, 10), new StructurePieceTreasure(Item.GOLD_INGOT.id, 0, 2, 7, 15), new StructurePieceTreasure(Item.EMERALD.id, 0, 1, 3, 2), new StructurePieceTreasure(Item.BONE.id, 0, 4, 6, 20), new StructurePieceTreasure(Item.ROTTEN_FLESH.id, 0, 3, 7, 16)};
+    public static final StructurePieceTreasure[] i = new StructurePieceTreasure[] {new StructurePieceTreasure(Item.DIAMOND.id, 0, 1, 3, 3), new StructurePieceTreasure(Item.IRON_INGOT.id, 0, 1, 5, 10), new StructurePieceTreasure(Item.GOLD_INGOT.id, 0, 2, 7, 15), new StructurePieceTreasure(Item.EMERALD.id, 0, 1, 3, 2), new StructurePieceTreasure(Item.BONE.id, 0, 4, 6, 20), new StructurePieceTreasure(Item.ROTTEN_FLESH.id, 0, 3, 7, 16)};
 
     public WorldGenPyramidPiece(Random var1, int var2, int var3)
     {
@@ -216,7 +217,7 @@ public class WorldGenPyramidPiece extends WorldGenScatteredPiece
             {
                 int var11 = Direction.a[var10] * 2;
                 int var12 = Direction.b[var10] * 2;
-                this.field_74940_h[var10] = this.a(var1, var3, var2, 10 + var11, -11, 10 + var12, i, 2 + var2.nextInt(5));
+                this.field_74940_h[var10] = this.a(var1, var3, var2, 10 + var11, -11, 10 + var12, ChestGenHooks.getItems("pyramidDesertyChest"), ChestGenHooks.getCount("pyramidDesertyChest", var2));
             }
         }
 

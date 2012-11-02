@@ -1,5 +1,8 @@
 package net.minecraft.server;
 
+import cpw.mods.fml.common.Side;
+import cpw.mods.fml.common.asm.SideOnly;
+import java.util.List;
 import java.util.Random;
 
 public class Item
@@ -129,7 +132,7 @@ public class Item
     public static Item ROTTEN_FLESH = (new ItemFood(111, 4, 0.1F, true)).a(MobEffectList.HUNGER.id, 30, 0, 0.8F).b(11, 5).b("rottenFlesh");
     public static Item ENDER_PEARL = (new ItemEnderPearl(112)).b(11, 6).b("enderPearl");
     public static Item BLAZE_ROD = (new Item(113)).b(12, 6).b("blazeRod").a(CreativeModeTab.l);
-    public static Item GHAST_TEAR = (new Item(114)).b(11, 7).b("ghastTear").c(PotionBrewer.c).a(CreativeModeTab.k);
+    public static Item GHAST_TEAR = (new Item(114)).b(11, 7).b("ghastTear").c("+0-1-2-3&4-4+13").a(CreativeModeTab.k);
     public static Item GOLD_NUGGET = (new Item(115)).b(12, 7).b("goldNugget").a(CreativeModeTab.l);
     public static Item NETHER_STALK = (new ItemSeeds(116, Block.NETHER_WART.id, Block.SOUL_SAND.id)).b(13, 7).b("netherStalkSeeds").c("+4");
     public static ItemPotion POTION = (ItemPotion)(new ItemPotion(117)).b(13, 8).b("potion");
@@ -208,6 +211,9 @@ public class Item
 
     /** full name of item from language file */
     private String name;
+    protected boolean canRepair = true;
+    public boolean isDefaultTexture = true;
+    private String currentTexture = "/gui/items.png";
 
     protected Item(int var1)
     {
@@ -215,10 +221,15 @@ public class Item
 
         if (byId[256 + var1] != null)
         {
-            System.out.println("CONFLICT @ " + var1);
+            System.out.println("CONFLICT @ " + var1 + " item slot already occupied by " + byId[256 + var1] + " while adding " + this);
         }
 
         byId[256 + var1] = this;
+
+        if (!(this instanceof ItemBlock))
+        {
+            this.isDefaultTexture = "/gui/items.png".equals(this.getTextureFile());
+        }
     }
 
     /**
@@ -240,6 +251,18 @@ public class Item
     {
         this.textureId = var1 + var2 * 16;
         return this;
+    }
+
+    @SideOnly(Side.CLIENT)
+    public int b(int var1)
+    {
+        return this.textureId;
+    }
+
+    @SideOnly(Side.CLIENT)
+    public final int f(ItemStack var1)
+    {
+        return this.b(var1.getData());
     }
 
     /**
@@ -311,7 +334,7 @@ public class Item
     /**
      * set max damage of an Item
      */
-    protected Item setMaxDurability(int var1)
+    public Item setMaxDurability(int var1)
     {
         this.durability = var1;
         return this;
@@ -367,6 +390,18 @@ public class Item
     {
         this.ci = true;
         return this;
+    }
+
+    @SideOnly(Side.CLIENT)
+    public boolean n_()
+    {
+        return this.ci;
+    }
+
+    @SideOnly(Side.CLIENT)
+    public boolean o_()
+    {
+        return false;
     }
 
     /**
@@ -440,6 +475,12 @@ public class Item
         return LocaleI18n.get(this.c_(var1) + ".name");
     }
 
+    @SideOnly(Side.CLIENT)
+    public int a(ItemStack var1, int var2)
+    {
+        return 16777215;
+    }
+
     /**
      * Called each tick as long the item is on a player inventory. Uses by maps to check if is on a player hand and
      * update it's contents.
@@ -505,9 +546,24 @@ public class Item
         return this.ck != null;
     }
 
+    @SideOnly(Side.CLIENT)
+    public void a(ItemStack var1, EntityHuman var2, List var3, boolean var4) {}
+
     public String func_77628_j(ItemStack var1)
     {
         return ("" + LocaleLanguage.a().func_74809_c(this.func_77657_g(var1))).trim();
+    }
+
+    @SideOnly(Side.CLIENT)
+    public boolean d(ItemStack var1)
+    {
+        return var1.hasEnchantments();
+    }
+
+    @SideOnly(Side.CLIENT)
+    public uf e(ItemStack var1)
+    {
+        return var1.hasEnchantments() ? uf.c : uf.a;
     }
 
     /**
@@ -532,10 +588,16 @@ public class Item
         float var16 = -MathHelper.cos(-var5 * 0.017453292F);
         float var17 = MathHelper.sin(-var5 * 0.017453292F);
         float var18 = var15 * var16;
-        float var20 = var14 * var16;
-        double var21 = 5.0D;
-        Vec3D var23 = var13.add((double)var18 * var21, (double)var17 * var21, (double)var20 * var21);
-        return var1.rayTrace(var13, var23, var3, !var3);
+        float var19 = var14 * var16;
+        double var20 = 5.0D;
+
+        if (var2 instanceof EntityPlayer)
+        {
+            var20 = ((EntityPlayer)var2).itemInWorldManager.getBlockReachDistance();
+        }
+
+        Vec3D var22 = var13.add((double)var18 * var20, (double)var17 * var20, (double)var19 * var20);
+        return var1.rayTrace(var13, var22, var3, !var3);
     }
 
     /**
@@ -546,6 +608,24 @@ public class Item
         return 0;
     }
 
+    @SideOnly(Side.CLIENT)
+    public boolean b()
+    {
+        return false;
+    }
+
+    @SideOnly(Side.CLIENT)
+    public int a(int var1, int var2)
+    {
+        return this.b(var1);
+    }
+
+    @SideOnly(Side.CLIENT)
+    public void a(int var1, CreativeModeTab var2, List var3)
+    {
+        var3.add(new ItemStack(var1, 1, 0));
+    }
+
     /**
      * returns this;
      */
@@ -553,6 +633,12 @@ public class Item
     {
         this.a = var1;
         return this;
+    }
+
+    @SideOnly(Side.CLIENT)
+    public CreativeModeTab w()
+    {
+        return this.a;
     }
 
     public boolean func_82788_x()
@@ -566,6 +652,91 @@ public class Item
     public boolean a(ItemStack var1, ItemStack var2)
     {
         return false;
+    }
+
+    public boolean onDroppedByPlayer(ItemStack var1, EntityHuman var2)
+    {
+        return true;
+    }
+
+    public boolean onItemUseFirst(ItemStack var1, EntityHuman var2, World var3, int var4, int var5, int var6, int var7, float var8, float var9, float var10)
+    {
+        return this.onItemUseFirst(var1, var2, var3, var4, var5, var6, var7);
+    }
+
+    @Deprecated
+    public boolean onItemUseFirst(ItemStack var1, EntityHuman var2, World var3, int var4, int var5, int var6, int var7)
+    {
+        return false;
+    }
+
+    public float getStrVsBlock(ItemStack var1, Block var2, int var3)
+    {
+        return this.getDestroySpeed(var1, var2);
+    }
+
+    public boolean isRepairable()
+    {
+        return this.canRepair && this.n();
+    }
+
+    public Item setNoRepair()
+    {
+        this.canRepair = false;
+        return this;
+    }
+
+    public boolean onBlockStartBreak(ItemStack var1, int var2, int var3, int var4, EntityHuman var5)
+    {
+        return false;
+    }
+
+    public void onUsingItemTick(ItemStack var1, EntityHuman var2, int var3) {}
+
+    public boolean onLeftClickEntity(ItemStack var1, EntityHuman var2, Entity var3)
+    {
+        return false;
+    }
+
+    public int getIconIndex(ItemStack var1, int var2, EntityHuman var3, ItemStack var4, int var5)
+    {
+        return this.f(var1);
+    }
+
+    public int getRenderPasses(int var1)
+    {
+        return this.b() ? 2 : 1;
+    }
+
+    public String getTextureFile()
+    {
+        return this instanceof ItemBlock ? Block.byId[((ItemBlock)this).g()].getTextureFile() : this.currentTexture;
+    }
+
+    public void setTextureFile(String var1)
+    {
+        this.currentTexture = var1;
+        this.isDefaultTexture = false;
+    }
+
+    public ItemStack getContainerItemStack(ItemStack var1)
+    {
+        return !this.s() ? null : new ItemStack(this.r());
+    }
+
+    public int getEntityLifespan(ItemStack var1, World var2)
+    {
+        return 6000;
+    }
+
+    public boolean hasCustomEntity(ItemStack var1)
+    {
+        return false;
+    }
+
+    public Entity createEntity(World var1, Entity var2, ItemStack var3)
+    {
+        return null;
     }
 
     static

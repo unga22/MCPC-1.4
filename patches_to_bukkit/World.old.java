@@ -1,3631 +1,2877 @@
 package net.minecraft.server;
 
+import forge.ForgeHooks;
+import java.io.PrintStream;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
+import java.util.TreeSet;
+import java.util.UUID;
+import org.bukkit.Bukkit;
+import org.bukkit.Location;
+import org.bukkit.World.Environment;
+import org.bukkit.block.BlockState;
+import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.CraftWorld;
+import org.bukkit.craftbukkit.event.CraftEventFactory;
+import org.bukkit.craftbukkit.util.LongHash;
+import org.bukkit.craftbukkit.util.LongHashset;
+import org.bukkit.craftbukkit.util.UnsafeList;
+import org.bukkit.entity.Projectile;
+import org.bukkit.event.Cancellable;
+import org.bukkit.event.block.BlockCanBuildEvent;
+import org.bukkit.event.block.BlockFormEvent;
+import org.bukkit.event.block.BlockPhysicsEvent;
+import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
+import org.bukkit.event.weather.ThunderChangeEvent;
+import org.bukkit.event.weather.WeatherChangeEvent;
+import org.bukkit.generator.ChunkGenerator;
+import org.bukkit.plugin.PluginManager;
 
-public abstract class World implements IBlockAccess
+public class World
+  implements IBlockAccess
 {
-    /**
-     * boolean; if true updates scheduled by scheduleBlockUpdate happen immediately
-     */
-    public boolean d = false;
+  public static double MAX_ENTITY_RADIUS = 2.0D;
 
-    /** A list of all Entities in all currently-loaded chunks */
-    public List entityList = new ArrayList();
-    protected List f = new ArrayList();
+  public boolean a = false;
+  public List entityList = new ArrayList();
+  private List G = new ArrayList();
+  private TreeSet H = new TreeSet();
+  private Set I = new HashSet();
+  public List tileEntityList = new ArrayList();
+  private List J = new ArrayList();
+  private List K = new ArrayList();
+  public List players = new ArrayList();
+  public UnsafeList e = new UnsafeList();
+  private long L = 16777215L;
+  public int f = 0;
+  protected int g = new Random().nextInt();
+  protected final int h = 1013904223;
+  protected float i;
+  protected float j;
+  protected float k;
+  protected float l;
+  protected int m = 0;
+  public int n = 0;
+  public boolean suppressPhysics = false;
+  private long M = System.currentTimeMillis();
+  public int p = 40;
+  public int difficulty;
+  public Random random = new Random();
+  public boolean s = false;
+  public WorldProvider worldProvider;
+  protected List u = new ArrayList();
+  public IChunkProvider chunkProvider;
+  protected final IDataManager dataManager;
+  public WorldData worldData;
+  public boolean isLoading;
+  private boolean N;
+  public WorldMapCollection worldMaps;
+  public final VillageCollection villages = new VillageCollection(this);
+  private final VillageSiege O = new VillageSiege(this);
+  private ArrayList P = new ArrayList();
+  private boolean Q;
+  public boolean allowMonsters = true;
+  public boolean allowAnimals = true;
+  private LongHashset chunkTickList;
+  public long ticksPerAnimalSpawns;
+  public long ticksPerMonsterSpawns;
+  private int R;
+  int[] E;
+  private List S;
+  public boolean isStatic;
+  private final CraftWorld world;
+  public boolean pvpMode;
+  public boolean keepSpawnInMemory = true;
+  public ChunkGenerator generator;
+  Chunk lastChunkAccessed;
+  int lastXAccessed = -2147483648;
+  int lastZAccessed = -2147483648;
+  final Object chunkLock = new Object();
 
-    /** A list of all TileEntities in all currently-loaded chunks */
-    public List tileEntityList = new ArrayList();
-    private List a = new ArrayList();
+  public BiomeBase getBiome(int i, int j)
+  {
+    if (isLoaded(i, 0, j)) {
+      Chunk chunk = getChunkAtWorldCoords(i, j);
 
-    /** Entities marked for removal. */
-    private List b = new ArrayList();
-
-    /** Array list of players in the world. */
-    public List players = new ArrayList();
-
-    /** a list of all the lightning entities */
-    public List i = new ArrayList();
-    private long c = 16777215L;
-
-    /** How much light is subtracted from full daylight */
-    public int j = 0;
-
-    /**
-     * Contains the current Linear Congruential Generator seed for block updates. Used with an A value of 3 and a C
-     * value of 0x3c6ef35f, producing a highly planar series of values ill-suited for choosing random blocks in a
-     * 16x128x16 field.
-     */
-    protected int k = (new Random()).nextInt();
-
-    /**
-     * magic number used to generate fast random numbers for 3d distribution within a chunk
-     */
-    protected final int l = 1013904223;
-    protected float m;
-    protected float n;
-    protected float o;
-    protected float p;
-
-    /**
-     * Set to 2 whenever a lightning bolt is generated in SSP. Decrements if > 0 in updateWeather(). Value appears to be
-     * unused.
-     */
-    protected int q = 0;
-
-    /**
-     * If > 0, the sky and skylight colors are illuminated by a lightning flash
-     */
-    public int r = 0;
-
-    /** true while the server is editing blocks */
-    public boolean suppressPhysics = false;
-
-    /** Whether monsters are enabled or not. (1 = on, 0 = off) */
-    public int difficulty;
-
-    /** RNG for World. */
-    public Random random = new Random();
-
-    /** The WorldProvider instance that World uses. */
-    public final WorldProvider worldProvider;
-    protected List w = new ArrayList();
-
-    /** Handles chunk operations and caching */
-    protected IChunkProvider chunkProvider;
-    protected final IDataManager dataManager;
-
-    /**
-     * holds information about a world (size on disk, time, spawn point, seed, ...)
-     */
-    protected WorldData worldData;
-
-    /**
-     * if set, this flag forces a request to load a chunk to load the chunk rather than defaulting to the world's
-     * chunkprovider's dummy if possible
-     */
-    public boolean isLoading;
-    public WorldMapCollection worldMaps;
-    public final VillageCollection villages;
-    protected final VillageSiege siegeManager = new VillageSiege(this);
-    public final MethodProfiler methodProfiler;
-    private final Vec3DPool field_82741_K = new Vec3DPool(300, 2000);
-    private final Calendar L = Calendar.getInstance();
-    private ArrayList M = new ArrayList();
-    private boolean N;
-
-    /** indicates if enemies are spawned or not */
-    protected boolean allowMonsters = true;
-
-    /** A flag indicating whether we should spawn peaceful mobs. */
-    protected boolean allowAnimals = true;
-
-    /** populated by chunks that are within 9 chunks of any player */
-    protected Set chunkTickList = new HashSet();
-
-    /** number of ticks until the next random ambients play */
-    private int O;
-
-    /**
-     * is a temporary list of blocks and light values used when updating light levels. Holds up to 32x32x32 blocks (the
-     * maximum influence of a light source.) Every element is a packed bit value: 0000000000LLLLzzzzzzyyyyyyxxxxxx. The
-     * 4-bit L is a light level used when darkening blocks. 6-bit numbers x, y and z represent the block's offset from
-     * the original block, plus 32 (i.e. value of 31 would mean a -1 offset
-     */
-    int[] I;
-
-    /**
-     * entities within AxisAlignedBB excluding one, set and returned in getEntitiesWithinAABBExcludingEntity(Entity
-     * var1, AxisAlignedBB var2)
-     */
-    private List P;
-
-    /**
-     * This is set to true when you are a client connected to a multiplayer world, false otherwise.
-     */
-    public boolean isStatic;
-
-    /**
-     * Gets the biome for a given set of x/z coordinates
-     */
-    public BiomeBase getBiome(int var1, int var2)
-    {
-        if (this.isLoaded(var1, 0, var2))
-        {
-            Chunk var3 = this.getChunkAtWorldCoords(var1, var2);
-
-            if (var3 != null)
-            {
-                return var3.a(var1 & 15, var2 & 15, this.worldProvider.d);
-            }
-        }
-
-        return this.worldProvider.d.a(var1, var2);
+      if (chunk != null) {
+        return chunk.a(i & 0xF, j & 0xF, this.worldProvider.c);
+      }
     }
 
-    public WorldChunkManager getWorldChunkManager()
-    {
-        return this.worldProvider.d;
+    return this.worldProvider.c.getBiome(i, j);
+  }
+
+  public WorldChunkManager getWorldChunkManager() {
+    return this.worldProvider.c;
+  }
+
+  private boolean canSpawn(int x, int z)
+  {
+    if (this.generator != null) {
+      return this.generator.canSpawn(getWorld(), x, z);
+    }
+    return this.worldProvider.canSpawn(x, z);
+  }
+
+  public CraftWorld getWorld()
+  {
+    return this.world;
+  }
+
+  public CraftServer getServer() {
+    return (CraftServer)Bukkit.getServer();
+  }
+
+  public World(IDataManager idatamanager, String s, WorldSettings worldsettings, WorldProvider worldprovider, ChunkGenerator gen, World.Environment env)
+  {
+    this.generator = gen;
+    this.world = new CraftWorld((WorldServer)this, gen, env);
+
+    this.chunkTickList = new LongHashset();
+    this.ticksPerAnimalSpawns = getServer().getTicksPerAnimalSpawns();
+    this.ticksPerMonsterSpawns = getServer().getTicksPerMonsterSpawns();
+    this.R = this.random.nextInt(12000);
+    this.E = new int[32768];
+    this.S = new ArrayList();
+    this.isStatic = false;
+    this.dataManager = idatamanager;
+    this.worldMaps = new WorldMapCollection(idatamanager);
+    this.worldData = idatamanager.getWorldData();
+    this.s = (this.worldData == null);
+    if (worldprovider != null)
+      this.worldProvider = worldprovider;
+    else if ((this.worldData != null) && (this.worldData.g() != 0))
+      this.worldProvider = WorldProvider.byDimension(this.worldData.g());
+    else {
+      this.worldProvider = WorldProvider.byDimension(0);
     }
 
-    public World(IDataManager var1, String var2, WorldSettings var3, WorldProvider var4, MethodProfiler var5)
-    {
-        this.O = this.random.nextInt(12000);
-        this.I = new int[32768];
-        this.P = new ArrayList();
-        this.isStatic = false;
-        this.dataManager = var1;
-        this.methodProfiler = var5;
-        this.worldMaps = new WorldMapCollection(var1);
-        this.worldData = var1.getWorldData();
+    boolean flag = false;
 
-        if (var4 != null)
-        {
-            this.worldProvider = var4;
-        }
-        else if (this.worldData != null && this.worldData.j() != 0)
-        {
-            this.worldProvider = WorldProvider.byDimension(this.worldData.j());
-        }
-        else
-        {
-            this.worldProvider = WorldProvider.byDimension(0);
-        }
-
-        if (this.worldData == null)
-        {
-            this.worldData = new WorldData(var3, var2);
-        }
-        else
-        {
-            this.worldData.setName(var2);
-        }
-
-        this.worldProvider.a(this);
-        this.chunkProvider = this.j();
-
-        if (!this.worldData.isInitialized())
-        {
-            this.a(var3);
-            this.worldData.d(true);
-        }
-
-        VillageCollection var6 = (VillageCollection)this.worldMaps.get(VillageCollection.class, "villages");
-
-        if (var6 == null)
-        {
-            this.villages = new VillageCollection(this);
-            this.worldMaps.a("villages", this.villages);
-        }
-        else
-        {
-            this.villages = var6;
-            this.villages.func_82566_a(this);
-        }
-
-        this.w();
-        this.a();
+    if (this.worldData == null) {
+      this.worldData = new WorldData(worldsettings, s);
+      flag = true;
+    } else {
+      this.worldData.a(s);
     }
 
-    /**
-     * Creates the chunk provider for this world. Called in the constructor. Retrieves provider from worldProvider?
-     */
-    protected abstract IChunkProvider j();
-
-    protected void a(WorldSettings var1)
-    {
-        this.worldData.d(true);
+    this.worldProvider.a(this);
+    this.chunkProvider = b();
+    if (flag) {
+      c();
     }
 
-    /**
-     * Returns the block ID of the first block at this (x,z) location with air above it, searching from sea level
-     * upwards.
-     */
-    public int b(int var1, int var2)
-    {
-        int var3;
+    g();
+    B();
+    getServer().addWorld(this.world);
+  }
 
-        for (var3 = 63; !this.isEmpty(var1, var3 + 1, var2); ++var3)
-        {
-            ;
+  protected IChunkProvider b() {
+    IChunkLoader ichunkloader = this.dataManager.createChunkLoader(this.worldProvider);
+
+    return new ChunkProviderLoadOrGenerate(this, ichunkloader, this.worldProvider.getChunkProvider());
+  }
+
+  protected void c() {
+    if (!this.worldProvider.c()) {
+      this.worldData.setSpawn(0, this.worldProvider.getSeaLevel(), 0);
+    } else {
+      this.isLoading = true;
+      WorldChunkManager worldchunkmanager = this.worldProvider.c;
+      List list = worldchunkmanager.a();
+      Random random = new Random(getSeed());
+      ChunkPosition chunkposition = worldchunkmanager.a(0, 0, 256, list, random);
+      int i = 0;
+      int j = this.worldProvider.getSeaLevel();
+      int k = 0;
+
+      if (this.generator != null) {
+        Random rand = new Random(getSeed());
+        Location spawn = this.generator.getFixedSpawnLocation(((WorldServer)this).getWorld(), rand);
+
+        if (spawn != null) {
+          if (spawn.getWorld() != ((WorldServer)this).getWorld()) {
+            throw new IllegalStateException("Cannot set spawn point for " + this.worldData.name + " to be in another world (" + spawn.getWorld().getName() + ")");
+          }
+          this.worldData.setSpawn(spawn.getBlockX(), spawn.getBlockY(), spawn.getBlockZ());
+          this.isLoading = false;
+          return;
         }
 
-        return this.getTypeId(var1, var3, var2);
-    }
+      }
 
-    /**
-     * Returns the block ID at coords x,y,z
-     */
-    public int getTypeId(int var1, int var2, int var3)
-    {
-        return var1 >= -30000000 && var3 >= -30000000 && var1 < 30000000 && var3 < 30000000 ? (var2 < 0 ? 0 : (var2 >= 256 ? 0 : this.getChunkAt(var1 >> 4, var3 >> 4).getTypeId(var1 & 15, var2, var3 & 15))) : 0;
-    }
+      if (chunkposition != null) {
+        i = chunkposition.x;
+        k = chunkposition.z;
+      } else {
+        System.out.println("Unable to find spawn biome");
+      }
 
-    public int b(int var1, int var2, int var3)
-    {
-        return var1 >= -30000000 && var3 >= -30000000 && var1 < 30000000 && var3 < 30000000 ? (var2 < 0 ? 0 : (var2 >= 256 ? 0 : this.getChunkAt(var1 >> 4, var3 >> 4).b(var1 & 15, var2, var3 & 15))) : 0;
-    }
+      int l = 0;
 
-    /**
-     * Returns true if the block at the specified coordinates is empty
-     */
-    public boolean isEmpty(int var1, int var2, int var3)
-    {
-        return this.getTypeId(var1, var2, var3) == 0;
-    }
-
-    /**
-     * Checks if a block at a given position should have a tile entity.
-     */
-    public boolean isTileEntity(int var1, int var2, int var3)
-    {
-        int var4 = this.getTypeId(var1, var2, var3);
-        return Block.byId[var4] != null && Block.byId[var4].u();
-    }
-
-    /**
-     * Returns whether a block exists at world coordinates x, y, z
-     */
-    public boolean isLoaded(int var1, int var2, int var3)
-    {
-        return var2 >= 0 && var2 < 256 ? this.isChunkLoaded(var1 >> 4, var3 >> 4) : false;
-    }
-
-    /**
-     * Checks if any of the chunks within distance (argument 4) blocks of the given block exist
-     */
-    public boolean areChunksLoaded(int var1, int var2, int var3, int var4)
-    {
-        return this.d(var1 - var4, var2 - var4, var3 - var4, var1 + var4, var2 + var4, var3 + var4);
-    }
-
-    /**
-     * Checks between a min and max all the chunks inbetween actually exist. Args: minX, minY, minZ, maxX, maxY, maxZ
-     */
-    public boolean d(int var1, int var2, int var3, int var4, int var5, int var6)
-    {
-        if (var5 >= 0 && var2 < 256)
-        {
-            var1 >>= 4;
-            var3 >>= 4;
-            var4 >>= 4;
-            var6 >>= 4;
-
-            for (int var7 = var1; var7 <= var4; ++var7)
-            {
-                for (int var8 = var3; var8 <= var6; ++var8)
-                {
-                    if (!this.isChunkLoaded(var7, var8))
-                    {
-                        return false;
-                    }
-                }
-            }
-
-            return true;
+      while (!canSpawn(i, k)) {
+        i += random.nextInt(64) - random.nextInt(64);
+        k += random.nextInt(64) - random.nextInt(64);
+        l++;
+        if (l == 1000) {
+          break;
         }
-        else
-        {
+      }
+
+      this.worldData.setSpawn(i, j, k);
+      this.isLoading = false;
+    }
+  }
+
+  public ChunkCoordinates getDimensionSpawn() {
+    return this.worldProvider.e();
+  }
+
+  public int b(int i, int j)
+  {
+    for (int k = 63; !isEmpty(i, k + 1, j); k++);
+    return getTypeId(i, k, j);
+  }
+
+  public void save(boolean flag, IProgressUpdate iprogressupdate) {
+    if (this.chunkProvider.canSave()) {
+      if (iprogressupdate != null) {
+        iprogressupdate.a("Saving level");
+      }
+
+      A();
+      if (iprogressupdate != null) {
+        iprogressupdate.b("Saving chunks");
+      }
+
+      this.chunkProvider.saveChunks(flag, iprogressupdate);
+      ForgeHooks.onWorldSave(this);
+    }
+  }
+
+  private void A() {
+    m();
+    this.dataManager.saveWorldData(this.worldData, this.players);
+    this.worldMaps.a();
+  }
+
+  public int getTypeId(int i, int j, int k) {
+    return (i >= -30000000) && (k >= -30000000) && (i < 30000000) && (k < 30000000) ? getChunkAt(i >> 4, k >> 4).getTypeId(i & 0xF, j, k & 0xF) : j >= 256 ? 0 : j < 0 ? 0 : 0;
+  }
+
+  public int f(int i, int j, int k) {
+    return (i >= -30000000) && (k >= -30000000) && (i < 30000000) && (k < 30000000) ? getChunkAt(i >> 4, k >> 4).b(i & 0xF, j, k & 0xF) : j >= 256 ? 0 : j < 0 ? 0 : 0;
+  }
+
+  public boolean isEmpty(int i, int j, int k)
+  {
+    int id = getTypeId(i, j, k);
+    return (id == 0) || (Block.byId[id] == null) || (Block.byId[id].isAirBlock(this, i, j, k));
+  }
+
+  public boolean isTileEntity(int i, int j, int k) {
+    int l = getTypeId(i, j, k);
+
+    return (Block.byId[l] != null) && (Block.byId[l].o());
+  }
+
+  public boolean isLoaded(int i, int j, int k) {
+    return (j >= 0) && (j < 256) ? isChunkLoaded(i >> 4, k >> 4) : false;
+  }
+
+  public boolean areChunksLoaded(int i, int j, int k, int l) {
+    return a(i - l, j - l, k - l, i + l, j + l, k + l);
+  }
+
+  public boolean a(int i, int j, int k, int l, int i1, int j1) {
+    if ((i1 >= 0) && (j < 256)) {
+      i >>= 4;
+      k >>= 4;
+      l >>= 4;
+      j1 >>= 4;
+
+      for (int k1 = i; k1 <= l; k1++) {
+        for (int l1 = k; l1 <= j1; l1++) {
+          if (!isChunkLoaded(k1, l1)) {
             return false;
+          }
         }
+      }
+
+      return true;
+    }
+    return false;
+  }
+
+  private boolean isChunkLoaded(int i, int j)
+  {
+    return this.chunkProvider.isChunkLoaded(i, j);
+  }
+
+  public Chunk getChunkAtWorldCoords(int i, int j) {
+    return getChunkAt(i >> 4, j >> 4);
+  }
+
+  public Chunk getChunkAt(int i, int j)
+  {
+    Chunk result = null;
+    synchronized (this.chunkLock) {
+      if ((this.lastChunkAccessed == null) || (this.lastXAccessed != i) || (this.lastZAccessed != j)) {
+        this.lastXAccessed = i;
+        this.lastZAccessed = j;
+        this.lastChunkAccessed = this.chunkProvider.getOrCreateChunk(i, j);
+      }
+      result = this.lastChunkAccessed;
+    }
+    return result;
+  }
+
+  public boolean setRawTypeIdAndData(int i, int j, int k, int l, int i1)
+  {
+    if ((i >= -30000000) && (k >= -30000000) && (i < 30000000) && (k < 30000000)) {
+      if (j < 0)
+        return false;
+      if (j >= 256) {
+        return false;
+      }
+      Chunk chunk = getChunkAt(i >> 4, k >> 4);
+      boolean flag = chunk.a(i & 0xF, j, k & 0xF, l, i1);
+
+      v(i, j, k);
+
+      return flag;
     }
 
-    /**
-     * Returns whether a chunk exists at chunk coordinates x, y
-     */
-    protected boolean isChunkLoaded(int var1, int var2)
-    {
-        return this.chunkProvider.isChunkLoaded(var1, var2);
+    return false;
+  }
+
+  public boolean setRawTypeId(int i, int j, int k, int l)
+  {
+    if ((i >= -30000000) && (k >= -30000000) && (i < 30000000) && (k < 30000000)) {
+      if (j < 0)
+        return false;
+      if (j >= 256) {
+        return false;
+      }
+      Chunk chunk = getChunkAt(i >> 4, k >> 4);
+      boolean flag = chunk.a(i & 0xF, j, k & 0xF, l);
+
+      v(i, j, k);
+
+      return flag;
     }
 
-    /**
-     * Returns a chunk looked up by block coordinates. Args: x, z
-     */
-    public Chunk getChunkAtWorldCoords(int var1, int var2)
-    {
-        return this.getChunkAt(var1 >> 4, var2 >> 4);
+    return false;
+  }
+
+  public Material getMaterial(int i, int j, int k)
+  {
+    int l = getTypeId(i, j, k);
+
+    return l == 0 ? Material.AIR : Block.byId[l].material;
+  }
+
+  public int getData(int i, int j, int k) {
+    if ((i >= -30000000) && (k >= -30000000) && (i < 30000000) && (k < 30000000)) {
+      if (j < 0)
+        return 0;
+      if (j >= 256) {
+        return 0;
+      }
+      Chunk chunk = getChunkAt(i >> 4, k >> 4);
+
+      i &= 15;
+      k &= 15;
+      return chunk.getData(i, j, k);
     }
 
-    /**
-     * Returns back a chunk looked up by chunk coordinates Args: x, y
-     */
-    public Chunk getChunkAt(int var1, int var2)
-    {
-        return this.chunkProvider.getOrCreateChunk(var1, var2);
+    return 0;
+  }
+
+  public void setData(int i, int j, int k, int l)
+  {
+    if (setRawData(i, j, k, l)) {
+      int i1 = getTypeId(i, j, k);
+
+      if (Block.r[(i1 & 0xFFF)] != 0)
+        update(i, j, k, i1);
+      else
+        applyPhysics(i, j, k, i1);
+    }
+  }
+
+  public boolean setRawData(int i, int j, int k, int l)
+  {
+    if ((i >= -30000000) && (k >= -30000000) && (i < 30000000) && (k < 30000000)) {
+      if (j < 0)
+        return false;
+      if (j >= 256) {
+        return false;
+      }
+      Chunk chunk = getChunkAt(i >> 4, k >> 4);
+
+      i &= 15;
+      k &= 15;
+      return chunk.b(i, j, k, l);
     }
 
-    /**
-     * Sets the block ID and metadata of a block in global coordinates
-     */
-    public boolean setRawTypeIdAndData(int var1, int var2, int var3, int var4, int var5)
-    {
-        return this.setRawTypeIdAndData(var1, var2, var3, var4, var5, true);
+    return false;
+  }
+
+  public boolean setTypeId(int i, int j, int k, int l)
+  {
+    int old = getTypeId(i, j, k);
+    if (setRawTypeId(i, j, k, l)) {
+      update(i, j, k, l == 0 ? old : l);
+      return true;
+    }
+    return false;
+  }
+
+  public boolean setTypeIdAndData(int i, int j, int k, int l, int i1)
+  {
+    if (setRawTypeIdAndData(i, j, k, l, i1)) {
+      update(i, j, k, l);
+      return true;
+    }
+    return false;
+  }
+
+  public void notify(int i, int j, int k)
+  {
+    for (int l = 0; l < this.u.size(); l++)
+      ((IWorldAccess)this.u.get(l)).a(i, j, k);
+  }
+
+  public void update(int i, int j, int k, int l)
+  {
+    notify(i, j, k);
+    applyPhysics(i, j, k, l);
+  }
+
+  public void g(int i, int j, int k, int l)
+  {
+    if (k > l) {
+      int i1 = l;
+      l = k;
+      k = i1;
     }
 
-    /**
-     * Sets the block ID and metadata of a block, optionally marking it as needing update. Args: X,Y,Z, blockID,
-     * metadata, needsUpdate
-     */
-    public boolean setRawTypeIdAndData(int var1, int var2, int var3, int var4, int var5, boolean var6)
-    {
-        if (var1 >= -30000000 && var3 >= -30000000 && var1 < 30000000 && var3 < 30000000)
-        {
-            if (var2 < 0)
-            {
-                return false;
-            }
-            else if (var2 >= 256)
-            {
-                return false;
-            }
-            else
-            {
-                Chunk var7 = this.getChunkAt(var1 >> 4, var3 >> 4);
-                boolean var8 = var7.a(var1 & 15, var2, var3 & 15, var4, var5);
-                this.methodProfiler.a("checkLight");
-                this.x(var1, var2, var3);
-                this.methodProfiler.b();
-
-                if (var6 && var8 && (this.isStatic || var7.seenByPlayer))
-                {
-                    this.notify(var1, var2, var3);
-                }
-
-                return var8;
-            }
-        }
-        else
-        {
-            return false;
-        }
+    if (!this.worldProvider.e) {
+      for (int i1 = k; i1 <= l; i1++) {
+        b(EnumSkyBlock.SKY, i, i1, j);
+      }
     }
 
-    /**
-     * Sets the block to the specified blockID at the block coordinates Args x, y, z, blockID
-     */
-    public boolean setRawTypeId(int var1, int var2, int var3, int var4)
-    {
-        if (var1 >= -30000000 && var3 >= -30000000 && var1 < 30000000 && var3 < 30000000)
-        {
-            if (var2 < 0)
-            {
-                return false;
-            }
-            else if (var2 >= 256)
-            {
-                return false;
-            }
-            else
-            {
-                Chunk var5 = this.getChunkAt(var1 >> 4, var3 >> 4);
-                boolean var6 = var5.a(var1 & 15, var2, var3 & 15, var4);
-                this.methodProfiler.a("checkLight");
-                this.x(var1, var2, var3);
-                this.methodProfiler.b();
+    b(i, k, j, i, l, j);
+  }
 
-                if (var6 && (this.isStatic || var5.seenByPlayer))
-                {
-                    this.notify(var1, var2, var3);
-                }
+  public void k(int i, int j, int k) {
+    for (int l = 0; l < this.u.size(); l++)
+      ((IWorldAccess)this.u.get(l)).a(i, j, k, i, j, k);
+  }
 
-                return var6;
-            }
+  public void b(int i, int j, int k, int l, int i1, int j1)
+  {
+    for (int k1 = 0; k1 < this.u.size(); k1++)
+      ((IWorldAccess)this.u.get(k1)).a(i, j, k, l, i1, j1);
+  }
+
+  public void applyPhysics(int i, int j, int k, int l)
+  {
+    k(i - 1, j, k, l);
+    k(i + 1, j, k, l);
+    k(i, j - 1, k, l);
+    k(i, j + 1, k, l);
+    k(i, j, k - 1, l);
+    k(i, j, k + 1, l);
+  }
+
+  private void k(int i, int j, int k, int l) {
+    if ((!this.suppressPhysics) && (!this.isStatic)) {
+      Block block = Block.byId[getTypeId(i, j, k)];
+
+      if (block != null)
+      {
+        CraftWorld world = ((WorldServer)this).getWorld();
+        if (world != null) {
+          BlockPhysicsEvent event = new BlockPhysicsEvent(world.getBlockAt(i, j, k), l);
+          getServer().getPluginManager().callEvent(event);
+
+          if (event.isCancelled()) {
+            return;
+          }
+
         }
-        else
-        {
-            return false;
-        }
+
+        block.doPhysics(this, i, j, k, l);
+      }
+    }
+  }
+
+  public boolean isChunkLoaded(int i, int j, int k) {
+    return getChunkAt(i >> 4, k >> 4).d(i & 0xF, j, k & 0xF);
+  }
+
+  public int m(int i, int j, int k) {
+    if (j < 0) {
+      return 0;
+    }
+    if (j >= 256) {
+      j = 255;
     }
 
-    /**
-     * Returns the block's material.
-     */
-    public Material getMaterial(int var1, int var2, int var3)
-    {
-        int var4 = this.getTypeId(var1, var2, var3);
-        return var4 == 0 ? Material.AIR : Block.byId[var4].material;
+    return getChunkAt(i >> 4, k >> 4).c(i & 0xF, j, k & 0xF, 0);
+  }
+
+  public int getLightLevel(int i, int j, int k)
+  {
+    return a(i, j, k, true);
+  }
+
+  public int a(int i, int j, int k, boolean flag) {
+    if ((i >= -30000000) && (k >= -30000000) && (i < 30000000) && (k < 30000000)) {
+      if (flag) {
+        int l = getTypeId(i, j, k);
+
+        if ((l == Block.STEP.id) || (l == Block.SOIL.id) || (l == Block.COBBLESTONE_STAIRS.id) || (l == Block.WOOD_STAIRS.id)) {
+          int i1 = a(i, j + 1, k, false);
+          int j1 = a(i + 1, j, k, false);
+          int k1 = a(i - 1, j, k, false);
+          int l1 = a(i, j, k + 1, false);
+          int i2 = a(i, j, k - 1, false);
+
+          if (j1 > i1) {
+            i1 = j1;
+          }
+
+          if (k1 > i1) {
+            i1 = k1;
+          }
+
+          if (l1 > i1) {
+            i1 = l1;
+          }
+
+          if (i2 > i1) {
+            i1 = i2;
+          }
+
+          return i1;
+        }
+      }
+
+      if (j < 0) {
+        return 0;
+      }
+      if (j >= 256) {
+        j = 255;
+      }
+
+      Chunk chunk = getChunkAt(i >> 4, k >> 4);
+
+      i &= 15;
+      k &= 15;
+      return chunk.c(i, j, k, this.f);
     }
 
-    /**
-     * Returns the block metadata at coords x,y,z
-     */
-    public int getData(int var1, int var2, int var3)
-    {
-        if (var1 >= -30000000 && var3 >= -30000000 && var1 < 30000000 && var3 < 30000000)
-        {
-            if (var2 < 0)
-            {
-                return 0;
-            }
-            else if (var2 >= 256)
-            {
-                return 0;
-            }
-            else
-            {
-                Chunk var4 = this.getChunkAt(var1 >> 4, var3 >> 4);
-                var1 &= 15;
-                var3 &= 15;
-                return var4.getData(var1, var2, var3);
-            }
-        }
-        else
-        {
-            return 0;
-        }
+    return 15;
+  }
+
+  public int getHighestBlockYAt(int i, int j)
+  {
+    if ((i >= -30000000) && (j >= -30000000) && (i < 30000000) && (j < 30000000)) {
+      if (!isChunkLoaded(i >> 4, j >> 4)) {
+        return 0;
+      }
+      Chunk chunk = getChunkAt(i >> 4, j >> 4);
+
+      return chunk.b(i & 0xF, j & 0xF);
     }
 
-    /**
-     * Sets the blocks metadata and if set will then notify blocks that this block changed. Args: x, y, z, metadata
-     */
-    public void setData(int var1, int var2, int var3, int var4)
-    {
-        if (this.setRawData(var1, var2, var3, var4))
-        {
-            this.update(var1, var2, var3, this.getTypeId(var1, var2, var3));
-        }
+    return 0;
+  }
+
+  public int a(EnumSkyBlock enumskyblock, int i, int j, int k)
+  {
+    if (j < 0) {
+      j = 0;
     }
 
-    /**
-     * Set the metadata of a block in global coordinates
-     */
-    public boolean setRawData(int var1, int var2, int var3, int var4)
-    {
-        if (var1 >= -30000000 && var3 >= -30000000 && var1 < 30000000 && var3 < 30000000)
-        {
-            if (var2 < 0)
-            {
-                return false;
-            }
-            else if (var2 >= 256)
-            {
-                return false;
-            }
-            else
-            {
-                Chunk var5 = this.getChunkAt(var1 >> 4, var3 >> 4);
-                int var6 = var1 & 15;
-                int var7 = var3 & 15;
-                boolean var8 = var5.b(var6, var2, var7, var4);
-
-                if (var8 && (this.isStatic || var5.seenByPlayer && Block.u[var5.getTypeId(var6, var2, var7) & 4095]))
-                {
-                    this.notify(var1, var2, var3);
-                }
-
-                return var8;
-            }
-        }
-        else
-        {
-            return false;
-        }
+    if (j >= 256) {
+      j = 255;
     }
 
-    /**
-     * Sets a block and notifies relevant systems with the block change  Args: x, y, z, blockID
-     */
-    public boolean setTypeId(int var1, int var2, int var3, int var4)
-    {
-        if (this.setRawTypeId(var1, var2, var3, var4))
-        {
-            this.update(var1, var2, var3, var4);
-            return true;
-        }
-        else
-        {
-            return false;
-        }
+    if ((i >= -30000000) && (k >= -30000000) && (i < 30000000) && (k < 30000000)) {
+      int l = i >> 4;
+      int i1 = k >> 4;
+
+      if (!isChunkLoaded(l, i1)) {
+        return enumskyblock.c;
+      }
+      Chunk chunk = getChunkAt(l, i1);
+
+      return chunk.getBrightness(enumskyblock, i & 0xF, j, k & 0xF);
     }
 
-    /**
-     * Sets the block ID and metadata, then notifies neighboring blocks of the change Params: x, y, z, BlockID, Metadata
-     */
-    public boolean setTypeIdAndData(int var1, int var2, int var3, int var4, int var5)
-    {
-        if (this.setRawTypeIdAndData(var1, var2, var3, var4, var5))
-        {
-            this.update(var1, var2, var3, var4);
-            return true;
-        }
-        else
-        {
-            return false;
-        }
+    return enumskyblock.c;
+  }
+
+  public void a(EnumSkyBlock enumskyblock, int i, int j, int k, int l)
+  {
+    if ((i >= -30000000) && (k >= -30000000) && (i < 30000000) && (k < 30000000) && 
+      (j >= 0) && 
+      (j < 256) && 
+      (isChunkLoaded(i >> 4, k >> 4))) {
+      Chunk chunk = getChunkAt(i >> 4, k >> 4);
+
+      chunk.a(enumskyblock, i & 0xF, j, k & 0xF, l);
+
+      for (int i1 = 0; i1 < this.u.size(); i1++)
+        ((IWorldAccess)this.u.get(i1)).b(i, j, k);
     }
+  }
 
-    /**
-     * Marks the block as needing an update with the renderer. Args: x, y, z
-     */
-    public void notify(int var1, int var2, int var3)
-    {
-        Iterator var4 = this.w.iterator();
+  public void o(int i, int j, int k)
+  {
+    for (int l = 0; l < this.u.size(); l++)
+      ((IWorldAccess)this.u.get(l)).b(i, j, k);
+  }
 
-        while (var4.hasNext())
+  public float p(int i, int j, int k)
+  {
+    return this.worldProvider.f[getLightLevel(i, j, k)];
+  }
+
+  public boolean e() {
+    return this.f < 4;
+  }
+
+  public MovingObjectPosition a(Vec3D vec3d, Vec3D vec3d1) {
+    return rayTrace(vec3d, vec3d1, false, false);
+  }
+
+  public MovingObjectPosition rayTrace(Vec3D vec3d, Vec3D vec3d1, boolean flag) {
+    return rayTrace(vec3d, vec3d1, flag, false);
+  }
+
+  public MovingObjectPosition rayTrace(Vec3D vec3d, Vec3D vec3d1, boolean flag, boolean flag1) {
+    if ((!Double.isNaN(vec3d.a)) && (!Double.isNaN(vec3d.b)) && (!Double.isNaN(vec3d.c))) {
+      if ((!Double.isNaN(vec3d1.a)) && (!Double.isNaN(vec3d1.b)) && (!Double.isNaN(vec3d1.c))) {
+        int i = MathHelper.floor(vec3d1.a);
+        int j = MathHelper.floor(vec3d1.b);
+        int k = MathHelper.floor(vec3d1.c);
+        int l = MathHelper.floor(vec3d.a);
+        int i1 = MathHelper.floor(vec3d.b);
+        int j1 = MathHelper.floor(vec3d.c);
+        int k1 = getTypeId(l, i1, j1);
+        int l1 = getData(l, i1, j1);
+        Block block = Block.byId[k1];
+
+        if ((block != null) && ((!flag1) || (block == null) || (block.e(this, l, i1, j1) != null)) && (k1 > 0) && (block.a(l1, flag)))
         {
-            IWorldAccess var5 = (IWorldAccess)var4.next();
-            var5.a(var1, var2, var3);
-        }
-    }
+          MovingObjectPosition movingobjectposition = block.a(this, l, i1, j1, vec3d, vec3d1);
 
-    /**
-     * The block type change and need to notify other systems  Args: x, y, z, blockID
-     */
-    public void update(int var1, int var2, int var3, int var4)
-    {
-        this.applyPhysics(var1, var2, var3, var4);
-    }
-
-    /**
-     * marks a vertical line of blocks as dirty
-     */
-    public void g(int var1, int var2, int var3, int var4)
-    {
-        int var5;
-
-        if (var3 > var4)
-        {
-            var5 = var4;
-            var4 = var3;
-            var3 = var5;
-        }
-
-        if (!this.worldProvider.f)
-        {
-            for (var5 = var3; var5 <= var4; ++var5)
-            {
-                this.c(EnumSkyBlock.Sky, var1, var5, var2);
-            }
-        }
-
-        this.e(var1, var3, var2, var1, var4, var2);
-    }
-
-    /**
-     * calls the 'MarkBlockAsNeedsUpdate' in all block accesses in this world
-     */
-    public void i(int var1, int var2, int var3)
-    {
-        Iterator var4 = this.w.iterator();
-
-        while (var4.hasNext())
-        {
-            IWorldAccess var5 = (IWorldAccess)var4.next();
-            var5.a(var1, var2, var3, var1, var2, var3);
-        }
-    }
-
-    public void e(int var1, int var2, int var3, int var4, int var5, int var6)
-    {
-        Iterator var7 = this.w.iterator();
-
-        while (var7.hasNext())
-        {
-            IWorldAccess var8 = (IWorldAccess)var7.next();
-            var8.a(var1, var2, var3, var4, var5, var6);
-        }
-    }
-
-    /**
-     * Notifies neighboring blocks that this specified block changed  Args: x, y, z, blockID
-     */
-    public void applyPhysics(int var1, int var2, int var3, int var4)
-    {
-        this.m(var1 - 1, var2, var3, var4);
-        this.m(var1 + 1, var2, var3, var4);
-        this.m(var1, var2 - 1, var3, var4);
-        this.m(var1, var2 + 1, var3, var4);
-        this.m(var1, var2, var3 - 1, var4);
-        this.m(var1, var2, var3 + 1, var4);
-    }
-
-    /**
-     * Notifies a block that one of its neighbor change to the specified type Args: x, y, z, blockID
-     */
-    private void m(int var1, int var2, int var3, int var4)
-    {
-        if (!this.suppressPhysics && !this.isStatic)
-        {
-            Block var5 = Block.byId[this.getTypeId(var1, var2, var3)];
-
-            if (var5 != null)
-            {
-                var5.doPhysics(this, var1, var2, var3, var4);
-            }
-        }
-    }
-
-    /**
-     * Checks if the specified block is able to see the sky
-     */
-    public boolean j(int var1, int var2, int var3)
-    {
-        return this.getChunkAt(var1 >> 4, var3 >> 4).d(var1 & 15, var2, var3 & 15);
-    }
-
-    /**
-     * gets the block's light value - without the _do function's checks.
-     */
-    public int k(int var1, int var2, int var3)
-    {
-        if (var2 < 0)
-        {
-            return 0;
-        }
-        else
-        {
-            if (var2 >= 256)
-            {
-                var2 = 255;
-            }
-
-            return this.getChunkAt(var1 >> 4, var3 >> 4).c(var1 & 15, var2, var3 & 15, 0);
-        }
-    }
-
-    /**
-     * Gets the light value of a block location
-     */
-    public int getLightLevel(int var1, int var2, int var3)
-    {
-        return this.a(var1, var2, var3, true);
-    }
-
-    /**
-     * Gets the light value of a block location. This is the actual function that gets the value and has a bool flag
-     * that indicates if its a half step block to get the maximum light value of a direct neighboring block (left,
-     * right, forward, back, and up)
-     */
-    public int a(int var1, int var2, int var3, boolean var4)
-    {
-        if (var1 >= -30000000 && var3 >= -30000000 && var1 < 30000000 && var3 < 30000000)
-        {
-            if (var4)
-            {
-                int var5 = this.getTypeId(var1, var2, var3);
-
-                if (var5 == Block.STEP.id || var5 == Block.WOOD_STEP.id || var5 == Block.SOIL.id || var5 == Block.COBBLESTONE_STAIRS.id || var5 == Block.WOOD_STAIRS.id)
-                {
-                    int var6 = this.a(var1, var2 + 1, var3, false);
-                    int var7 = this.a(var1 + 1, var2, var3, false);
-                    int var8 = this.a(var1 - 1, var2, var3, false);
-                    int var9 = this.a(var1, var2, var3 + 1, false);
-                    int var10 = this.a(var1, var2, var3 - 1, false);
-
-                    if (var7 > var6)
-                    {
-                        var6 = var7;
-                    }
-
-                    if (var8 > var6)
-                    {
-                        var6 = var8;
-                    }
-
-                    if (var9 > var6)
-                    {
-                        var6 = var9;
-                    }
-
-                    if (var10 > var6)
-                    {
-                        var6 = var10;
-                    }
-
-                    return var6;
-                }
-            }
-
-            if (var2 < 0)
-            {
-                return 0;
-            }
-            else
-            {
-                if (var2 >= 256)
-                {
-                    var2 = 255;
-                }
-
-                Chunk var11 = this.getChunkAt(var1 >> 4, var3 >> 4);
-                var1 &= 15;
-                var3 &= 15;
-                return var11.c(var1, var2, var3, this.j);
-            }
-        }
-        else
-        {
-            return 15;
-        }
-    }
-
-    /**
-     * Returns the y coordinate with a block in it at this x, z coordinate
-     */
-    public int getHighestBlockYAt(int var1, int var2)
-    {
-        if (var1 >= -30000000 && var2 >= -30000000 && var1 < 30000000 && var2 < 30000000)
-        {
-            if (!this.isChunkLoaded(var1 >> 4, var2 >> 4))
-            {
-                return 0;
-            }
-            else
-            {
-                Chunk var3 = this.getChunkAt(var1 >> 4, var2 >> 4);
-                return var3.b(var1 & 15, var2 & 15);
-            }
-        }
-        else
-        {
-            return 0;
-        }
-    }
-
-    public int func_82734_g(int var1, int var2)
-    {
-        if (var1 >= -30000000 && var2 >= -30000000 && var1 < 30000000 && var2 < 30000000)
-        {
-            if (!this.isChunkLoaded(var1 >> 4, var2 >> 4))
-            {
-                return 0;
-            }
-            else
-            {
-                Chunk var3 = this.getChunkAt(var1 >> 4, var2 >> 4);
-                return var3.field_82912_p;
-            }
-        }
-        else
-        {
-            return 0;
-        }
-    }
-
-    /**
-     * Returns saved light value without taking into account the time of day.  Either looks in the sky light map or
-     * block light map based on the enumSkyBlock arg.
-     */
-    public int b(EnumSkyBlock var1, int var2, int var3, int var4)
-    {
-        if (var3 < 0)
-        {
-            var3 = 0;
+          if (movingobjectposition != null) {
+            return movingobjectposition;
+          }
         }
 
-        if (var3 >= 256)
-        {
-            var3 = 255;
-        }
+        k1 = 200;
 
-        if (var2 >= -30000000 && var4 >= -30000000 && var2 < 30000000 && var4 < 30000000)
-        {
-            int var5 = var2 >> 4;
-            int var6 = var4 >> 4;
-
-            if (!this.isChunkLoaded(var5, var6))
-            {
-                return var1.c;
-            }
-            else
-            {
-                Chunk var7 = this.getChunkAt(var5, var6);
-                return var7.getBrightness(var1, var2 & 15, var3, var4 & 15);
-            }
-        }
-        else
-        {
-            return var1.c;
-        }
-    }
-
-    /**
-     * Sets the light value either into the sky map or block map depending on if enumSkyBlock is set to sky or block.
-     * Args: enumSkyBlock, x, y, z, lightValue
-     */
-    public void b(EnumSkyBlock var1, int var2, int var3, int var4, int var5)
-    {
-        if (var2 >= -30000000 && var4 >= -30000000 && var2 < 30000000 && var4 < 30000000)
-        {
-            if (var3 >= 0)
-            {
-                if (var3 < 256)
-                {
-                    if (this.isChunkLoaded(var2 >> 4, var4 >> 4))
-                    {
-                        Chunk var6 = this.getChunkAt(var2 >> 4, var4 >> 4);
-                        var6.a(var1, var2 & 15, var3, var4 & 15, var5);
-                        Iterator var7 = this.w.iterator();
-
-                        while (var7.hasNext())
-                        {
-                            IWorldAccess var8 = (IWorldAccess)var7.next();
-                            var8.b(var2, var3, var4);
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    public void func_72902_n(int var1, int var2, int var3)
-    {
-        Iterator var4 = this.w.iterator();
-
-        while (var4.hasNext())
-        {
-            IWorldAccess var5 = (IWorldAccess)var4.next();
-            var5.b(var1, var2, var3);
-        }
-    }
-
-    /**
-     * Returns how bright the block is shown as which is the block's light value looked up in a lookup table (light
-     * values aren't linear for brightness). Args: x, y, z
-     */
-    public float o(int var1, int var2, int var3)
-    {
-        return this.worldProvider.g[this.getLightLevel(var1, var2, var3)];
-    }
-
-    /**
-     * Checks whether its daytime by seeing if the light subtracted from the skylight is less than 4
-     */
-    public boolean t()
-    {
-        return this.j < 4;
-    }
-
-    /**
-     * ray traces all blocks, including non-collideable ones
-     */
-    public MovingObjectPosition a(Vec3D var1, Vec3D var2)
-    {
-        return this.rayTrace(var1, var2, false, false);
-    }
-
-    public MovingObjectPosition rayTrace(Vec3D var1, Vec3D var2, boolean var3)
-    {
-        return this.rayTrace(var1, var2, var3, false);
-    }
-
-    public MovingObjectPosition rayTrace(Vec3D var1, Vec3D var2, boolean var3, boolean var4)
-    {
-        if (!Double.isNaN(var1.c) && !Double.isNaN(var1.d) && !Double.isNaN(var1.e))
-        {
-            if (!Double.isNaN(var2.c) && !Double.isNaN(var2.d) && !Double.isNaN(var2.e))
-            {
-                int var5 = MathHelper.floor(var2.c);
-                int var6 = MathHelper.floor(var2.d);
-                int var7 = MathHelper.floor(var2.e);
-                int var8 = MathHelper.floor(var1.c);
-                int var9 = MathHelper.floor(var1.d);
-                int var10 = MathHelper.floor(var1.e);
-                int var11 = this.getTypeId(var8, var9, var10);
-                int var12 = this.getData(var8, var9, var10);
-                Block var13 = Block.byId[var11];
-
-                if ((!var4 || var13 == null || var13.e(this, var8, var9, var10) != null) && var11 > 0 && var13.a(var12, var3))
-                {
-                    MovingObjectPosition var14 = var13.a(this, var8, var9, var10, var1, var2);
-
-                    if (var14 != null)
-                    {
-                        return var14;
-                    }
-                }
-
-                var11 = 200;
-
-                while (var11-- >= 0)
-                {
-                    if (Double.isNaN(var1.c) || Double.isNaN(var1.d) || Double.isNaN(var1.e))
-                    {
-                        return null;
-                    }
-
-                    if (var8 == var5 && var9 == var6 && var10 == var7)
-                    {
-                        return null;
-                    }
-
-                    boolean var39 = true;
-                    boolean var40 = true;
-                    boolean var41 = true;
-                    double var15 = 999.0D;
-                    double var17 = 999.0D;
-                    double var19 = 999.0D;
-
-                    if (var5 > var8)
-                    {
-                        var15 = (double)var8 + 1.0D;
-                    }
-                    else if (var5 < var8)
-                    {
-                        var15 = (double)var8 + 0.0D;
-                    }
-                    else
-                    {
-                        var39 = false;
-                    }
-
-                    if (var6 > var9)
-                    {
-                        var17 = (double)var9 + 1.0D;
-                    }
-                    else if (var6 < var9)
-                    {
-                        var17 = (double)var9 + 0.0D;
-                    }
-                    else
-                    {
-                        var40 = false;
-                    }
-
-                    if (var7 > var10)
-                    {
-                        var19 = (double)var10 + 1.0D;
-                    }
-                    else if (var7 < var10)
-                    {
-                        var19 = (double)var10 + 0.0D;
-                    }
-                    else
-                    {
-                        var41 = false;
-                    }
-
-                    double var21 = 999.0D;
-                    double var23 = 999.0D;
-                    double var25 = 999.0D;
-                    double var27 = var2.c - var1.c;
-                    double var29 = var2.d - var1.d;
-                    double var31 = var2.e - var1.e;
-
-                    if (var39)
-                    {
-                        var21 = (var15 - var1.c) / var27;
-                    }
-
-                    if (var40)
-                    {
-                        var23 = (var17 - var1.d) / var29;
-                    }
-
-                    if (var41)
-                    {
-                        var25 = (var19 - var1.e) / var31;
-                    }
-
-                    boolean var33 = false;
-                    byte var42;
-
-                    if (var21 < var23 && var21 < var25)
-                    {
-                        if (var5 > var8)
-                        {
-                            var42 = 4;
-                        }
-                        else
-                        {
-                            var42 = 5;
-                        }
-
-                        var1.c = var15;
-                        var1.d += var29 * var21;
-                        var1.e += var31 * var21;
-                    }
-                    else if (var23 < var25)
-                    {
-                        if (var6 > var9)
-                        {
-                            var42 = 0;
-                        }
-                        else
-                        {
-                            var42 = 1;
-                        }
-
-                        var1.c += var27 * var23;
-                        var1.d = var17;
-                        var1.e += var31 * var23;
-                    }
-                    else
-                    {
-                        if (var7 > var10)
-                        {
-                            var42 = 2;
-                        }
-                        else
-                        {
-                            var42 = 3;
-                        }
-
-                        var1.c += var27 * var25;
-                        var1.d += var29 * var25;
-                        var1.e = var19;
-                    }
-
-                    Vec3D var34 = this.getVec3DPool().create(var1.c, var1.d, var1.e);
-                    var8 = (int)(var34.c = (double)MathHelper.floor(var1.c));
-
-                    if (var42 == 5)
-                    {
-                        --var8;
-                        ++var34.c;
-                    }
-
-                    var9 = (int)(var34.d = (double)MathHelper.floor(var1.d));
-
-                    if (var42 == 1)
-                    {
-                        --var9;
-                        ++var34.d;
-                    }
-
-                    var10 = (int)(var34.e = (double)MathHelper.floor(var1.e));
-
-                    if (var42 == 3)
-                    {
-                        --var10;
-                        ++var34.e;
-                    }
-
-                    int var35 = this.getTypeId(var8, var9, var10);
-                    int var36 = this.getData(var8, var9, var10);
-                    Block var37 = Block.byId[var35];
-
-                    if ((!var4 || var37 == null || var37.e(this, var8, var9, var10) != null) && var35 > 0 && var37.a(var36, var3))
-                    {
-                        MovingObjectPosition var38 = var37.a(this, var8, var9, var10, var1, var2);
-
-                        if (var38 != null)
-                        {
-                            return var38;
-                        }
-                    }
-                }
-
-                return null;
-            }
-            else
-            {
-                return null;
-            }
-        }
-        else
-        {
+        while (k1-- >= 0) {
+          if ((Double.isNaN(vec3d.a)) || (Double.isNaN(vec3d.b)) || (Double.isNaN(vec3d.c))) {
             return null;
-        }
-    }
+          }
 
-    /**
-     * Plays a sound at the entity's position. Args: entity, sound, volume (relative to 1.0), and frequency (or pitch,
-     * also relative to 1.0).
-     */
-    public void makeSound(Entity var1, String var2, float var3, float var4)
-    {
-        if (var1 != null && var2 != null)
-        {
-            Iterator var5 = this.w.iterator();
-
-            while (var5.hasNext())
-            {
-                IWorldAccess var6 = (IWorldAccess)var5.next();
-                var6.a(var2, var1.locX, var1.locY - (double)var1.height, var1.locZ, var3, var4);
-            }
-        }
-    }
-
-    /**
-     * Play a sound effect. Many many parameters for this function. Not sure what they do, but a classic call is :
-     * (double)i + 0.5D, (double)j + 0.5D, (double)k + 0.5D, 'random.door_open', 1.0F, world.rand.nextFloat() * 0.1F +
-     * 0.9F with i,j,k position of the block.
-     */
-    public void makeSound(double var1, double var3, double var5, String var7, float var8, float var9)
-    {
-        if (var7 != null)
-        {
-            Iterator var10 = this.w.iterator();
-
-            while (var10.hasNext())
-            {
-                IWorldAccess var11 = (IWorldAccess)var10.next();
-                var11.a(var7, var1, var3, var5, var8, var9);
-            }
-        }
-    }
-
-    public void func_72980_b(double var1, double var3, double var5, String var7, float var8, float var9) {}
-
-    /**
-     * Plays a record at the specified coordinates of the specified name. Args: recordName, x, y, z
-     */
-    public void a(String var1, int var2, int var3, int var4)
-    {
-        Iterator var5 = this.w.iterator();
-
-        while (var5.hasNext())
-        {
-            IWorldAccess var6 = (IWorldAccess)var5.next();
-            var6.a(var1, var2, var3, var4);
-        }
-    }
-
-    /**
-     * Spawns a particle.  Args particleName, x, y, z, velX, velY, velZ
-     */
-    public void addParticle(String var1, double var2, double var4, double var6, double var8, double var10, double var12)
-    {
-        Iterator var14 = this.w.iterator();
-
-        while (var14.hasNext())
-        {
-            IWorldAccess var15 = (IWorldAccess)var14.next();
-            var15.a(var1, var2, var4, var6, var8, var10, var12);
-        }
-    }
-
-    /**
-     * adds a lightning bolt to the list of lightning bolts in this world.
-     */
-    public boolean strikeLightning(Entity var1)
-    {
-        this.i.add(var1);
-        return true;
-    }
-
-    /**
-     * Called when an entity is spawned in the world. This includes players.
-     */
-    public boolean addEntity(Entity var1)
-    {
-        int var2 = MathHelper.floor(var1.locX / 16.0D);
-        int var3 = MathHelper.floor(var1.locZ / 16.0D);
-        boolean var4 = false;
-
-        if (var1 instanceof EntityHuman)
-        {
-            var4 = true;
-        }
-
-        if (!var4 && !this.isChunkLoaded(var2, var3))
-        {
-            return false;
-        }
-        else
-        {
-            if (var1 instanceof EntityHuman)
-            {
-                EntityHuman var5 = (EntityHuman)var1;
-                this.players.add(var5);
-                this.everyoneSleeping();
-            }
-
-            this.getChunkAt(var2, var3).a(var1);
-            this.entityList.add(var1);
-            this.a(var1);
-            return true;
-        }
-    }
-
-    /**
-     * Start the skin for this entity downloading, if necessary, and increment its reference counter
-     */
-    protected void a(Entity var1)
-    {
-        Iterator var2 = this.w.iterator();
-
-        while (var2.hasNext())
-        {
-            IWorldAccess var3 = (IWorldAccess)var2.next();
-            var3.a(var1);
-        }
-    }
-
-    /**
-     * Decrement the reference counter for this entity's skin image data
-     */
-    protected void b(Entity var1)
-    {
-        Iterator var2 = this.w.iterator();
-
-        while (var2.hasNext())
-        {
-            IWorldAccess var3 = (IWorldAccess)var2.next();
-            var3.b(var1);
-        }
-    }
-
-    /**
-     * Dismounts the entity (and anything riding the entity), sets the dead flag, and removes the player entity from the
-     * player entity list. Called by the playerLoggedOut function.
-     */
-    public void kill(Entity var1)
-    {
-        if (var1.passenger != null)
-        {
-            var1.passenger.mount((Entity)null);
-        }
-
-        if (var1.vehicle != null)
-        {
-            var1.mount((Entity)null);
-        }
-
-        var1.die();
-
-        if (var1 instanceof EntityHuman)
-        {
-            this.players.remove(var1);
-            this.everyoneSleeping();
-        }
-    }
-
-    /**
-     * remove dat player from dem servers
-     */
-    public void removeEntity(Entity var1)
-    {
-        var1.die();
-
-        if (var1 instanceof EntityHuman)
-        {
-            this.players.remove(var1);
-            this.everyoneSleeping();
-        }
-
-        int var2 = var1.ai;
-        int var3 = var1.ak;
-
-        if (var1.ah && this.isChunkLoaded(var2, var3))
-        {
-            this.getChunkAt(var2, var3).b(var1);
-        }
-
-        this.entityList.remove(var1);
-        this.b(var1);
-    }
-
-    /**
-     * Adds a IWorldAccess to the list of worldAccesses
-     */
-    public void addIWorldAccess(IWorldAccess var1)
-    {
-        this.w.add(var1);
-    }
-
-    /**
-     * Returns a list of bounding boxes that collide with aabb excluding the passed in entity's collision. Args: entity,
-     * aabb
-     */
-    public List getCubes(Entity var1, AxisAlignedBB var2)
-    {
-        this.M.clear();
-        int var3 = MathHelper.floor(var2.a);
-        int var4 = MathHelper.floor(var2.d + 1.0D);
-        int var5 = MathHelper.floor(var2.b);
-        int var6 = MathHelper.floor(var2.e + 1.0D);
-        int var7 = MathHelper.floor(var2.c);
-        int var8 = MathHelper.floor(var2.f + 1.0D);
-
-        for (int var9 = var3; var9 < var4; ++var9)
-        {
-            for (int var10 = var7; var10 < var8; ++var10)
-            {
-                if (this.isLoaded(var9, 64, var10))
-                {
-                    for (int var11 = var5 - 1; var11 < var6; ++var11)
-                    {
-                        Block var12 = Block.byId[this.getTypeId(var9, var11, var10)];
-
-                        if (var12 != null)
-                        {
-                            var12.a(this, var9, var11, var10, var2, this.M, var1);
-                        }
-                    }
-                }
-            }
-        }
-
-        double var15 = 0.25D;
-        List var17 = this.getEntities(var1, var2.grow(var15, var15, var15));
-        Iterator var16 = var17.iterator();
-
-        while (var16.hasNext())
-        {
-            Entity var13 = (Entity)var16.next();
-            AxisAlignedBB var14 = var13.E();
-
-            if (var14 != null && var14.a(var2))
-            {
-                this.M.add(var14);
-            }
-
-            var14 = var1.g(var13);
-
-            if (var14 != null && var14.a(var2))
-            {
-                this.M.add(var14);
-            }
-        }
-
-        return this.M;
-    }
-
-    /**
-     * calculates and returns a list of colliding bounding boxes within a given AABB
-     */
-    public List a(AxisAlignedBB var1)
-    {
-        this.M.clear();
-        int var2 = MathHelper.floor(var1.a);
-        int var3 = MathHelper.floor(var1.d + 1.0D);
-        int var4 = MathHelper.floor(var1.b);
-        int var5 = MathHelper.floor(var1.e + 1.0D);
-        int var6 = MathHelper.floor(var1.c);
-        int var7 = MathHelper.floor(var1.f + 1.0D);
-
-        for (int var8 = var2; var8 < var3; ++var8)
-        {
-            for (int var9 = var6; var9 < var7; ++var9)
-            {
-                if (this.isLoaded(var8, 64, var9))
-                {
-                    for (int var10 = var4 - 1; var10 < var5; ++var10)
-                    {
-                        Block var11 = Block.byId[this.getTypeId(var8, var10, var9)];
-
-                        if (var11 != null)
-                        {
-                            var11.a(this, var8, var10, var9, var1, this.M, (Entity)null);
-                        }
-                    }
-                }
-            }
-        }
-
-        return this.M;
-    }
-
-    /**
-     * Returns the amount of skylight subtracted for the current time
-     */
-    public int a(float var1)
-    {
-        float var2 = this.c(var1);
-        float var3 = 1.0F - (MathHelper.cos(var2 * (float)Math.PI * 2.0F) * 2.0F + 0.5F);
-
-        if (var3 < 0.0F)
-        {
-            var3 = 0.0F;
-        }
-
-        if (var3 > 1.0F)
-        {
-            var3 = 1.0F;
-        }
-
-        var3 = 1.0F - var3;
-        var3 = (float)((double)var3 * (1.0D - (double)(this.j(var1) * 5.0F) / 16.0D));
-        var3 = (float)((double)var3 * (1.0D - (double)(this.i(var1) * 5.0F) / 16.0D));
-        var3 = 1.0F - var3;
-        return (int)(var3 * 11.0F);
-    }
-
-    /**
-     * calls calculateCelestialAngle
-     */
-    public float c(float var1)
-    {
-        return this.worldProvider.a(this.worldData.g(), var1);
-    }
-
-    /**
-     * Gets the height to which rain/snow will fall. Calculates it if not already stored.
-     */
-    public int h(int var1, int var2)
-    {
-        return this.getChunkAtWorldCoords(var1, var2).d(var1 & 15, var2 & 15);
-    }
-
-    /**
-     * Finds the highest block on the x, z coordinate that is solid and returns its y coord. Args x, z
-     */
-    public int i(int var1, int var2)
-    {
-        Chunk var3 = this.getChunkAtWorldCoords(var1, var2);
-        int var4 = var3.h() + 15;
-        var1 &= 15;
-
-        for (var2 &= 15; var4 > 0; --var4)
-        {
-            int var5 = var3.getTypeId(var1, var4, var2);
-
-            if (var5 != 0 && Block.byId[var5].material.isSolid() && Block.byId[var5].material != Material.LEAVES)
-            {
-                return var4 + 1;
-            }
-        }
-
-        return -1;
-    }
-
-    /**
-     * Used to schedule a call to the updateTick method on the specified block.
-     */
-    public void a(int var1, int var2, int var3, int var4, int var5) {}
-
-    public void func_82740_a(int var1, int var2, int var3, int var4, int var5, int var6) {}
-
-    /**
-     * Schedules a block update from the saved information in a chunk. Called when the chunk is loaded.
-     */
-    public void b(int var1, int var2, int var3, int var4, int var5) {}
-
-    /**
-     * Updates (and cleans up) entities and tile entities
-     */
-    public void tickEntities()
-    {
-        this.methodProfiler.a("entities");
-        this.methodProfiler.a("global");
-        int var1;
-        Entity var2;
-
-        for (var1 = 0; var1 < this.i.size(); ++var1)
-        {
-            var2 = (Entity)this.i.get(var1);
-            var2.j_();
-
-            if (var2.dead)
-            {
-                this.i.remove(var1--);
-            }
-        }
-
-        this.methodProfiler.c("remove");
-        this.entityList.removeAll(this.f);
-        Iterator var5 = this.f.iterator();
-        int var3;
-        int var4;
-
-        while (var5.hasNext())
-        {
-            var2 = (Entity)var5.next();
-            var3 = var2.ai;
-            var4 = var2.ak;
-
-            if (var2.ah && this.isChunkLoaded(var3, var4))
-            {
-                this.getChunkAt(var3, var4).b(var2);
-            }
-        }
-
-        var5 = this.f.iterator();
-
-        while (var5.hasNext())
-        {
-            var2 = (Entity)var5.next();
-            this.b(var2);
-        }
-
-        this.f.clear();
-        this.methodProfiler.c("regular");
-
-        for (var1 = 0; var1 < this.entityList.size(); ++var1)
-        {
-            var2 = (Entity)this.entityList.get(var1);
-
-            if (var2.vehicle != null)
-            {
-                if (!var2.vehicle.dead && var2.vehicle.passenger == var2)
-                {
-                    continue;
-                }
-
-                var2.vehicle.passenger = null;
-                var2.vehicle = null;
-            }
-
-            this.methodProfiler.a("tick");
-
-            if (!var2.dead)
-            {
-                this.playerJoinedWorld(var2);
-            }
-
-            this.methodProfiler.b();
-            this.methodProfiler.a("remove");
-
-            if (var2.dead)
-            {
-                var3 = var2.ai;
-                var4 = var2.ak;
-
-                if (var2.ah && this.isChunkLoaded(var3, var4))
-                {
-                    this.getChunkAt(var3, var4).b(var2);
-                }
-
-                this.entityList.remove(var1--);
-                this.b(var2);
-            }
-
-            this.methodProfiler.b();
-        }
-
-        this.methodProfiler.c("tileEntities");
-        this.N = true;
-        var5 = this.tileEntityList.iterator();
-
-        while (var5.hasNext())
-        {
-            TileEntity var6 = (TileEntity)var5.next();
-
-            if (!var6.r() && var6.func_70309_m() && this.isLoaded(var6.x, var6.y, var6.z))
-            {
-                var6.g();
-            }
-
-            if (var6.r())
-            {
-                var5.remove();
-
-                if (this.isChunkLoaded(var6.x >> 4, var6.z >> 4))
-                {
-                    Chunk var8 = this.getChunkAt(var6.x >> 4, var6.z >> 4);
-
-                    if (var8 != null)
-                    {
-                        var8.f(var6.x & 15, var6.y, var6.z & 15);
-                    }
-                }
-            }
-        }
-
-        this.N = false;
-
-        if (!this.b.isEmpty())
-        {
-            this.tileEntityList.removeAll(this.b);
-            this.b.clear();
-        }
-
-        this.methodProfiler.c("pendingTileEntities");
-
-        if (!this.a.isEmpty())
-        {
-            Iterator var7 = this.a.iterator();
-
-            while (var7.hasNext())
-            {
-                TileEntity var9 = (TileEntity)var7.next();
-
-                if (!var9.r())
-                {
-                    if (!this.tileEntityList.contains(var9))
-                    {
-                        this.tileEntityList.add(var9);
-                    }
-
-                    if (this.isChunkLoaded(var9.x >> 4, var9.z >> 4))
-                    {
-                        Chunk var10 = this.getChunkAt(var9.x >> 4, var9.z >> 4);
-
-                        if (var10 != null)
-                        {
-                            var10.a(var9.x & 15, var9.y, var9.z & 15, var9);
-                        }
-                    }
-
-                    this.notify(var9.x, var9.y, var9.z);
-                }
-            }
-
-            this.a.clear();
-        }
-
-        this.methodProfiler.b();
-        this.methodProfiler.b();
-    }
-
-    public void a(Collection var1)
-    {
-        if (this.N)
-        {
-            this.a.addAll(var1);
-        }
-        else
-        {
-            this.tileEntityList.addAll(var1);
-        }
-    }
-
-    /**
-     * Will update the entity in the world if the chunk the entity is in is currently loaded. Args: entity
-     */
-    public void playerJoinedWorld(Entity var1)
-    {
-        this.entityJoinedWorld(var1, true);
-    }
-
-    /**
-     * Will update the entity in the world if the chunk the entity is in is currently loaded or its forced to update.
-     * Args: entity, forceUpdate
-     */
-    public void entityJoinedWorld(Entity var1, boolean var2)
-    {
-        int var3 = MathHelper.floor(var1.locX);
-        int var4 = MathHelper.floor(var1.locZ);
-        byte var5 = 32;
-
-        if (!var2 || this.d(var3 - var5, 0, var4 - var5, var3 + var5, 0, var4 + var5))
-        {
-            var1.T = var1.locX;
-            var1.U = var1.locY;
-            var1.V = var1.locZ;
-            var1.lastYaw = var1.yaw;
-            var1.lastPitch = var1.pitch;
-
-            if (var2 && var1.ah)
-            {
-                if (var1.vehicle != null)
-                {
-                    var1.U();
-                }
-                else
-                {
-                    var1.j_();
-                }
-            }
-
-            this.methodProfiler.a("chunkCheck");
-
-            if (Double.isNaN(var1.locX) || Double.isInfinite(var1.locX))
-            {
-                var1.locX = var1.T;
-            }
-
-            if (Double.isNaN(var1.locY) || Double.isInfinite(var1.locY))
-            {
-                var1.locY = var1.U;
-            }
-
-            if (Double.isNaN(var1.locZ) || Double.isInfinite(var1.locZ))
-            {
-                var1.locZ = var1.V;
-            }
-
-            if (Double.isNaN((double)var1.pitch) || Double.isInfinite((double)var1.pitch))
-            {
-                var1.pitch = var1.lastPitch;
-            }
-
-            if (Double.isNaN((double)var1.yaw) || Double.isInfinite((double)var1.yaw))
-            {
-                var1.yaw = var1.lastYaw;
-            }
-
-            int var6 = MathHelper.floor(var1.locX / 16.0D);
-            int var7 = MathHelper.floor(var1.locY / 16.0D);
-            int var8 = MathHelper.floor(var1.locZ / 16.0D);
-
-            if (!var1.ah || var1.ai != var6 || var1.aj != var7 || var1.ak != var8)
-            {
-                if (var1.ah && this.isChunkLoaded(var1.ai, var1.ak))
-                {
-                    this.getChunkAt(var1.ai, var1.ak).a(var1, var1.aj);
-                }
-
-                if (this.isChunkLoaded(var6, var8))
-                {
-                    var1.ah = true;
-                    this.getChunkAt(var6, var8).a(var1);
-                }
-                else
-                {
-                    var1.ah = false;
-                }
-            }
-
-            this.methodProfiler.b();
-
-            if (var2 && var1.ah && var1.passenger != null)
-            {
-                if (!var1.passenger.dead && var1.passenger.vehicle == var1)
-                {
-                    this.playerJoinedWorld(var1.passenger);
-                }
-                else
-                {
-                    var1.passenger.vehicle = null;
-                    var1.passenger = null;
-                }
-            }
-        }
-    }
-
-    /**
-     * Returns true if there are no solid, live entities in the specified AxisAlignedBB
-     */
-    public boolean b(AxisAlignedBB var1)
-    {
-        return this.a(var1, (Entity)null);
-    }
-
-    /**
-     * Returns true if there are no solid, live entities in the specified AxisAlignedBB, excluding the given entity
-     */
-    public boolean a(AxisAlignedBB var1, Entity var2)
-    {
-        List var3 = this.getEntities((Entity)null, var1);
-        Iterator var4 = var3.iterator();
-        Entity var5;
-
-        do
-        {
-            if (!var4.hasNext())
-            {
-                return true;
-            }
-
-            var5 = (Entity)var4.next();
-        }
-        while (var5.dead || !var5.m || var5 == var2);
-
-        return false;
-    }
-
-    /**
-     * Returns true if there are any blocks in the region constrained by an AxisAlignedBB
-     */
-    public boolean c(AxisAlignedBB var1)
-    {
-        int var2 = MathHelper.floor(var1.a);
-        int var3 = MathHelper.floor(var1.d + 1.0D);
-        int var4 = MathHelper.floor(var1.b);
-        int var5 = MathHelper.floor(var1.e + 1.0D);
-        int var6 = MathHelper.floor(var1.c);
-        int var7 = MathHelper.floor(var1.f + 1.0D);
-
-        if (var1.a < 0.0D)
-        {
-            --var2;
-        }
-
-        if (var1.b < 0.0D)
-        {
-            --var4;
-        }
-
-        if (var1.c < 0.0D)
-        {
-            --var6;
-        }
-
-        for (int var8 = var2; var8 < var3; ++var8)
-        {
-            for (int var9 = var4; var9 < var5; ++var9)
-            {
-                for (int var10 = var6; var10 < var7; ++var10)
-                {
-                    Block var11 = Block.byId[this.getTypeId(var8, var9, var10)];
-
-                    if (var11 != null)
-                    {
-                        return true;
-                    }
-                }
-            }
-        }
-
-        return false;
-    }
-
-    /**
-     * Returns if any of the blocks within the aabb are liquids. Args: aabb
-     */
-    public boolean containsLiquid(AxisAlignedBB var1)
-    {
-        int var2 = MathHelper.floor(var1.a);
-        int var3 = MathHelper.floor(var1.d + 1.0D);
-        int var4 = MathHelper.floor(var1.b);
-        int var5 = MathHelper.floor(var1.e + 1.0D);
-        int var6 = MathHelper.floor(var1.c);
-        int var7 = MathHelper.floor(var1.f + 1.0D);
-
-        if (var1.a < 0.0D)
-        {
-            --var2;
-        }
-
-        if (var1.b < 0.0D)
-        {
-            --var4;
-        }
-
-        if (var1.c < 0.0D)
-        {
-            --var6;
-        }
-
-        for (int var8 = var2; var8 < var3; ++var8)
-        {
-            for (int var9 = var4; var9 < var5; ++var9)
-            {
-                for (int var10 = var6; var10 < var7; ++var10)
-                {
-                    Block var11 = Block.byId[this.getTypeId(var8, var9, var10)];
-
-                    if (var11 != null && var11.material.isLiquid())
-                    {
-                        return true;
-                    }
-                }
-            }
-        }
-
-        return false;
-    }
-
-    /**
-     * Returns whether or not the given bounding box is on fire or not
-     */
-    public boolean e(AxisAlignedBB var1)
-    {
-        int var2 = MathHelper.floor(var1.a);
-        int var3 = MathHelper.floor(var1.d + 1.0D);
-        int var4 = MathHelper.floor(var1.b);
-        int var5 = MathHelper.floor(var1.e + 1.0D);
-        int var6 = MathHelper.floor(var1.c);
-        int var7 = MathHelper.floor(var1.f + 1.0D);
-
-        if (this.d(var2, var4, var6, var3, var5, var7))
-        {
-            for (int var8 = var2; var8 < var3; ++var8)
-            {
-                for (int var9 = var4; var9 < var5; ++var9)
-                {
-                    for (int var10 = var6; var10 < var7; ++var10)
-                    {
-                        int var11 = this.getTypeId(var8, var9, var10);
-
-                        if (var11 == Block.FIRE.id || var11 == Block.LAVA.id || var11 == Block.STATIONARY_LAVA.id)
-                        {
-                            return true;
-                        }
-                    }
-                }
-            }
-        }
-
-        return false;
-    }
-
-    /**
-     * handles the acceleration of an object whilst in water. Not sure if it is used elsewhere.
-     */
-    public boolean a(AxisAlignedBB var1, Material var2, Entity var3)
-    {
-        int var4 = MathHelper.floor(var1.a);
-        int var5 = MathHelper.floor(var1.d + 1.0D);
-        int var6 = MathHelper.floor(var1.b);
-        int var7 = MathHelper.floor(var1.e + 1.0D);
-        int var8 = MathHelper.floor(var1.c);
-        int var9 = MathHelper.floor(var1.f + 1.0D);
-
-        if (!this.d(var4, var6, var8, var5, var7, var9))
-        {
-            return false;
-        }
-        else
-        {
-            boolean var10 = false;
-            Vec3D var11 = this.getVec3DPool().create(0.0D, 0.0D, 0.0D);
-
-            for (int var12 = var4; var12 < var5; ++var12)
-            {
-                for (int var13 = var6; var13 < var7; ++var13)
-                {
-                    for (int var14 = var8; var14 < var9; ++var14)
-                    {
-                        Block var15 = Block.byId[this.getTypeId(var12, var13, var14)];
-
-                        if (var15 != null && var15.material == var2)
-                        {
-                            double var16 = (double)((float)(var13 + 1) - BlockFluids.d(this.getData(var12, var13, var14)));
-
-                            if ((double)var7 >= var16)
-                            {
-                                var10 = true;
-                                var15.a(this, var12, var13, var14, var3, var11);
-                            }
-                        }
-                    }
-                }
-            }
-
-            if (var11.b() > 0.0D)
-            {
-                var11 = var11.a();
-                double var18 = 0.014D;
-                var3.motX += var11.c * var18;
-                var3.motY += var11.d * var18;
-                var3.motZ += var11.e * var18;
-            }
-
-            return var10;
-        }
-    }
-
-    /**
-     * Returns true if the given bounding box contains the given material
-     */
-    public boolean a(AxisAlignedBB var1, Material var2)
-    {
-        int var3 = MathHelper.floor(var1.a);
-        int var4 = MathHelper.floor(var1.d + 1.0D);
-        int var5 = MathHelper.floor(var1.b);
-        int var6 = MathHelper.floor(var1.e + 1.0D);
-        int var7 = MathHelper.floor(var1.c);
-        int var8 = MathHelper.floor(var1.f + 1.0D);
-
-        for (int var9 = var3; var9 < var4; ++var9)
-        {
-            for (int var10 = var5; var10 < var6; ++var10)
-            {
-                for (int var11 = var7; var11 < var8; ++var11)
-                {
-                    Block var12 = Block.byId[this.getTypeId(var9, var10, var11)];
-
-                    if (var12 != null && var12.material == var2)
-                    {
-                        return true;
-                    }
-                }
-            }
-        }
-
-        return false;
-    }
-
-    /**
-     * checks if the given AABB is in the material given. Used while swimming.
-     */
-    public boolean b(AxisAlignedBB var1, Material var2)
-    {
-        int var3 = MathHelper.floor(var1.a);
-        int var4 = MathHelper.floor(var1.d + 1.0D);
-        int var5 = MathHelper.floor(var1.b);
-        int var6 = MathHelper.floor(var1.e + 1.0D);
-        int var7 = MathHelper.floor(var1.c);
-        int var8 = MathHelper.floor(var1.f + 1.0D);
-
-        for (int var9 = var3; var9 < var4; ++var9)
-        {
-            for (int var10 = var5; var10 < var6; ++var10)
-            {
-                for (int var11 = var7; var11 < var8; ++var11)
-                {
-                    Block var12 = Block.byId[this.getTypeId(var9, var10, var11)];
-
-                    if (var12 != null && var12.material == var2)
-                    {
-                        int var13 = this.getData(var9, var10, var11);
-                        double var14 = (double)(var10 + 1);
-
-                        if (var13 < 8)
-                        {
-                            var14 = (double)(var10 + 1) - (double)var13 / 8.0D;
-                        }
-
-                        if (var14 >= var1.b)
-                        {
-                            return true;
-                        }
-                    }
-                }
-            }
-        }
-
-        return false;
-    }
-
-    /**
-     * Creates an explosion. Args: entity, x, y, z, strength
-     */
-    public Explosion explode(Entity var1, double var2, double var4, double var6, float var8, boolean var9)
-    {
-        return this.createExplosion(var1, var2, var4, var6, var8, false, var9);
-    }
-
-    /**
-     * returns a new explosion. Does initiation (at time of writing Explosion is not finished)
-     */
-    public Explosion createExplosion(Entity var1, double var2, double var4, double var6, float var8, boolean var9, boolean var10)
-    {
-        Explosion var11 = new Explosion(this, var1, var2, var4, var6, var8);
-        var11.a = var9;
-        var11.b = var10;
-        var11.a();
-        var11.a(true);
-        return var11;
-    }
-
-    /**
-     * Gets the percentage of real blocks within within a bounding box, along a specified vector.
-     */
-    public float a(Vec3D var1, AxisAlignedBB var2)
-    {
-        double var3 = 1.0D / ((var2.d - var2.a) * 2.0D + 1.0D);
-        double var5 = 1.0D / ((var2.e - var2.b) * 2.0D + 1.0D);
-        double var7 = 1.0D / ((var2.f - var2.c) * 2.0D + 1.0D);
-        int var9 = 0;
-        int var10 = 0;
-
-        for (float var11 = 0.0F; var11 <= 1.0F; var11 = (float)((double)var11 + var3))
-        {
-            for (float var12 = 0.0F; var12 <= 1.0F; var12 = (float)((double)var12 + var5))
-            {
-                for (float var13 = 0.0F; var13 <= 1.0F; var13 = (float)((double)var13 + var7))
-                {
-                    double var14 = var2.a + (var2.d - var2.a) * (double)var11;
-                    double var16 = var2.b + (var2.e - var2.b) * (double)var12;
-                    double var18 = var2.c + (var2.f - var2.c) * (double)var13;
-
-                    if (this.a(this.getVec3DPool().create(var14, var16, var18), var1) == null)
-                    {
-                        ++var9;
-                    }
-
-                    ++var10;
-                }
-            }
-        }
-
-        return (float)var9 / (float)var10;
-    }
-
-    /**
-     * If the block in the given direction of the given coordinate is fire, extinguish it. Args: Player, X,Y,Z,
-     * blockDirection
-     */
-    public boolean douseFire(EntityHuman var1, int var2, int var3, int var4, int var5)
-    {
-        if (var5 == 0)
-        {
-            --var3;
-        }
-
-        if (var5 == 1)
-        {
-            ++var3;
-        }
-
-        if (var5 == 2)
-        {
-            --var4;
-        }
-
-        if (var5 == 3)
-        {
-            ++var4;
-        }
-
-        if (var5 == 4)
-        {
-            --var2;
-        }
-
-        if (var5 == 5)
-        {
-            ++var2;
-        }
-
-        if (this.getTypeId(var2, var3, var4) == Block.FIRE.id)
-        {
-            this.a(var1, 1004, var2, var3, var4, 0);
-            this.setTypeId(var2, var3, var4, 0);
-            return true;
-        }
-        else
-        {
-            return false;
-        }
-    }
-
-    /**
-     * Returns the TileEntity associated with a given block in X,Y,Z coordinates, or null if no TileEntity exists
-     */
-    public TileEntity getTileEntity(int var1, int var2, int var3)
-    {
-        if (var2 >= 256)
-        {
+          if ((l == i) && (i1 == j) && (j1 == k)) {
             return null;
+          }
+
+          boolean flag2 = true;
+          boolean flag3 = true;
+          boolean flag4 = true;
+          double d0 = 999.0D;
+          double d1 = 999.0D;
+          double d2 = 999.0D;
+
+          if (i > l)
+            d0 = l + 1.0D;
+          else if (i < l)
+            d0 = l + 0.0D;
+          else {
+            flag2 = false;
+          }
+
+          if (j > i1)
+            d1 = i1 + 1.0D;
+          else if (j < i1)
+            d1 = i1 + 0.0D;
+          else {
+            flag3 = false;
+          }
+
+          if (k > j1)
+            d2 = j1 + 1.0D;
+          else if (k < j1)
+            d2 = j1 + 0.0D;
+          else {
+            flag4 = false;
+          }
+
+          double d3 = 999.0D;
+          double d4 = 999.0D;
+          double d5 = 999.0D;
+          double d6 = vec3d1.a - vec3d.a;
+          double d7 = vec3d1.b - vec3d.b;
+          double d8 = vec3d1.c - vec3d.c;
+
+          if (flag2) {
+            d3 = (d0 - vec3d.a) / d6;
+          }
+
+          if (flag3) {
+            d4 = (d1 - vec3d.b) / d7;
+          }
+
+          if (flag4) {
+            d5 = (d2 - vec3d.c) / d8;
+          }
+
+          boolean flag5 = false;
+          byte b0;
+          if ((d3 < d4) && (d3 < d5))
+          {
+            byte b0;
+            byte b0;
+            if (i > l)
+              b0 = 4;
+            else {
+              b0 = 5;
+            }
+
+            vec3d.a = d0;
+            vec3d.b += d7 * d3;
+            vec3d.c += d8 * d3;
+          } else if (d4 < d5)
+          {
+            byte b0;
+            byte b0;
+            if (j > i1)
+              b0 = 0;
+            else {
+              b0 = 1;
+            }
+
+            vec3d.a += d6 * d4;
+            vec3d.b = d1;
+            vec3d.c += d8 * d4;
+          }
+          else
+          {
+            byte b0;
+            if (k > j1)
+              b0 = 2;
+            else {
+              b0 = 3;
+            }
+
+            vec3d.a += d6 * d5;
+            vec3d.b += d7 * d5;
+            vec3d.c = d2;
+          }
+
+          Vec3D vec3d2 = Vec3D.create(vec3d.a, vec3d.b, vec3d.c);
+
+          l = (int)(vec3d2.a = MathHelper.floor(vec3d.a));
+          if (b0 == 5) {
+            l--;
+            vec3d2.a += 1.0D;
+          }
+
+          i1 = (int)(vec3d2.b = MathHelper.floor(vec3d.b));
+          if (b0 == 1) {
+            i1--;
+            vec3d2.b += 1.0D;
+          }
+
+          j1 = (int)(vec3d2.c = MathHelper.floor(vec3d.c));
+          if (b0 == 3) {
+            j1--;
+            vec3d2.c += 1.0D;
+          }
+
+          int i2 = getTypeId(l, i1, j1);
+          int j2 = getData(l, i1, j1);
+          Block block1 = Block.byId[i2];
+
+          if (((!flag1) || (block1 == null) || (block1.e(this, l, i1, j1) != null)) && (i2 > 0) && (block1.a(j2, flag))) {
+            MovingObjectPosition movingobjectposition1 = block1.a(this, l, i1, j1, vec3d, vec3d1);
+
+            if (movingobjectposition1 != null) {
+              return movingobjectposition1;
+            }
+          }
+        }
+
+        return null;
+      }
+      return null;
+    }
+
+    return null;
+  }
+
+  public void makeSound(Entity entity, String s, float f, float f1)
+  {
+    for (int i = 0; i < this.u.size(); i++)
+      ((IWorldAccess)this.u.get(i)).a(s, entity.locX, entity.locY - entity.height, entity.locZ, f, f1);
+  }
+
+  public void makeSound(double d0, double d1, double d2, String s, float f, float f1)
+  {
+    for (int i = 0; i < this.u.size(); i++)
+      ((IWorldAccess)this.u.get(i)).a(s, d0, d1, d2, f, f1);
+  }
+
+  public void a(String s, int i, int j, int k)
+  {
+    for (int l = 0; l < this.u.size(); l++)
+      ((IWorldAccess)this.u.get(l)).a(s, i, j, k);
+  }
+
+  public void a(String s, double d0, double d1, double d2, double d3, double d4, double d5)
+  {
+    for (int i = 0; i < this.u.size(); i++)
+      ((IWorldAccess)this.u.get(i)).a(s, d0, d1, d2, d3, d4, d5);
+  }
+
+  public boolean strikeLightning(Entity entity)
+  {
+    this.e.add(entity);
+    return true;
+  }
+
+  public boolean addEntity(Entity entity)
+  {
+    return addEntity(entity, CreatureSpawnEvent.SpawnReason.DEFAULT);
+  }
+
+  public boolean addEntity(Entity entity, CreatureSpawnEvent.SpawnReason spawnReason) {
+    if (entity == null) return false;
+
+    int i = MathHelper.floor(entity.locX / 16.0D);
+    int j = MathHelper.floor(entity.locZ / 16.0D);
+    boolean flag = false;
+
+    if ((entity instanceof EntityHuman)) {
+      flag = true;
+    }
+
+    Cancellable event = null;
+    if (((entity instanceof EntityLiving)) && (!(entity instanceof EntityPlayer))) {
+      boolean isAnimal = ((entity instanceof EntityAnimal)) || ((entity instanceof EntityWaterAnimal)) || ((entity instanceof EntityGolem));
+      boolean isMonster = ((entity instanceof EntityMonster)) || ((entity instanceof EntityGhast)) || ((entity instanceof EntitySlime));
+
+      if ((spawnReason != CreatureSpawnEvent.SpawnReason.CUSTOM) && (
+        ((isAnimal) && (!this.allowAnimals)) || ((isMonster) && (!this.allowMonsters)))) {
+        entity.dead = true;
+        return false;
+      }
+
+      event = CraftEventFactory.callCreatureSpawnEvent((EntityLiving)entity, spawnReason);
+    } else if ((entity instanceof EntityItem)) {
+      event = CraftEventFactory.callItemSpawnEvent((EntityItem)entity);
+    } else if ((entity.getBukkitEntity() instanceof Projectile))
+    {
+      event = CraftEventFactory.callProjectileLaunchEvent(entity);
+    }
+
+    if ((event != null) && ((event.isCancelled()) || (entity.dead))) {
+      entity.dead = true;
+      return false;
+    }
+
+    if ((!flag) && (!isChunkLoaded(i, j))) {
+      entity.dead = true;
+      return false;
+    }
+    if ((entity instanceof EntityHuman)) {
+      EntityHuman entityhuman = (EntityHuman)entity;
+
+      this.players.add(entityhuman);
+      everyoneSleeping();
+    }
+
+    getChunkAt(i, j).a(entity);
+    this.entityList.add(entity);
+    c(entity);
+    return true;
+  }
+
+  protected void c(Entity entity)
+  {
+    for (int i = 0; i < this.u.size(); i++)
+      ((IWorldAccess)this.u.get(i)).a(entity);
+  }
+
+  protected void d(Entity entity)
+  {
+    for (int i = 0; i < this.u.size(); i++) {
+      ((IWorldAccess)this.u.get(i)).b(entity);
+    }
+
+    entity.valid = false;
+  }
+
+  public void kill(Entity entity) {
+    if (entity.passenger != null) {
+      entity.passenger.mount((Entity)null);
+    }
+
+    if (entity.vehicle != null) {
+      entity.mount((Entity)null);
+    }
+
+    entity.die();
+    if ((entity instanceof EntityHuman)) {
+      this.players.remove((EntityHuman)entity);
+      everyoneSleeping();
+    }
+  }
+
+  public void removeEntity(Entity entity) {
+    entity.die();
+    if ((entity instanceof EntityHuman)) {
+      this.players.remove((EntityHuman)entity);
+      everyoneSleeping();
+    }
+
+    int i = entity.ca;
+    int j = entity.cc;
+
+    if ((entity.bZ) && (isChunkLoaded(i, j))) {
+      getChunkAt(i, j).b(entity);
+    }
+
+    this.entityList.remove(entity);
+    d(entity);
+  }
+
+  public void addIWorldAccess(IWorldAccess iworldaccess) {
+    this.u.add(iworldaccess);
+  }
+
+  public List getCubes(Entity entity, AxisAlignedBB axisalignedbb) {
+    this.P.clear();
+    int i = MathHelper.floor(axisalignedbb.a);
+    int j = MathHelper.floor(axisalignedbb.d + 1.0D);
+    int k = MathHelper.floor(axisalignedbb.b);
+    int l = MathHelper.floor(axisalignedbb.e + 1.0D);
+    int i1 = MathHelper.floor(axisalignedbb.c);
+    int j1 = MathHelper.floor(axisalignedbb.f + 1.0D);
+
+    for (int k1 = i; k1 < j; k1++) {
+      for (int l1 = i1; l1 < j1; l1++) {
+        if (isLoaded(k1, 64, l1)) {
+          for (int i2 = k - 1; i2 < l; i2++) {
+            Block block = Block.byId[getTypeId(k1, i2, l1)];
+
+            if (block != null) {
+              block.a(this, k1, i2, l1, axisalignedbb, this.P);
+            }
+          }
+        }
+      }
+    }
+
+    double d0 = 0.25D;
+    List list = getEntities(entity, axisalignedbb.grow(d0, d0, d0));
+
+    for (int j2 = 0; j2 < list.size(); j2++) {
+      AxisAlignedBB axisalignedbb1 = ((Entity)list.get(j2)).h();
+
+      if ((axisalignedbb1 != null) && (axisalignedbb1.a(axisalignedbb))) {
+        this.P.add(axisalignedbb1);
+      }
+
+      axisalignedbb1 = entity.b_((Entity)list.get(j2));
+      if ((axisalignedbb1 != null) && (axisalignedbb1.a(axisalignedbb))) {
+        this.P.add(axisalignedbb1);
+      }
+    }
+
+    return this.P;
+  }
+
+  public int a(float f) {
+    float f1 = b(f);
+    float f2 = 1.0F - (MathHelper.cos(f1 * 3.141593F * 2.0F) * 2.0F + 0.5F);
+
+    if (f2 < 0.0F) {
+      f2 = 0.0F;
+    }
+
+    if (f2 > 1.0F) {
+      f2 = 1.0F;
+    }
+
+    f2 = 1.0F - f2;
+    f2 = (float)(f2 * (1.0D - d(f) * 5.0F / 16.0D));
+    f2 = (float)(f2 * (1.0D - c(f) * 5.0F / 16.0D));
+    f2 = 1.0F - f2;
+    return (int)(f2 * 11.0F);
+  }
+
+  public float b(float f) {
+    return this.worldProvider.a(this.worldData.getTime(), f);
+  }
+
+  public int f(int i, int j) {
+    return getChunkAtWorldCoords(i, j).d(i & 0xF, j & 0xF);
+  }
+
+  public int g(int i, int j) {
+    Chunk chunk = getChunkAtWorldCoords(i, j);
+    int k = chunk.g() + 16;
+
+    i &= 15;
+
+    for (j &= 15; k > 0; k--) {
+      int l = chunk.getTypeId(i, k, j);
+
+      if ((l != 0) && (Block.byId[l].material.isSolid()) && (Block.byId[l].material != Material.LEAVES)) {
+        return k + 1;
+      }
+    }
+
+    return -1;
+  }
+
+  public void c(int i, int j, int k, int l, int i1) {
+    NextTickListEntry nextticklistentry = new NextTickListEntry(i, j, k, l);
+    byte b0 = 8;
+
+    if (this.a) {
+      if (a(nextticklistentry.a - b0, nextticklistentry.b - b0, nextticklistentry.c - b0, nextticklistentry.a + b0, nextticklistentry.b + b0, nextticklistentry.c + b0)) {
+        int j1 = getTypeId(nextticklistentry.a, nextticklistentry.b, nextticklistentry.c);
+
+        if ((j1 == nextticklistentry.d) && (j1 > 0)) {
+          Block.byId[j1].a(this, nextticklistentry.a, nextticklistentry.b, nextticklistentry.c, this.random);
+        }
+      }
+    }
+    else if (a(i - b0, j - b0, k - b0, i + b0, j + b0, k + b0)) {
+      if (l > 0) {
+        nextticklistentry.a(i1 + this.worldData.getTime());
+      }
+
+      if (!this.I.contains(nextticklistentry)) {
+        this.I.add(nextticklistentry);
+        this.H.add(nextticklistentry);
+      }
+    }
+  }
+
+  public void d(int i, int j, int k, int l, int i1)
+  {
+    NextTickListEntry nextticklistentry = new NextTickListEntry(i, j, k, l);
+
+    if (l > 0) {
+      nextticklistentry.a(i1 + this.worldData.getTime());
+    }
+
+    if (!this.I.contains(nextticklistentry)) {
+      this.I.add(nextticklistentry);
+      this.H.add(nextticklistentry);
+    }
+  }
+
+  public void tickEntities()
+  {
+    for (int i = 0; i < this.e.size(); i++) {
+      Entity entity = (Entity)this.e.unsafeGet(i);
+
+      if (entity != null)
+      {
+        entity.F_();
+        if (entity.dead) {
+          this.e.remove(i--);
+        }
+      }
+    }
+
+    this.entityList.removeAll(this.G);
+
+    for (i = 0; i < this.G.size(); i++) {
+      Entity entity = (Entity)this.G.get(i);
+      int j = entity.ca;
+      int k = entity.cc;
+      if ((entity.bZ) && (isChunkLoaded(j, k))) {
+        getChunkAt(j, k).b(entity);
+      }
+    }
+
+    for (i = 0; i < this.G.size(); i++) {
+      d((Entity)this.G.get(i));
+    }
+
+    this.G.clear();
+
+    for (i = 0; i < this.entityList.size(); i++) {
+      Entity entity = (Entity)this.entityList.get(i);
+      if (entity.vehicle != null) {
+        if ((entity.vehicle.dead) || (entity.vehicle.passenger != entity))
+        {
+          entity.vehicle.passenger = null;
+          entity.vehicle = null;
+        }
+      } else {
+        if (!entity.dead) {
+          playerJoinedWorld(entity);
+        }
+
+        if (entity.dead) {
+          int j = entity.ca;
+          int k = entity.cc;
+          if ((entity.bZ) && (isChunkLoaded(j, k))) {
+            getChunkAt(j, k).b(entity);
+          }
+
+          this.entityList.remove(i--);
+          d(entity);
+        }
+
+      }
+
+    }
+
+    this.Q = true;
+    Iterator iterator = this.tileEntityList.iterator();
+
+    while (iterator.hasNext()) {
+      TileEntity tileentity = (TileEntity)iterator.next();
+
+      if ((!tileentity.l()) && (tileentity.world != null) && (isLoaded(tileentity.x, tileentity.y, tileentity.z))) {
+        tileentity.q_();
+      }
+
+      if (tileentity.l()) {
+        iterator.remove();
+        if (isChunkLoaded(tileentity.x >> 4, tileentity.z >> 4)) {
+          Chunk chunk = getChunkAt(tileentity.x >> 4, tileentity.z >> 4);
+
+          if (chunk != null) {
+            chunk.cleanChunkBlockTileEntity(tileentity.x & 0xF, tileentity.y, tileentity.z & 0xF);
+          }
+        }
+      }
+    }
+
+    this.Q = false;
+    if (!this.K.isEmpty()) {
+      for (Iterator i$ = this.K.iterator(); i$.hasNext(); ) { Object tile = i$.next();
+
+        ((TileEntity)tile).onChunkUnload();
+      }
+
+      this.tileEntityList.removeAll(this.K);
+      this.K.clear();
+    }
+
+    if (!this.J.isEmpty()) {
+      Iterator iterator1 = this.J.iterator();
+
+      while (iterator1.hasNext()) {
+        TileEntity tileentity1 = (TileEntity)iterator1.next();
+
+        if (!tileentity1.l()) {
+          if (!this.tileEntityList.contains(tileentity1)) {
+            this.tileEntityList.add(tileentity1);
+          }
+
         }
         else
         {
-            Chunk var4 = this.getChunkAt(var1 >> 4, var3 >> 4);
+          if (isChunkLoaded(tileentity1.x >> 4, tileentity1.z >> 4)) {
+            Chunk chunk1 = getChunkAt(tileentity1.x >> 4, tileentity1.z >> 4);
 
-            if (var4 == null)
-            {
-                return null;
+            if (chunk1 != null) {
+              chunk1.cleanChunkBlockTileEntity(tileentity1.x & 0xF, tileentity1.y, tileentity1.z & 0xF);
             }
-            else
-            {
-                TileEntity var5 = var4.e(var1 & 15, var2, var3 & 15);
 
-                if (var5 == null)
-                {
-                    Iterator var6 = this.a.iterator();
+          }
 
-                    while (var6.hasNext())
-                    {
-                        TileEntity var7 = (TileEntity)var6.next();
+          notify(tileentity1.x, tileentity1.y, tileentity1.z);
+        }
+      }
 
-                        if (!var7.r() && var7.x == var1 && var7.y == var2 && var7.z == var3)
-                        {
-                            var5 = var7;
-                            break;
-                        }
-                    }
-                }
+      this.J.clear();
+    }
+  }
 
-                return var5;
-            }
+  public void a(Collection collection)
+  {
+    List dest = this.Q ? this.J : this.tileEntityList;
+    for (Iterator i$ = collection.iterator(); i$.hasNext(); ) { Object entity = i$.next();
+
+      if (((TileEntity)entity).canUpdate())
+      {
+        dest.add(entity);
+      } }
+  }
+
+  public void playerJoinedWorld(Entity entity)
+  {
+    entityJoinedWorld(entity, true);
+  }
+
+  public void entityJoinedWorld(Entity entity, boolean flag) {
+    int i = MathHelper.floor(entity.locX);
+    int j = MathHelper.floor(entity.locZ);
+    byte b0 = 32;
+
+    if ((!flag) || (a(i - b0, 0, j - b0, i + b0, 0, j + b0)) || (ForgeHooks.canUpdateEntity(entity))) {
+      entity.bL = entity.locX;
+      entity.bM = entity.locY;
+      entity.bN = entity.locZ;
+      entity.lastYaw = entity.yaw;
+      entity.lastPitch = entity.pitch;
+      if ((flag) && (entity.bZ)) {
+        if (entity.vehicle != null)
+          entity.R();
+        else {
+          entity.F_();
+        }
+
+      }
+
+      if ((Double.isNaN(entity.locX)) || (Double.isInfinite(entity.locX))) {
+        entity.locX = entity.bL;
+      }
+
+      if ((Double.isNaN(entity.locY)) || (Double.isInfinite(entity.locY))) {
+        entity.locY = entity.bM;
+      }
+
+      if ((Double.isNaN(entity.locZ)) || (Double.isInfinite(entity.locZ))) {
+        entity.locZ = entity.bN;
+      }
+
+      if ((Double.isNaN(entity.pitch)) || (Double.isInfinite(entity.pitch))) {
+        entity.pitch = entity.lastPitch;
+      }
+
+      if ((Double.isNaN(entity.yaw)) || (Double.isInfinite(entity.yaw))) {
+        entity.yaw = entity.lastYaw;
+      }
+
+      int k = MathHelper.floor(entity.locX / 16.0D);
+      int l = MathHelper.floor(entity.locY / 16.0D);
+      int i1 = MathHelper.floor(entity.locZ / 16.0D);
+
+      if ((!entity.bZ) || (entity.ca != k) || (entity.cb != l) || (entity.cc != i1)) {
+        if ((entity.bZ) && (isChunkLoaded(entity.ca, entity.cc))) {
+          getChunkAt(entity.ca, entity.cc).a(entity, entity.cb);
+        }
+
+        if (isChunkLoaded(k, i1)) {
+          entity.bZ = true;
+          getChunkAt(k, i1).a(entity);
+        } else {
+          entity.bZ = false;
+        }
+
+      }
+
+      if ((flag) && (entity.bZ) && (entity.passenger != null))
+        if ((!entity.passenger.dead) && (entity.passenger.vehicle == entity)) {
+          playerJoinedWorld(entity.passenger);
+        } else {
+          entity.passenger.vehicle = null;
+          entity.passenger = null;
         }
     }
+  }
 
-    /**
-     * Sets the TileEntity for a given block in X, Y, Z coordinates
-     */
-    public void setTileEntity(int var1, int var2, int var3, TileEntity var4)
-    {
-        if (var4 != null && !var4.r())
-        {
-            if (this.N)
-            {
-                var4.x = var1;
-                var4.y = var2;
-                var4.z = var3;
-                this.a.add(var4);
-            }
-            else
-            {
-                this.tileEntityList.add(var4);
-                Chunk var5 = this.getChunkAt(var1 >> 4, var3 >> 4);
+  public boolean containsEntity(AxisAlignedBB axisalignedbb)
+  {
+    List list = getEntities((Entity)null, axisalignedbb);
 
-                if (var5 != null)
-                {
-                    var5.a(var1 & 15, var2, var3 & 15, var4);
-                }
-            }
-        }
+    for (int i = 0; i < list.size(); i++) {
+      Entity entity = (Entity)list.get(i);
+
+      if ((!entity.dead) && (entity.bf)) {
+        return false;
+      }
     }
 
-    /**
-     * Removes the TileEntity for a given block in X,Y,Z coordinates
-     */
-    public void q(int var1, int var2, int var3)
-    {
-        TileEntity var4 = this.getTileEntity(var1, var2, var3);
+    return true;
+  }
 
-        if (var4 != null && this.N)
-        {
-            var4.w_();
-            this.a.remove(var4);
+  public boolean b(AxisAlignedBB axisalignedbb) {
+    int i = MathHelper.floor(axisalignedbb.a);
+    int j = MathHelper.floor(axisalignedbb.d + 1.0D);
+    int k = MathHelper.floor(axisalignedbb.b);
+    int l = MathHelper.floor(axisalignedbb.e + 1.0D);
+    int i1 = MathHelper.floor(axisalignedbb.c);
+    int j1 = MathHelper.floor(axisalignedbb.f + 1.0D);
+
+    if (axisalignedbb.a < 0.0D) {
+      i--;
+    }
+
+    if (axisalignedbb.b < 0.0D) {
+      k--;
+    }
+
+    if (axisalignedbb.c < 0.0D) {
+      i1--;
+    }
+
+    for (int k1 = i; k1 < j; k1++) {
+      for (int l1 = k; l1 < l; l1++) {
+        for (int i2 = i1; i2 < j1; i2++) {
+          Block block = Block.byId[getTypeId(k1, l1, i2)];
+
+          if (block != null) {
+            return true;
+          }
         }
+      }
+    }
+
+    return false;
+  }
+
+  public boolean containsLiquid(AxisAlignedBB axisalignedbb) {
+    int i = MathHelper.floor(axisalignedbb.a);
+    int j = MathHelper.floor(axisalignedbb.d + 1.0D);
+    int k = MathHelper.floor(axisalignedbb.b);
+    int l = MathHelper.floor(axisalignedbb.e + 1.0D);
+    int i1 = MathHelper.floor(axisalignedbb.c);
+    int j1 = MathHelper.floor(axisalignedbb.f + 1.0D);
+
+    if (axisalignedbb.a < 0.0D) {
+      i--;
+    }
+
+    if (axisalignedbb.b < 0.0D) {
+      k--;
+    }
+
+    if (axisalignedbb.c < 0.0D) {
+      i1--;
+    }
+
+    for (int k1 = i; k1 < j; k1++) {
+      for (int l1 = k; l1 < l; l1++) {
+        for (int i2 = i1; i2 < j1; i2++) {
+          Block block = Block.byId[getTypeId(k1, l1, i2)];
+
+          if ((block != null) && (block.material.isLiquid())) {
+            return true;
+          }
+        }
+      }
+    }
+
+    return false;
+  }
+
+  public boolean d(AxisAlignedBB axisalignedbb) {
+    int i = MathHelper.floor(axisalignedbb.a);
+    int j = MathHelper.floor(axisalignedbb.d + 1.0D);
+    int k = MathHelper.floor(axisalignedbb.b);
+    int l = MathHelper.floor(axisalignedbb.e + 1.0D);
+    int i1 = MathHelper.floor(axisalignedbb.c);
+    int j1 = MathHelper.floor(axisalignedbb.f + 1.0D);
+
+    if (a(i, k, i1, j, l, j1)) {
+      for (int k1 = i; k1 < j; k1++) {
+        for (int l1 = k; l1 < l; l1++) {
+          for (int i2 = i1; i2 < j1; i2++) {
+            int j2 = getTypeId(k1, l1, i2);
+
+            if ((j2 == Block.FIRE.id) || (j2 == Block.LAVA.id) || (j2 == Block.STATIONARY_LAVA.id)) {
+              return true;
+            }
+
+            if ((j2 > 0) && (Block.byId[j2] != null) && (Block.byId[j2].isBlockBurning(this, k1, l1, i2)))
+            {
+              return true;
+            }
+          }
+        }
+
+      }
+
+    }
+
+    return false;
+  }
+
+  public boolean a(AxisAlignedBB axisalignedbb, Material material, Entity entity) {
+    int i = MathHelper.floor(axisalignedbb.a);
+    int j = MathHelper.floor(axisalignedbb.d + 1.0D);
+    int k = MathHelper.floor(axisalignedbb.b);
+    int l = MathHelper.floor(axisalignedbb.e + 1.0D);
+    int i1 = MathHelper.floor(axisalignedbb.c);
+    int j1 = MathHelper.floor(axisalignedbb.f + 1.0D);
+
+    if (!a(i, k, i1, j, l, j1)) {
+      return false;
+    }
+    boolean flag = false;
+    Vec3D vec3d = Vec3D.create(0.0D, 0.0D, 0.0D);
+
+    for (int k1 = i; k1 < j; k1++) {
+      for (int l1 = k; l1 < l; l1++) {
+        for (int i2 = i1; i2 < j1; i2++) {
+          Block block = Block.byId[getTypeId(k1, l1, i2)];
+
+          if ((block != null) && (block.material == material)) {
+            double d0 = l1 + 1 - BlockFluids.d(getData(k1, l1, i2));
+
+            if (l >= d0) {
+              flag = true;
+              block.a(this, k1, l1, i2, entity, vec3d);
+            }
+          }
+        }
+      }
+    }
+
+    if (vec3d.c() > 0.0D) {
+      vec3d = vec3d.b();
+      double d1 = 0.014D;
+
+      entity.motX += vec3d.a * d1;
+      entity.motY += vec3d.b * d1;
+      entity.motZ += vec3d.c * d1;
+    }
+
+    return flag;
+  }
+
+  public boolean a(AxisAlignedBB axisalignedbb, Material material)
+  {
+    int i = MathHelper.floor(axisalignedbb.a);
+    int j = MathHelper.floor(axisalignedbb.d + 1.0D);
+    int k = MathHelper.floor(axisalignedbb.b);
+    int l = MathHelper.floor(axisalignedbb.e + 1.0D);
+    int i1 = MathHelper.floor(axisalignedbb.c);
+    int j1 = MathHelper.floor(axisalignedbb.f + 1.0D);
+
+    for (int k1 = i; k1 < j; k1++) {
+      for (int l1 = k; l1 < l; l1++) {
+        for (int i2 = i1; i2 < j1; i2++) {
+          Block block = Block.byId[getTypeId(k1, l1, i2)];
+
+          if ((block != null) && (block.material == material)) {
+            return true;
+          }
+        }
+      }
+    }
+
+    return false;
+  }
+
+  public boolean b(AxisAlignedBB axisalignedbb, Material material) {
+    int i = MathHelper.floor(axisalignedbb.a);
+    int j = MathHelper.floor(axisalignedbb.d + 1.0D);
+    int k = MathHelper.floor(axisalignedbb.b);
+    int l = MathHelper.floor(axisalignedbb.e + 1.0D);
+    int i1 = MathHelper.floor(axisalignedbb.c);
+    int j1 = MathHelper.floor(axisalignedbb.f + 1.0D);
+
+    for (int k1 = i; k1 < j; k1++) {
+      for (int l1 = k; l1 < l; l1++) {
+        for (int i2 = i1; i2 < j1; i2++) {
+          Block block = Block.byId[getTypeId(k1, l1, i2)];
+
+          if ((block != null) && (block.material == material)) {
+            int j2 = getData(k1, l1, i2);
+            double d0 = l1 + 1;
+
+            if (j2 < 8) {
+              d0 = l1 + 1 - j2 / 8.0D;
+            }
+
+            if (d0 >= axisalignedbb.b) {
+              return true;
+            }
+          }
+        }
+      }
+    }
+
+    return false;
+  }
+
+  public Explosion explode(Entity entity, double d0, double d1, double d2, float f) {
+    return createExplosion(entity, d0, d1, d2, f, false);
+  }
+
+  public Explosion createExplosion(Entity entity, double d0, double d1, double d2, float f, boolean flag) {
+    Explosion explosion = new Explosion(this, entity, d0, d1, d2, f);
+
+    explosion.a = flag;
+    explosion.a();
+    explosion.a(true);
+    return explosion;
+  }
+
+  public float a(Vec3D vec3d, AxisAlignedBB axisalignedbb) {
+    double d0 = 1.0D / ((axisalignedbb.d - axisalignedbb.a) * 2.0D + 1.0D);
+    double d1 = 1.0D / ((axisalignedbb.e - axisalignedbb.b) * 2.0D + 1.0D);
+    double d2 = 1.0D / ((axisalignedbb.f - axisalignedbb.c) * 2.0D + 1.0D);
+    int i = 0;
+    int j = 0;
+
+    for (float f = 0.0F; f <= 1.0F; f = (float)(f + d0)) {
+      for (float f1 = 0.0F; f1 <= 1.0F; f1 = (float)(f1 + d1)) {
+        for (float f2 = 0.0F; f2 <= 1.0F; f2 = (float)(f2 + d2)) {
+          double d3 = axisalignedbb.a + (axisalignedbb.d - axisalignedbb.a) * f;
+          double d4 = axisalignedbb.b + (axisalignedbb.e - axisalignedbb.b) * f1;
+          double d5 = axisalignedbb.c + (axisalignedbb.f - axisalignedbb.c) * f2;
+
+          if (a(Vec3D.create(d3, d4, d5), vec3d) == null) {
+            i++;
+          }
+
+          j++;
+        }
+      }
+    }
+
+    return i / j;
+  }
+
+  public boolean douseFire(EntityHuman entityhuman, int i, int j, int k, int l) {
+    if (l == 0) {
+      j--;
+    }
+
+    if (l == 1) {
+      j++;
+    }
+
+    if (l == 2) {
+      k--;
+    }
+
+    if (l == 3) {
+      k++;
+    }
+
+    if (l == 4) {
+      i--;
+    }
+
+    if (l == 5) {
+      i++;
+    }
+
+    if (getTypeId(i, j, k) == Block.FIRE.id) {
+      a(entityhuman, 1004, i, j, k, 0);
+      setTypeId(i, j, k, 0);
+      return true;
+    }
+    return false;
+  }
+
+  public TileEntity getTileEntity(int i, int j, int k)
+  {
+    if (j >= 256) {
+      return null;
+    }
+    Chunk chunk = getChunkAt(i >> 4, k >> 4);
+
+    if (chunk == null) {
+      return null;
+    }
+    TileEntity tileentity = chunk.e(i & 0xF, j, k & 0xF);
+
+    if (tileentity == null) {
+      Iterator iterator = this.J.iterator();
+
+      while (iterator.hasNext()) {
+        TileEntity tileentity1 = (TileEntity)iterator.next();
+
+        if ((!tileentity1.l()) && (tileentity1.x == i) && (tileentity1.y == j) && (tileentity1.z == k)) {
+          tileentity = tileentity1;
+          break;
+        }
+      }
+    }
+
+    return tileentity;
+  }
+
+  public void setTileEntity(int i, int j, int k, TileEntity tileentity)
+  {
+    if ((tileentity == null) || (tileentity.l())) {
+      return;
+    }
+    List dest = this.Q ? this.J : this.tileEntityList;
+    if (tileentity.canUpdate())
+    {
+      synchronized (dest) {
+        dest.add(tileentity);
+      }
+
+    }
+
+    Chunk chunk = getChunkAt(i >> 4, k >> 4);
+
+    if (chunk != null)
+      chunk.a(i & 0xF, j, k & 0xF, tileentity);
+  }
+
+  public void q(int i, int j, int k)
+  {
+    Chunk chunk = getChunkAt(i >> 4, k >> 4);
+
+    if (chunk != null)
+      chunk.f(i & 0xF, j, k & 0xF);
+  }
+
+  public void a(TileEntity tileentity)
+  {
+    this.K.add(tileentity);
+  }
+
+  public boolean r(int i, int j, int k) {
+    Block block = Block.byId[getTypeId(i, j, k)];
+
+    return block == null ? false : block.a();
+  }
+
+  public boolean e(int i, int j, int k) {
+    Block block = Block.byId[getTypeId(i, j, k)];
+    return (block != null) && (block.isBlockNormalCube(this, i, j, k));
+  }
+
+  public boolean b(int i, int j, int k, boolean flag) {
+    if ((i >= -30000000) && (k >= -30000000) && (i < 30000000) && (k < 30000000)) {
+      Chunk chunk = this.chunkProvider.getOrCreateChunk(i >> 4, k >> 4);
+
+      if ((chunk != null) && (!chunk.isEmpty())) {
+        Block block = Block.byId[getTypeId(i, j, k)];
+
+        return block == null ? false : e(i, j, k);
+      }
+      return flag;
+    }
+
+    return flag;
+  }
+
+  public void g()
+  {
+    int i = a(1.0F);
+
+    if (i != this.f)
+      this.f = i;
+  }
+
+  public void setSpawnFlags(boolean flag, boolean flag1)
+  {
+    this.allowMonsters = flag;
+    this.allowAnimals = flag1;
+  }
+
+  public void doTick() {
+    if ((getWorldData().isHardcore()) && (this.difficulty < 3)) {
+      this.difficulty = 3;
+    }
+
+    this.worldProvider.c.b();
+    i();
+
+    if (everyoneDeeplySleeping()) {
+      boolean flag = false;
+
+      if (((!this.allowMonsters) || (this.difficulty < 1)) || 
+        (!flag)) {
+        long i = this.worldData.getTime() + 24000L;
+        this.worldData.a(i - i % 24000L);
+        u();
+      }
+
+    }
+
+    long time = this.worldData.getTime();
+    if (((this.allowMonsters) || (this.allowAnimals)) && ((this instanceof WorldServer)) && (getServer().getHandle().players.size() > 0)) {
+      SpawnerCreature.spawnEntities(this, (this.allowMonsters) && (this.ticksPerMonsterSpawns != 0L) && (time % this.ticksPerMonsterSpawns == 0L), (this.allowAnimals) && (this.ticksPerAnimalSpawns != 0L) && (time % this.ticksPerAnimalSpawns == 0L));
+    }
+
+    this.chunkProvider.unloadChunks();
+    int j = a(1.0F);
+
+    if (j != this.f) {
+      this.f = j;
+    }
+
+    long i = this.worldData.getTime() + 1L;
+    if (i % this.p == 0L)
+    {
+      save(false, (IProgressUpdate)null);
+    }
+
+    this.worldData.a(i);
+
+    a(false);
+
+    l();
+
+    this.villages.tick();
+    this.O.a();
+  }
+
+  private void B()
+  {
+    if (this.worldData.hasStorm()) {
+      this.j = 1.0F;
+      if (this.worldData.isThundering())
+        this.l = 1.0F;
+    }
+  }
+
+  protected void i()
+  {
+    if (!this.worldProvider.e) {
+      if (this.m > 0) {
+        this.m -= 1;
+      }
+
+      int i = this.worldData.getThunderDuration();
+
+      if (i <= 0) {
+        if (this.worldData.isThundering())
+          this.worldData.setThunderDuration(this.random.nextInt(12000) + 3600);
         else
+          this.worldData.setThunderDuration(this.random.nextInt(168000) + 12000);
+      }
+      else {
+        i--;
+        this.worldData.setThunderDuration(i);
+        if (i <= 0)
         {
-            if (var4 != null)
-            {
-                this.a.remove(var4);
-                this.tileEntityList.remove(var4);
-            }
-
-            Chunk var5 = this.getChunkAt(var1 >> 4, var3 >> 4);
-
-            if (var5 != null)
-            {
-                var5.f(var1 & 15, var2, var3 & 15);
-            }
+          ThunderChangeEvent thunder = new ThunderChangeEvent(getWorld(), !this.worldData.isThundering());
+          getServer().getPluginManager().callEvent(thunder);
+          if (!thunder.isCancelled()) {
+            this.worldData.setThundering(!this.worldData.isThundering());
+          }
         }
-    }
 
-    /**
-     * Adds TileEntity to despawn list
-     */
-    public void a(TileEntity var1)
-    {
-        this.b.add(var1);
-    }
+      }
 
-    /**
-     * Returns true if the block at the specified coordinates is an opaque cube. Args: x, y, z
-     */
-    public boolean r(int var1, int var2, int var3)
-    {
-        Block var4 = Block.byId[this.getTypeId(var1, var2, var3)];
-        return var4 == null ? false : var4.c();
-    }
+      int j = this.worldData.getWeatherDuration();
 
-    /**
-     * Returns true if the block at the specified coordinates is an opaque cube. Args: x, y, z
-     */
-    public boolean s(int var1, int var2, int var3)
-    {
-        return Block.i(this.getTypeId(var1, var2, var3));
-    }
-
-    /**
-     * Returns true if the block at the given coordinate has a solid (buildable) top surface.
-     */
-    public boolean t(int var1, int var2, int var3)
-    {
-        Block var4 = Block.byId[this.getTypeId(var1, var2, var3)];
-        return var4 == null ? false : (var4.material.k() && var4.b() ? true : (var4 instanceof BlockStairs ? (this.getData(var1, var2, var3) & 4) == 4 : (var4 instanceof BlockStepAbstract ? (this.getData(var1, var2, var3) & 8) == 8 : false)));
-    }
-
-    /**
-     * Checks if the block is a solid, normal cube. If the chunk does not exist, or is not loaded, it returns the
-     * boolean parameter.
-     */
-    public boolean b(int var1, int var2, int var3, boolean var4)
-    {
-        if (var1 >= -30000000 && var3 >= -30000000 && var1 < 30000000 && var3 < 30000000)
-        {
-            Chunk var5 = this.chunkProvider.getOrCreateChunk(var1 >> 4, var3 >> 4);
-
-            if (var5 != null && !var5.isEmpty())
-            {
-                Block var6 = Block.byId[this.getTypeId(var1, var2, var3)];
-                return var6 == null ? false : var6.material.k() && var6.b();
-            }
-            else
-            {
-                return var4;
-            }
-        }
-        else
-        {
-            return var4;
-        }
-    }
-
-    /**
-     * Called on construction of the World class to setup the initial skylight values
-     */
-    public void w()
-    {
-        int var1 = this.a(1.0F);
-
-        if (var1 != this.j)
-        {
-            this.j = var1;
-        }
-    }
-
-    /**
-     * first boolean for hostile mobs and second for peaceful mobs
-     */
-    public void setSpawnFlags(boolean var1, boolean var2)
-    {
-        this.allowMonsters = var1;
-        this.allowAnimals = var2;
-    }
-
-    /**
-     * Runs a single tick for the world
-     */
-    public void doTick()
-    {
-        this.n();
-    }
-
-    /**
-     * Called from World constructor to set rainingStrength and thunderingStrength
-     */
-    private void a()
-    {
+      if (j <= 0) {
         if (this.worldData.hasStorm())
-        {
-            this.n = 1.0F;
-
-            if (this.worldData.isThundering())
-            {
-                this.p = 1.0F;
-            }
-        }
-    }
-
-    /**
-     * Updates all weather states.
-     */
-    protected void n()
-    {
-        if (!this.worldProvider.f)
-        {
-            if (this.q > 0)
-            {
-                --this.q;
-            }
-
-            int var1 = this.worldData.getThunderDuration();
-
-            if (var1 <= 0)
-            {
-                if (this.worldData.isThundering())
-                {
-                    this.worldData.setThunderDuration(this.random.nextInt(12000) + 3600);
-                }
-                else
-                {
-                    this.worldData.setThunderDuration(this.random.nextInt(168000) + 12000);
-                }
-            }
-            else
-            {
-                --var1;
-                this.worldData.setThunderDuration(var1);
-
-                if (var1 <= 0)
-                {
-                    this.worldData.setThundering(!this.worldData.isThundering());
-                }
-            }
-
-            int var2 = this.worldData.getWeatherDuration();
-
-            if (var2 <= 0)
-            {
-                if (this.worldData.hasStorm())
-                {
-                    this.worldData.setWeatherDuration(this.random.nextInt(12000) + 12000);
-                }
-                else
-                {
-                    this.worldData.setWeatherDuration(this.random.nextInt(168000) + 12000);
-                }
-            }
-            else
-            {
-                --var2;
-                this.worldData.setWeatherDuration(var2);
-
-                if (var2 <= 0)
-                {
-                    this.worldData.setStorm(!this.worldData.hasStorm());
-                }
-            }
-
-            this.m = this.n;
-
-            if (this.worldData.hasStorm())
-            {
-                this.n = (float)((double)this.n + 0.01D);
-            }
-            else
-            {
-                this.n = (float)((double)this.n - 0.01D);
-            }
-
-            if (this.n < 0.0F)
-            {
-                this.n = 0.0F;
-            }
-
-            if (this.n > 1.0F)
-            {
-                this.n = 1.0F;
-            }
-
-            this.o = this.p;
-
-            if (this.worldData.isThundering())
-            {
-                this.p = (float)((double)this.p + 0.01D);
-            }
-            else
-            {
-                this.p = (float)((double)this.p - 0.01D);
-            }
-
-            if (this.p < 0.0F)
-            {
-                this.p = 0.0F;
-            }
-
-            if (this.p > 1.0F)
-            {
-                this.p = 1.0F;
-            }
-        }
-    }
-
-    /**
-     * start precipitation in this world (2 ticks after command posted)
-     */
-    public void x()
-    {
-        this.worldData.setWeatherDuration(1);
-    }
-
-    protected void y()
-    {
-        this.chunkTickList.clear();
-        this.methodProfiler.a("buildList");
-        int var1;
-        EntityHuman var2;
-        int var3;
-        int var4;
-
-        for (var1 = 0; var1 < this.players.size(); ++var1)
-        {
-            var2 = (EntityHuman)this.players.get(var1);
-            var3 = MathHelper.floor(var2.locX / 16.0D);
-            var4 = MathHelper.floor(var2.locZ / 16.0D);
-            byte var5 = 7;
-
-            for (int var6 = -var5; var6 <= var5; ++var6)
-            {
-                for (int var7 = -var5; var7 <= var5; ++var7)
-                {
-                    this.chunkTickList.add(new ChunkCoordIntPair(var6 + var3, var7 + var4));
-                }
-            }
-        }
-
-        this.methodProfiler.b();
-
-        if (this.O > 0)
-        {
-            --this.O;
-        }
-
-        this.methodProfiler.a("playerCheckLight");
-
-        if (!this.players.isEmpty())
-        {
-            var1 = this.random.nextInt(this.players.size());
-            var2 = (EntityHuman)this.players.get(var1);
-            var3 = MathHelper.floor(var2.locX) + this.random.nextInt(11) - 5;
-            var4 = MathHelper.floor(var2.locY) + this.random.nextInt(11) - 5;
-            int var8 = MathHelper.floor(var2.locZ) + this.random.nextInt(11) - 5;
-            this.x(var3, var4, var8);
-        }
-
-        this.methodProfiler.b();
-    }
-
-    protected void a(int var1, int var2, Chunk var3)
-    {
-        this.methodProfiler.c("moodSound");
-
-        if (this.O == 0 && !this.isStatic)
-        {
-            this.k = this.k * 3 + 1013904223;
-            int var4 = this.k >> 2;
-            int var5 = var4 & 15;
-            int var6 = var4 >> 8 & 15;
-            int var7 = var4 >> 16 & 127;
-            int var8 = var3.getTypeId(var5, var7, var6);
-            var5 += var1;
-            var6 += var2;
-
-            if (var8 == 0 && this.k(var5, var7, var6) <= this.random.nextInt(8) && this.b(EnumSkyBlock.Sky, var5, var7, var6) <= 0)
-            {
-                EntityHuman var9 = this.findNearbyPlayer((double)var5 + 0.5D, (double)var7 + 0.5D, (double)var6 + 0.5D, 8.0D);
-
-                if (var9 != null && var9.e((double)var5 + 0.5D, (double)var7 + 0.5D, (double)var6 + 0.5D) > 4.0D)
-                {
-                    this.makeSound((double)var5 + 0.5D, (double)var7 + 0.5D, (double)var6 + 0.5D, "ambient.cave.cave", 0.7F, 0.8F + this.random.nextFloat() * 0.2F);
-                    this.O = this.random.nextInt(12000) + 6000;
-                }
-            }
-        }
-
-        this.methodProfiler.c("checkLight");
-        var3.o();
-    }
-
-    /**
-     * plays random cave ambient sounds and runs updateTick on random blocks within each chunk in the vacinity of a
-     * player
-     */
-    protected void g()
-    {
-        this.y();
-    }
-
-    /**
-     * checks to see if a given block is both water and is cold enough to freeze
-     */
-    public boolean u(int var1, int var2, int var3)
-    {
-        return this.c(var1, var2, var3, false);
-    }
-
-    /**
-     * checks to see if a given block is both water and has at least one immediately adjacent non-water block
-     */
-    public boolean v(int var1, int var2, int var3)
-    {
-        return this.c(var1, var2, var3, true);
-    }
-
-    /**
-     * checks to see if a given block is both water, and cold enough to freeze - if the par4 boolean is set, this will
-     * only return true if there is a non-water block immediately adjacent to the specified block
-     */
-    public boolean c(int var1, int var2, int var3, boolean var4)
-    {
-        BiomeBase var5 = this.getBiome(var1, var3);
-        float var6 = var5.j();
-
-        if (var6 > 0.15F)
-        {
-            return false;
-        }
+          this.worldData.setWeatherDuration(this.random.nextInt(12000) + 12000);
         else
+          this.worldData.setWeatherDuration(this.random.nextInt(168000) + 12000);
+      }
+      else {
+        j--;
+        this.worldData.setWeatherDuration(j);
+        if (j <= 0)
         {
-            if (var2 >= 0 && var2 < 256 && this.b(EnumSkyBlock.Block, var1, var2, var3) < 10)
-            {
-                int var7 = this.getTypeId(var1, var2, var3);
+          WeatherChangeEvent weather = new WeatherChangeEvent(getWorld(), !this.worldData.hasStorm());
+          getServer().getPluginManager().callEvent(weather);
 
-                if ((var7 == Block.STATIONARY_WATER.id || var7 == Block.WATER.id) && this.getData(var1, var2, var3) == 0)
-                {
-                    if (!var4)
-                    {
-                        return true;
-                    }
+          if (!weather.isCancelled()) {
+            this.worldData.setStorm(!this.worldData.hasStorm());
+          }
+        }
 
-                    boolean var8 = true;
+      }
 
-                    if (var8 && this.getMaterial(var1 - 1, var2, var3) != Material.WATER)
-                    {
-                        var8 = false;
-                    }
+      this.i = this.j;
+      if (this.worldData.hasStorm())
+        this.j = (float)(this.j + 0.01D);
+      else {
+        this.j = (float)(this.j - 0.01D);
+      }
 
-                    if (var8 && this.getMaterial(var1 + 1, var2, var3) != Material.WATER)
-                    {
-                        var8 = false;
-                    }
+      if (this.j < 0.0F) {
+        this.j = 0.0F;
+      }
 
-                    if (var8 && this.getMaterial(var1, var2, var3 - 1) != Material.WATER)
-                    {
-                        var8 = false;
-                    }
+      if (this.j > 1.0F) {
+        this.j = 1.0F;
+      }
 
-                    if (var8 && this.getMaterial(var1, var2, var3 + 1) != Material.WATER)
-                    {
-                        var8 = false;
-                    }
+      this.k = this.l;
+      if (this.worldData.isThundering())
+        this.l = (float)(this.l + 0.01D);
+      else {
+        this.l = (float)(this.l - 0.01D);
+      }
 
-                    if (!var8)
-                    {
-                        return true;
-                    }
-                }
+      if (this.l < 0.0F) {
+        this.l = 0.0F;
+      }
+
+      if (this.l > 1.0F)
+        this.l = 1.0F;
+    }
+  }
+
+  private void C()
+  {
+    WeatherChangeEvent weather = new WeatherChangeEvent(getWorld(), false);
+    getServer().getPluginManager().callEvent(weather);
+
+    ThunderChangeEvent thunder = new ThunderChangeEvent(getWorld(), false);
+    getServer().getPluginManager().callEvent(thunder);
+    if (!weather.isCancelled()) {
+      this.worldData.setWeatherDuration(0);
+      this.worldData.setStorm(false);
+    }
+    if (!thunder.isCancelled()) {
+      this.worldData.setThunderDuration(0);
+      this.worldData.setThundering(false);
+    }
+  }
+
+  public void j()
+  {
+    this.worldData.setWeatherDuration(1);
+  }
+
+  protected void k()
+  {
+    for (int i = 0; i < this.players.size(); i++) {
+      EntityHuman entityhuman = (EntityHuman)this.players.get(i);
+      int j = MathHelper.floor(entityhuman.locX / 16.0D);
+      int k = MathHelper.floor(entityhuman.locZ / 16.0D);
+      byte b0 = 7;
+
+      for (int l = -b0; l <= b0; l++) {
+        for (int i1 = -b0; i1 <= b0; i1++) {
+          this.chunkTickList.add(LongHash.toLong(l + j, i1 + k));
+        }
+      }
+    }
+
+    ForgeHooks.addActiveChunks(this, this.chunkTickList);
+
+    if (this.R > 0) {
+      this.R -= 1;
+    }
+
+    if (!this.players.isEmpty()) {
+      i = this.random.nextInt(this.players.size());
+      EntityHuman entityhuman = (EntityHuman)this.players.get(i);
+      int j = MathHelper.floor(entityhuman.locX) + this.random.nextInt(11) - 5;
+      int k = MathHelper.floor(entityhuman.locY) + this.random.nextInt(11) - 5;
+      int j1 = MathHelper.floor(entityhuman.locZ) + this.random.nextInt(11) - 5;
+
+      v(j, k, j1);
+    }
+  }
+
+  protected void a(int i, int j, Chunk chunk)
+  {
+    chunk.j();
+
+    if (this.R == 0) {
+      this.g = (this.g * 3 + 1013904223);
+      int k = this.g >> 2;
+      int l = k & 0xF;
+      int i1 = k >> 8 & 0xF;
+      int j1 = k >> 16 & 0xFF;
+      int k1 = chunk.getTypeId(l, j1, i1);
+
+      l += i;
+      i1 += j;
+      if ((k1 == 0) && (m(l, j1, i1) <= this.random.nextInt(8)) && (a(EnumSkyBlock.SKY, l, j1, i1) <= 0)) {
+        EntityHuman entityhuman = findNearbyPlayer(l + 0.5D, j1 + 0.5D, i1 + 0.5D, 8.0D);
+
+        if ((entityhuman != null) && (entityhuman.e(l + 0.5D, j1 + 0.5D, i1 + 0.5D) > 4.0D)) {
+          makeSound(l + 0.5D, j1 + 0.5D, i1 + 0.5D, "ambient.cave.cave", 0.7F, 0.8F + this.random.nextFloat() * 0.2F);
+          this.R = (this.random.nextInt(12000) + 6000);
+        }
+      }
+
+    }
+
+    chunk.n();
+  }
+
+  protected void l() {
+    k();
+    int i = 0;
+    int j = 0;
+
+    for (long chunkCoord : this.chunkTickList.popAll()) {
+      int chunkX = LongHash.msw(chunkCoord);
+      int chunkZ = LongHash.lsw(chunkCoord);
+
+      int k = chunkX * 16;
+      int l = chunkZ * 16;
+
+      Chunk chunk = getChunkAt(chunkX, chunkZ);
+
+      a(k, l, chunk);
+
+      if ((this.random.nextInt(100000) == 0) && (x()) && (w())) {
+        this.g = (this.g * 3 + 1013904223);
+        int i1 = this.g >> 2;
+        int j1 = k + (i1 & 0xF);
+        int k1 = l + (i1 >> 8 & 0xF);
+        int l1 = f(j1, k1);
+        if (y(j1, l1, k1)) {
+          strikeLightning(new EntityWeatherLighting(this, j1, l1, k1));
+          this.m = 2;
+        }
+
+      }
+
+      if (this.random.nextInt(16) == 0) {
+        this.g = (this.g * 3 + 1013904223);
+        int i1 = this.g >> 2;
+        int j1 = i1 & 0xF;
+        int k1 = i1 >> 8 & 0xF;
+        int l1 = f(j1 + k, k1 + l);
+        if (t(j1 + k, l1 - 1, k1 + l))
+        {
+          BlockState blockState = getWorld().getBlockAt(j1 + k, l1 - 1, k1 + l).getState();
+          blockState.setTypeId(Block.ICE.id);
+
+          BlockFormEvent iceBlockForm = new BlockFormEvent(blockState.getBlock(), blockState);
+          getServer().getPluginManager().callEvent(iceBlockForm);
+          if (!iceBlockForm.isCancelled()) {
+            blockState.update(true);
+          }
+
+        }
+
+        if ((x()) && (u(j1 + k, l1, k1 + l)))
+        {
+          BlockState blockState = getWorld().getBlockAt(j1 + k, l1, k1 + l).getState();
+          blockState.setTypeId(Block.SNOW.id);
+
+          BlockFormEvent snow = new BlockFormEvent(blockState.getBlock(), blockState);
+          getServer().getPluginManager().callEvent(snow);
+          if (!snow.isCancelled()) {
+            blockState.update(true);
+          }
+
+        }
+
+      }
+
+      ChunkSection[] achunksection = chunk.h();
+
+      int j1 = achunksection.length;
+
+      for (int k1 = 0; k1 < j1; k1++) {
+        ChunkSection chunksection = achunksection[k1];
+
+        if ((chunksection != null) && (chunksection.b()))
+          for (int i2 = 0; i2 < 3; i2++) {
+            this.g = (this.g * 3 + 1013904223);
+            int j2 = this.g >> 2;
+            int k2 = j2 & 0xF;
+            int l2 = j2 >> 8 & 0xF;
+            int i3 = j2 >> 16 & 0xF;
+            int j3 = chunksection.a(k2, i3, l2);
+
+            j++;
+            Block block = Block.byId[j3];
+
+            if ((block != null) && (block.n())) {
+              i++;
+              block.a(this, k2 + k, i3 + chunksection.c(), l2 + l, this.random);
             }
-
-            return false;
-        }
+          }
+      }
     }
+  }
 
-    /**
-     * Tests whether or not snow can be placed at a given location
-     */
-    public boolean w(int var1, int var2, int var3)
-    {
-        BiomeBase var4 = this.getBiome(var1, var3);
-        float var5 = var4.j();
+  public boolean s(int i, int j, int k)
+  {
+    return c(i, j, k, false);
+  }
 
-        if (var5 > 0.15F)
-        {
-            return false;
-        }
-        else
-        {
-            if (var2 >= 0 && var2 < 256 && this.b(EnumSkyBlock.Block, var1, var2, var3) < 10)
-            {
-                int var6 = this.getTypeId(var1, var2 - 1, var3);
-                int var7 = this.getTypeId(var1, var2, var3);
+  public boolean t(int i, int j, int k) {
+    return c(i, j, k, true);
+  }
 
-                if (var7 == 0 && Block.SNOW.canPlace(this, var1, var2, var3) && var6 != 0 && var6 != Block.ICE.id && Block.byId[var6].material.isSolid())
-                {
-                    return true;
-                }
-            }
+  public boolean c(int i, int j, int k, boolean flag) {
+    BiomeBase biomebase = getBiome(i, k);
+    float f = biomebase.i();
 
-            return false;
-        }
+    if (f > 0.15F) {
+      return false;
     }
+    if ((j >= 0) && (j < 256) && (a(EnumSkyBlock.BLOCK, i, j, k) < 10)) {
+      int l = getTypeId(i, j, k);
 
-    public void x(int var1, int var2, int var3)
-    {
-        if (!this.worldProvider.f)
-        {
-            this.c(EnumSkyBlock.Sky, var1, var2, var3);
+      if (((l == Block.STATIONARY_WATER.id) || (l == Block.WATER.id)) && (getData(i, j, k) == 0)) {
+        if (!flag) {
+          return true;
         }
 
-        this.c(EnumSkyBlock.Block, var1, var2, var3);
-    }
+        boolean flag1 = true;
 
-    private int b(int var1, int var2, int var3, int var4, int var5, int var6)
-    {
-        int var7 = 0;
-
-        if (this.j(var2, var3, var4))
-        {
-            var7 = 15;
-        }
-        else
-        {
-            if (var6 == 0)
-            {
-                var6 = 1;
-            }
-
-            int var8 = this.b(EnumSkyBlock.Sky, var2 - 1, var3, var4) - var6;
-            int var9 = this.b(EnumSkyBlock.Sky, var2 + 1, var3, var4) - var6;
-            int var10 = this.b(EnumSkyBlock.Sky, var2, var3 - 1, var4) - var6;
-            int var11 = this.b(EnumSkyBlock.Sky, var2, var3 + 1, var4) - var6;
-            int var12 = this.b(EnumSkyBlock.Sky, var2, var3, var4 - 1) - var6;
-            int var13 = this.b(EnumSkyBlock.Sky, var2, var3, var4 + 1) - var6;
-
-            if (var8 > var7)
-            {
-                var7 = var8;
-            }
-
-            if (var9 > var7)
-            {
-                var7 = var9;
-            }
-
-            if (var10 > var7)
-            {
-                var7 = var10;
-            }
-
-            if (var11 > var7)
-            {
-                var7 = var11;
-            }
-
-            if (var12 > var7)
-            {
-                var7 = var12;
-            }
-
-            if (var13 > var7)
-            {
-                var7 = var13;
-            }
+        if ((flag1) && (getMaterial(i - 1, j, k) != Material.WATER)) {
+          flag1 = false;
         }
 
-        return var7;
-    }
-
-    private int g(int var1, int var2, int var3, int var4, int var5, int var6)
-    {
-        int var7 = Block.lightEmission[var5];
-        int var8 = this.b(EnumSkyBlock.Block, var2 - 1, var3, var4) - var6;
-        int var9 = this.b(EnumSkyBlock.Block, var2 + 1, var3, var4) - var6;
-        int var10 = this.b(EnumSkyBlock.Block, var2, var3 - 1, var4) - var6;
-        int var11 = this.b(EnumSkyBlock.Block, var2, var3 + 1, var4) - var6;
-        int var12 = this.b(EnumSkyBlock.Block, var2, var3, var4 - 1) - var6;
-        int var13 = this.b(EnumSkyBlock.Block, var2, var3, var4 + 1) - var6;
-
-        if (var8 > var7)
-        {
-            var7 = var8;
+        if ((flag1) && (getMaterial(i + 1, j, k) != Material.WATER)) {
+          flag1 = false;
         }
 
-        if (var9 > var7)
-        {
-            var7 = var9;
+        if ((flag1) && (getMaterial(i, j, k - 1) != Material.WATER)) {
+          flag1 = false;
         }
 
-        if (var10 > var7)
-        {
-            var7 = var10;
+        if ((flag1) && (getMaterial(i, j, k + 1) != Material.WATER)) {
+          flag1 = false;
         }
 
-        if (var11 > var7)
-        {
-            var7 = var11;
+        if (!flag1) {
+          return true;
         }
-
-        if (var12 > var7)
-        {
-            var7 = var12;
-        }
-
-        if (var13 > var7)
-        {
-            var7 = var13;
-        }
-
-        return var7;
+      }
     }
 
-    public void c(EnumSkyBlock var1, int var2, int var3, int var4)
-    {
-        if (this.areChunksLoaded(var2, var3, var4, 17))
-        {
-            int var5 = 0;
-            int var6 = 0;
-            this.methodProfiler.a("getBrightness");
-            int var7 = this.b(var1, var2, var3, var4);
-            boolean var8 = false;
-            int var9 = this.getTypeId(var2, var3, var4);
-            int var10 = this.b(var2, var3, var4);
+    return false;
+  }
 
-            if (var10 == 0)
-            {
-                var10 = 1;
-            }
+  public boolean u(int i, int j, int k)
+  {
+    BiomeBase biomebase = getBiome(i, k);
+    float f = biomebase.i();
 
-            boolean var11 = false;
-            int var24;
-
-            if (var1 == EnumSkyBlock.Sky)
-            {
-                var24 = this.b(var7, var2, var3, var4, var9, var10);
-            }
-            else
-            {
-                var24 = this.g(var7, var2, var3, var4, var9, var10);
-            }
-
-            int var12;
-            int var13;
-            int var14;
-            int var15;
-            int var17;
-            int var16;
-            int var19;
-            int var18;
-
-            if (var24 > var7)
-            {
-                this.I[var6++] = 133152;
-            }
-            else if (var24 < var7)
-            {
-                if (var1 != EnumSkyBlock.Block)
-                {
-                    ;
-                }
-
-                this.I[var6++] = 133152 + (var7 << 18);
-
-                while (var5 < var6)
-                {
-                    var9 = this.I[var5++];
-                    var10 = (var9 & 63) - 32 + var2;
-                    var24 = (var9 >> 6 & 63) - 32 + var3;
-                    var12 = (var9 >> 12 & 63) - 32 + var4;
-                    var13 = var9 >> 18 & 15;
-                    var14 = this.b(var1, var10, var24, var12);
-
-                    if (var14 == var13)
-                    {
-                        this.b(var1, var10, var24, var12, 0);
-
-                        if (var13 > 0)
-                        {
-                            var15 = var10 - var2;
-                            var16 = var24 - var3;
-                            var17 = var12 - var4;
-
-                            if (var15 < 0)
-                            {
-                                var15 = -var15;
-                            }
-
-                            if (var16 < 0)
-                            {
-                                var16 = -var16;
-                            }
-
-                            if (var17 < 0)
-                            {
-                                var17 = -var17;
-                            }
-
-                            if (var15 + var16 + var17 < 17)
-                            {
-                                for (var18 = 0; var18 < 6; ++var18)
-                                {
-                                    var19 = var18 % 2 * 2 - 1;
-                                    int var20 = var10 + var18 / 2 % 3 / 2 * var19;
-                                    int var21 = var24 + (var18 / 2 + 1) % 3 / 2 * var19;
-                                    int var22 = var12 + (var18 / 2 + 2) % 3 / 2 * var19;
-                                    var14 = this.b(var1, var20, var21, var22);
-                                    int var23 = Block.lightBlock[this.getTypeId(var20, var21, var22)];
-
-                                    if (var23 == 0)
-                                    {
-                                        var23 = 1;
-                                    }
-
-                                    if (var14 == var13 - var23 && var6 < this.I.length)
-                                    {
-                                        this.I[var6++] = var20 - var2 + 32 + (var21 - var3 + 32 << 6) + (var22 - var4 + 32 << 12) + (var13 - var23 << 18);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
-                var5 = 0;
-            }
-
-            this.methodProfiler.b();
-            this.methodProfiler.a("checkedPosition < toCheckCount");
-
-            while (var5 < var6)
-            {
-                var9 = this.I[var5++];
-                var10 = (var9 & 63) - 32 + var2;
-                var24 = (var9 >> 6 & 63) - 32 + var3;
-                var12 = (var9 >> 12 & 63) - 32 + var4;
-                var13 = this.b(var1, var10, var24, var12);
-                var14 = this.getTypeId(var10, var24, var12);
-                var15 = Block.lightBlock[var14];
-
-                if (var15 == 0)
-                {
-                    var15 = 1;
-                }
-
-                boolean var25 = false;
-
-                if (var1 == EnumSkyBlock.Sky)
-                {
-                    var16 = this.b(var13, var10, var24, var12, var14, var15);
-                }
-                else
-                {
-                    var16 = this.g(var13, var10, var24, var12, var14, var15);
-                }
-
-                if (var16 != var13)
-                {
-                    this.b(var1, var10, var24, var12, var16);
-
-                    if (var16 > var13)
-                    {
-                        var17 = var10 - var2;
-                        var18 = var24 - var3;
-                        var19 = var12 - var4;
-
-                        if (var17 < 0)
-                        {
-                            var17 = -var17;
-                        }
-
-                        if (var18 < 0)
-                        {
-                            var18 = -var18;
-                        }
-
-                        if (var19 < 0)
-                        {
-                            var19 = -var19;
-                        }
-
-                        if (var17 + var18 + var19 < 17 && var6 < this.I.length - 6)
-                        {
-                            if (this.b(var1, var10 - 1, var24, var12) < var16)
-                            {
-                                this.I[var6++] = var10 - 1 - var2 + 32 + (var24 - var3 + 32 << 6) + (var12 - var4 + 32 << 12);
-                            }
-
-                            if (this.b(var1, var10 + 1, var24, var12) < var16)
-                            {
-                                this.I[var6++] = var10 + 1 - var2 + 32 + (var24 - var3 + 32 << 6) + (var12 - var4 + 32 << 12);
-                            }
-
-                            if (this.b(var1, var10, var24 - 1, var12) < var16)
-                            {
-                                this.I[var6++] = var10 - var2 + 32 + (var24 - 1 - var3 + 32 << 6) + (var12 - var4 + 32 << 12);
-                            }
-
-                            if (this.b(var1, var10, var24 + 1, var12) < var16)
-                            {
-                                this.I[var6++] = var10 - var2 + 32 + (var24 + 1 - var3 + 32 << 6) + (var12 - var4 + 32 << 12);
-                            }
-
-                            if (this.b(var1, var10, var24, var12 - 1) < var16)
-                            {
-                                this.I[var6++] = var10 - var2 + 32 + (var24 - var3 + 32 << 6) + (var12 - 1 - var4 + 32 << 12);
-                            }
-
-                            if (this.b(var1, var10, var24, var12 + 1) < var16)
-                            {
-                                this.I[var6++] = var10 - var2 + 32 + (var24 - var3 + 32 << 6) + (var12 + 1 - var4 + 32 << 12);
-                            }
-                        }
-                    }
-                }
-            }
-
-            this.methodProfiler.b();
-        }
+    if (f > 0.15F) {
+      return false;
     }
+    if ((j >= 0) && (j < 256) && (a(EnumSkyBlock.BLOCK, i, j, k) < 10)) {
+      int l = getTypeId(i, j - 1, k);
+      int i1 = getTypeId(i, j, k);
 
-    /**
-     * Runs through the list of updates to run and ticks them
-     */
-    public boolean a(boolean var1)
-    {
-        return false;
-    }
-
-    public List a(Chunk var1, boolean var2)
-    {
-        return null;
-    }
-
-    /**
-     * Will get all entities within the specified AABB excluding the one passed into it. Args: entityToExclude, aabb
-     */
-    public List getEntities(Entity var1, AxisAlignedBB var2)
-    {
-        this.P.clear();
-        int var3 = MathHelper.floor((var2.a - 2.0D) / 16.0D);
-        int var4 = MathHelper.floor((var2.d + 2.0D) / 16.0D);
-        int var5 = MathHelper.floor((var2.c - 2.0D) / 16.0D);
-        int var6 = MathHelper.floor((var2.f + 2.0D) / 16.0D);
-
-        for (int var7 = var3; var7 <= var4; ++var7)
-        {
-            for (int var8 = var5; var8 <= var6; ++var8)
-            {
-                if (this.isChunkLoaded(var7, var8))
-                {
-                    this.getChunkAt(var7, var8).a(var1, var2, this.P);
-                }
-            }
-        }
-
-        return this.P;
-    }
-
-    /**
-     * Returns all entities of the specified class type which intersect with the AABB. Args: entityClass, aabb
-     */
-    public List a(Class var1, AxisAlignedBB var2)
-    {
-        return this.func_82733_a(var1, var2, (IEntitySelector)null);
-    }
-
-    public List func_82733_a(Class var1, AxisAlignedBB var2, IEntitySelector var3)
-    {
-        int var4 = MathHelper.floor((var2.a - 2.0D) / 16.0D);
-        int var5 = MathHelper.floor((var2.d + 2.0D) / 16.0D);
-        int var6 = MathHelper.floor((var2.c - 2.0D) / 16.0D);
-        int var7 = MathHelper.floor((var2.f + 2.0D) / 16.0D);
-        ArrayList var8 = new ArrayList();
-
-        for (int var9 = var4; var9 <= var5; ++var9)
-        {
-            for (int var10 = var6; var10 <= var7; ++var10)
-            {
-                if (this.isChunkLoaded(var9, var10))
-                {
-                    this.getChunkAt(var9, var10).a(var1, var2, var8, var3);
-                }
-            }
-        }
-
-        return var8;
-    }
-
-    public Entity a(Class var1, AxisAlignedBB var2, Entity var3)
-    {
-        List var4 = this.a(var1, var2);
-        Entity var5 = null;
-        double var6 = Double.MAX_VALUE;
-        Iterator var8 = var4.iterator();
-
-        while (var8.hasNext())
-        {
-            Entity var9 = (Entity)var8.next();
-
-            if (var9 != var3)
-            {
-                double var10 = var3.e(var9);
-
-                if (var10 <= var6)
-                {
-                    var5 = var9;
-                    var6 = var10;
-                }
-            }
-        }
-
-        return var5;
-    }
-
-    /**
-     * Returns the Entity with the given ID, or null if it doesn't exist in this World.
-     */
-    public abstract Entity getEntity(int var1);
-
-    /**
-     * marks the chunk that contains this tilentity as modified and then calls worldAccesses.doNothingWithTileEntity
-     */
-    public void b(int var1, int var2, int var3, TileEntity var4)
-    {
-        if (this.isLoaded(var1, var2, var3))
-        {
-            this.getChunkAtWorldCoords(var1, var3).e();
-        }
-    }
-
-    /**
-     * Counts how many entities of an entity class exist in the world. Args: entityClass
-     */
-    public int a(Class var1)
-    {
-        int var2 = 0;
-
-        for (int var3 = 0; var3 < this.entityList.size(); ++var3)
-        {
-            Entity var4 = (Entity)this.entityList.get(var3);
-
-            if (var1.isAssignableFrom(var4.getClass()))
-            {
-                ++var2;
-            }
-        }
-
-        return var2;
-    }
-
-    /**
-     * adds entities to the loaded entities list, and loads thier skins.
-     */
-    public void a(List var1)
-    {
-        this.entityList.addAll(var1);
-
-        for (int var2 = 0; var2 < var1.size(); ++var2)
-        {
-            this.a((Entity)var1.get(var2));
-        }
-    }
-
-    /**
-     * adds entities to the list of unloaded entities
-     */
-    public void b(List var1)
-    {
-        this.f.addAll(var1);
-    }
-
-    /**
-     * Returns true if the given Entity can be placed on the given side of the given block position.
-     */
-    public boolean mayPlace(int var1, int var2, int var3, int var4, boolean var5, int var6, Entity var7)
-    {
-        int var8 = this.getTypeId(var2, var3, var4);
-        Block var9 = Block.byId[var8];
-        Block var10 = Block.byId[var1];
-        AxisAlignedBB var11 = var10.e(this, var2, var3, var4);
-
-        if (var5)
-        {
-            var11 = null;
-        }
-
-        if (var11 != null && !this.a(var11, var7))
-        {
-            return false;
-        }
-        else
-        {
-            if (var9 != null && (var9 == Block.WATER || var9 == Block.STATIONARY_WATER || var9 == Block.LAVA || var9 == Block.STATIONARY_LAVA || var9 == Block.FIRE || var9.material.isReplaceable()))
-            {
-                var9 = null;
-            }
-
-            return var9 != null && var9.material == Material.ORIENTABLE && var10 == Block.ANVIL ? true : var1 > 0 && var9 == null && var10.canPlace(this, var2, var3, var4, var6);
-        }
-    }
-
-    public PathEntity findPath(Entity var1, Entity var2, float var3, boolean var4, boolean var5, boolean var6, boolean var7)
-    {
-        this.methodProfiler.a("pathfind");
-        int var8 = MathHelper.floor(var1.locX);
-        int var9 = MathHelper.floor(var1.locY + 1.0D);
-        int var10 = MathHelper.floor(var1.locZ);
-        int var11 = (int)(var3 + 16.0F);
-        int var12 = var8 - var11;
-        int var13 = var9 - var11;
-        int var14 = var10 - var11;
-        int var15 = var8 + var11;
-        int var16 = var9 + var11;
-        int var17 = var10 + var11;
-        ChunkCache var18 = new ChunkCache(this, var12, var13, var14, var15, var16, var17);
-        PathEntity var19 = (new Pathfinder(var18, var4, var5, var6, var7)).a(var1, var2, var3);
-        this.methodProfiler.b();
-        return var19;
-    }
-
-    public PathEntity a(Entity var1, int var2, int var3, int var4, float var5, boolean var6, boolean var7, boolean var8, boolean var9)
-    {
-        this.methodProfiler.a("pathfind");
-        int var10 = MathHelper.floor(var1.locX);
-        int var11 = MathHelper.floor(var1.locY);
-        int var12 = MathHelper.floor(var1.locZ);
-        int var13 = (int)(var5 + 8.0F);
-        int var14 = var10 - var13;
-        int var15 = var11 - var13;
-        int var16 = var12 - var13;
-        int var17 = var10 + var13;
-        int var18 = var11 + var13;
-        int var19 = var12 + var13;
-        ChunkCache var20 = new ChunkCache(this, var14, var15, var16, var17, var18, var19);
-        PathEntity var21 = (new Pathfinder(var20, var6, var7, var8, var9)).a(var1, var2, var3, var4, var5);
-        this.methodProfiler.b();
-        return var21;
-    }
-
-    /**
-     * Is this block powering in the specified direction Args: x, y, z, direction
-     */
-    public boolean isBlockFacePowered(int var1, int var2, int var3, int var4)
-    {
-        int var5 = this.getTypeId(var1, var2, var3);
-        return var5 == 0 ? false : Block.byId[var5].c(this, var1, var2, var3, var4);
-    }
-
-    /**
-     * Whether one of the neighboring blocks is putting power into this block. Args: x, y, z
-     */
-    public boolean isBlockPowered(int var1, int var2, int var3)
-    {
-        return this.isBlockFacePowered(var1, var2 - 1, var3, 0) ? true : (this.isBlockFacePowered(var1, var2 + 1, var3, 1) ? true : (this.isBlockFacePowered(var1, var2, var3 - 1, 2) ? true : (this.isBlockFacePowered(var1, var2, var3 + 1, 3) ? true : (this.isBlockFacePowered(var1 - 1, var2, var3, 4) ? true : this.isBlockFacePowered(var1 + 1, var2, var3, 5)))));
-    }
-
-    /**
-     * Is a block next to you getting powered (if its an attachable block) or is it providing power directly to you.
-     * Args: x, y, z, direction
-     */
-    public boolean isBlockFaceIndirectlyPowered(int var1, int var2, int var3, int var4)
-    {
-        if (this.s(var1, var2, var3))
-        {
-            return this.isBlockPowered(var1, var2, var3);
-        }
-        else
-        {
-            int var5 = this.getTypeId(var1, var2, var3);
-            return var5 == 0 ? false : Block.byId[var5].b(this, var1, var2, var3, var4);
-        }
-    }
-
-    /**
-     * Used to see if one of the blocks next to you or your block is getting power from a neighboring block. Used by
-     * items like TNT or Doors so they don't have redstone going straight into them.  Args: x, y, z
-     */
-    public boolean isBlockIndirectlyPowered(int var1, int var2, int var3)
-    {
-        return this.isBlockFaceIndirectlyPowered(var1, var2 - 1, var3, 0) ? true : (this.isBlockFaceIndirectlyPowered(var1, var2 + 1, var3, 1) ? true : (this.isBlockFaceIndirectlyPowered(var1, var2, var3 - 1, 2) ? true : (this.isBlockFaceIndirectlyPowered(var1, var2, var3 + 1, 3) ? true : (this.isBlockFaceIndirectlyPowered(var1 - 1, var2, var3, 4) ? true : this.isBlockFaceIndirectlyPowered(var1 + 1, var2, var3, 5)))));
-    }
-
-    /**
-     * Gets the closest player to the entity within the specified distance (if distance is less than 0 then ignored).
-     * Args: entity, dist
-     */
-    public EntityHuman findNearbyPlayer(Entity var1, double var2)
-    {
-        return this.findNearbyPlayer(var1.locX, var1.locY, var1.locZ, var2);
-    }
-
-    /**
-     * Gets the closest player to the point within the specified distance (distance can be set to less than 0 to not
-     * limit the distance). Args: x, y, z, dist
-     */
-    public EntityHuman findNearbyPlayer(double var1, double var3, double var5, double var7)
-    {
-        double var9 = -1.0D;
-        EntityHuman var11 = null;
-
-        for (int var12 = 0; var12 < this.players.size(); ++var12)
-        {
-            EntityHuman var13 = (EntityHuman)this.players.get(var12);
-            double var14 = var13.e(var1, var3, var5);
-
-            if ((var7 < 0.0D || var14 < var7 * var7) && (var9 == -1.0D || var14 < var9))
-            {
-                var9 = var14;
-                var11 = var13;
-            }
-        }
-
-        return var11;
-    }
-
-    /**
-     * Returns the closest vulnerable player to this entity within the given radius, or null if none is found
-     */
-    public EntityHuman findNearbyVulnerablePlayer(Entity var1, double var2)
-    {
-        return this.findNearbyVulnerablePlayer(var1.locX, var1.locY, var1.locZ, var2);
-    }
-
-    /**
-     * Returns the closest vulnerable player within the given radius, or null if none is found.
-     */
-    public EntityHuman findNearbyVulnerablePlayer(double var1, double var3, double var5, double var7)
-    {
-        double var9 = -1.0D;
-        EntityHuman var11 = null;
-
-        for (int var12 = 0; var12 < this.players.size(); ++var12)
-        {
-            EntityHuman var13 = (EntityHuman)this.players.get(var12);
-
-            if (!var13.abilities.isInvulnerable)
-            {
-                double var14 = var13.e(var1, var3, var5);
-                double var16 = var7;
-
-                if (var13.isSneaking())
-                {
-                    var16 = var7 * 0.800000011920929D;
-                }
-
-                if (var13.func_82150_aj())
-                {
-                    float var18 = var13.func_82243_bO();
-
-                    if (var18 < 0.1F)
-                    {
-                        var18 = 0.1F;
-                    }
-
-                    var16 *= (double)(0.7F * var18);
-                }
-
-                if ((var7 < 0.0D || var14 < var16 * var16) && (var9 == -1.0D || var14 < var9))
-                {
-                    var9 = var14;
-                    var11 = var13;
-                }
-            }
-        }
-
-        return var11;
-    }
-
-    /**
-     * Find a player by name in this world.
-     */
-    public EntityHuman a(String var1)
-    {
-        for (int var2 = 0; var2 < this.players.size(); ++var2)
-        {
-            if (var1.equals(((EntityHuman)this.players.get(var2)).name))
-            {
-                return (EntityHuman)this.players.get(var2);
-            }
-        }
-
-        return null;
-    }
-
-    /**
-     * Checks whether the session lock file was modified by another process
-     */
-    public void C()
-    {
-        this.dataManager.checkSession();
-    }
-
-    /**
-     * gets the random world seed
-     */
-    public long getSeed()
-    {
-        return this.worldData.getSeed();
-    }
-
-    public long getTime()
-    {
-        return this.worldData.getTime();
-    }
-
-    public long F()
-    {
-        return this.worldData.g();
-    }
-
-    /**
-     * Sets the world time.
-     */
-    public void setTime(long var1)
-    {
-        this.worldData.c(var1);
-    }
-
-    /**
-     * Returns the coordinates of the spawn point
-     */
-    public ChunkCoordinates getSpawn()
-    {
-        return new ChunkCoordinates(this.worldData.c(), this.worldData.d(), this.worldData.e());
-    }
-
-    /**
-     * Called when checking if a certain block can be mined or not. The 'spawn safe zone' check is located here.
-     */
-    public boolean a(EntityHuman var1, int var2, int var3, int var4)
-    {
+      if ((i1 == 0) && (Block.SNOW.canPlace(this, i, j, k)) && (l != 0) && (l != Block.ICE.id) && (Block.byId[l].material.isSolid())) {
         return true;
+      }
     }
 
-    /**
-     * sends a Packet 38 (Entity Status) to all tracked players of that entity
-     */
-    public void broadcastEntityEffect(Entity var1, byte var2) {}
+    return false;
+  }
 
-    /**
-     * gets the world's chunk provider
-     */
-    public IChunkProvider H()
-    {
-        return this.chunkProvider;
+  public void v(int i, int j, int k)
+  {
+    if (!this.worldProvider.e) {
+      b(EnumSkyBlock.SKY, i, j, k);
     }
 
-    /**
-     * Adds a block event with the given Args to the blockEventCache. During the next tick(), the block specified will
-     * have its onBlockEvent handler called with the given parameters. Args: X,Y,Z, BlockID, EventID, EventParameter
-     */
-    public void playNote(int var1, int var2, int var3, int var4, int var5, int var6)
-    {
-        if (var4 > 0)
-        {
-            Block.byId[var4].b(this, var1, var2, var3, var5, var6);
+    b(EnumSkyBlock.BLOCK, i, j, k);
+  }
+
+  private int c(int i, int j, int k, int l, int i1, int j1) {
+    int k1 = 0;
+
+    if (isChunkLoaded(j, k, l)) {
+      k1 = 15;
+    } else {
+      if (j1 == 0) {
+        j1 = 1;
+      }
+
+      int l1 = a(EnumSkyBlock.SKY, j - 1, k, l) - j1;
+      int i2 = a(EnumSkyBlock.SKY, j + 1, k, l) - j1;
+      int j2 = a(EnumSkyBlock.SKY, j, k - 1, l) - j1;
+      int k2 = a(EnumSkyBlock.SKY, j, k + 1, l) - j1;
+      int l2 = a(EnumSkyBlock.SKY, j, k, l - 1) - j1;
+      int i3 = a(EnumSkyBlock.SKY, j, k, l + 1) - j1;
+
+      if (l1 > k1) {
+        k1 = l1;
+      }
+
+      if (i2 > k1) {
+        k1 = i2;
+      }
+
+      if (j2 > k1) {
+        k1 = j2;
+      }
+
+      if (k2 > k1) {
+        k1 = k2;
+      }
+
+      if (l2 > k1) {
+        k1 = l2;
+      }
+
+      if (i3 > k1) {
+        k1 = i3;
+      }
+    }
+
+    return k1;
+  }
+
+  private int d(int i, int j, int k, int l, int i1, int j1) {
+    int k1 = (i1 == 0) || (Block.byId[i1] == null) ? 0 : Block.byId[i1].getLightValue(this, j, k, l);
+    int l1 = a(EnumSkyBlock.BLOCK, j - 1, k, l) - j1;
+    int i2 = a(EnumSkyBlock.BLOCK, j + 1, k, l) - j1;
+    int j2 = a(EnumSkyBlock.BLOCK, j, k - 1, l) - j1;
+    int k2 = a(EnumSkyBlock.BLOCK, j, k + 1, l) - j1;
+    int l2 = a(EnumSkyBlock.BLOCK, j, k, l - 1) - j1;
+    int i3 = a(EnumSkyBlock.BLOCK, j, k, l + 1) - j1;
+
+    if (l1 > k1) {
+      k1 = l1;
+    }
+
+    if (i2 > k1) {
+      k1 = i2;
+    }
+
+    if (j2 > k1) {
+      k1 = j2;
+    }
+
+    if (k2 > k1) {
+      k1 = k2;
+    }
+
+    if (l2 > k1) {
+      k1 = l2;
+    }
+
+    if (i3 > k1) {
+      k1 = i3;
+    }
+
+    return k1;
+  }
+
+  public void b(EnumSkyBlock enumskyblock, int i, int j, int k) {
+    if ((areChunksLoaded(i, j, k, 17)) && (!this.suppressPhysics)) {
+      int l = 0;
+      int i1 = 0;
+
+      int j1 = a(enumskyblock, i, j, k);
+      boolean flag = false;
+      int k1 = getTypeId(i, j, k);
+      int l1 = f(i, j, k);
+
+      if (l1 == 0) {
+        l1 = 1;
+      }
+
+      boolean flag1 = false;
+      int i2;
+      int i2;
+      if (enumskyblock == EnumSkyBlock.SKY)
+        i2 = c(j1, i, j, k, k1, l1);
+      else {
+        i2 = d(j1, i, j, k, k1, l1);
+      }
+
+      if (i2 > j1) {
+        this.E[(i1++)] = 133152;
+      } else if (i2 < j1) {
+        if (enumskyblock != EnumSkyBlock.BLOCK);
+        this.E[(i1++)] = (133152 + (j1 << 18));
+
+        while (l < i1) {
+          int j2 = this.E[(l++)];
+          k1 = (j2 & 0x3F) - 32 + i;
+          l1 = (j2 >> 6 & 0x3F) - 32 + j;
+          i2 = (j2 >> 12 & 0x3F) - 32 + k;
+          int k2 = j2 >> 18 & 0xF;
+          int l2 = a(enumskyblock, k1, l1, i2);
+          if (l2 == k2) {
+            a(enumskyblock, k1, l1, i2, 0);
+            if (k2 > 0) {
+              int i3 = k1 - i;
+              int k3 = l1 - j;
+              int j3 = i2 - k;
+              if (i3 < 0) {
+                i3 = -i3;
+              }
+
+              if (k3 < 0) {
+                k3 = -k3;
+              }
+
+              if (j3 < 0) {
+                j3 = -j3;
+              }
+
+              if (i3 + k3 + j3 < 17) {
+                for (int l3 = 0; l3 < 6; l3++) {
+                  int i4 = l3 % 2 * 2 - 1;
+                  int j4 = k1 + l3 / 2 % 3 / 2 * i4;
+                  int k4 = l1 + (l3 / 2 + 1) % 3 / 2 * i4;
+                  int l4 = i2 + (l3 / 2 + 2) % 3 / 2 * i4;
+
+                  l2 = a(enumskyblock, j4, k4, l4);
+                  int i5 = Block.lightBlock[getTypeId(j4, k4, l4)];
+
+                  if (i5 == 0) {
+                    i5 = 1;
+                  }
+
+                  if ((l2 == k2 - i5) && (i1 < this.E.length)) {
+                    this.E[(i1++)] = (j4 - i + 32 + (k4 - j + 32 << 6) + (l4 - k + 32 << 12) + (k2 - i5 << 18));
+                  }
+                }
+              }
+            }
+          }
         }
-    }
 
-    /**
-     * Returns this world's current save handler
-     */
-    public IDataManager getDataManager()
-    {
-        return this.dataManager;
-    }
+        l = 0;
+      }
 
-    /**
-     * Returns the world's WorldInfo object
-     */
-    public WorldData getWorldData()
-    {
-        return this.worldData;
-    }
+      while (l < i1) {
+        j1 = this.E[(l++)];
+        int j5 = (j1 & 0x3F) - 32 + i;
 
-    /**
-     * Gets the GameRules Class Instance.
-     */
-    public GameRules getGameRules()
-    {
-        return this.worldData.getGameRules();
-    }
-
-    /**
-     * Updates the flag that indicates whether or not all players in the world are sleeping.
-     */
-    public void everyoneSleeping() {}
-
-    public float i(float var1)
-    {
-        return (this.o + (this.p - this.o) * var1) * this.j(var1);
-    }
-
-    /**
-     * Not sure about this actually. Reverting this one myself.
-     */
-    public float j(float var1)
-    {
-        return this.m + (this.n - this.m) * var1;
-    }
-
-    /**
-     * Returns true if the current thunder strength (weighted with the rain strength) is greater than 0.9
-     */
-    public boolean L()
-    {
-        return (double)this.i(1.0F) > 0.9D;
-    }
-
-    /**
-     * Returns true if the current rain strength is greater than 0.2
-     */
-    public boolean M()
-    {
-        return (double)this.j(1.0F) > 0.2D;
-    }
-
-    public boolean B(int var1, int var2, int var3)
-    {
-        if (!this.M())
-        {
-            return false;
+        int j2 = (j1 >> 6 & 0x3F) - 32 + j;
+        k1 = (j1 >> 12 & 0x3F) - 32 + k;
+        l1 = a(enumskyblock, j5, j2, k1);
+        i2 = getTypeId(j5, j2, k1);
+        int k2 = Block.lightBlock[i2];
+        if (k2 == 0) {
+          k2 = 1;
         }
-        else if (!this.j(var1, var2, var3))
-        {
-            return false;
+
+        boolean flag2 = false;
+        int l2;
+        int l2;
+        if (enumskyblock == EnumSkyBlock.SKY)
+          l2 = c(l1, j5, j2, k1, i2, k2);
+        else {
+          l2 = d(l1, j5, j2, k1, i2, k2);
         }
-        else if (this.h(var1, var3) > var2)
-        {
-            return false;
+
+        if (l2 != l1) {
+          a(enumskyblock, j5, j2, k1, l2);
+          if (l2 > l1) {
+            int i3 = j5 - i;
+            int k3 = j2 - j;
+            int j3 = k1 - k;
+            if (i3 < 0) {
+              i3 = -i3;
+            }
+
+            if (k3 < 0) {
+              k3 = -k3;
+            }
+
+            if (j3 < 0) {
+              j3 = -j3;
+            }
+
+            if ((i3 + k3 + j3 < 17) && (i1 < this.E.length - 6)) {
+              if (a(enumskyblock, j5 - 1, j2, k1) < l2) {
+                this.E[(i1++)] = (j5 - 1 - i + 32 + (j2 - j + 32 << 6) + (k1 - k + 32 << 12));
+              }
+
+              if (a(enumskyblock, j5 + 1, j2, k1) < l2) {
+                this.E[(i1++)] = (j5 + 1 - i + 32 + (j2 - j + 32 << 6) + (k1 - k + 32 << 12));
+              }
+
+              if (a(enumskyblock, j5, j2 - 1, k1) < l2) {
+                this.E[(i1++)] = (j5 - i + 32 + (j2 - 1 - j + 32 << 6) + (k1 - k + 32 << 12));
+              }
+
+              if (a(enumskyblock, j5, j2 + 1, k1) < l2) {
+                this.E[(i1++)] = (j5 - i + 32 + (j2 + 1 - j + 32 << 6) + (k1 - k + 32 << 12));
+              }
+
+              if (a(enumskyblock, j5, j2, k1 - 1) < l2) {
+                this.E[(i1++)] = (j5 - i + 32 + (j2 - j + 32 << 6) + (k1 - 1 - k + 32 << 12));
+              }
+
+              if (a(enumskyblock, j5, j2, k1 + 1) < l2)
+                this.E[(i1++)] = (j5 - i + 32 + (j2 - j + 32 << 6) + (k1 + 1 - k + 32 << 12));
+            }
+          }
         }
-        else
-        {
-            BiomeBase var4 = this.getBiome(var1, var3);
-            return var4.c() ? false : var4.d();
+      }
+    }
+  }
+
+  public boolean a(boolean flag)
+  {
+    int i = this.H.size();
+
+    if (i != this.I.size()) {
+      throw new IllegalStateException("TickNextTick list out of synch");
+    }
+    if (i > 1000)
+    {
+      if (i > 20000)
+        i /= 20;
+      else {
+        i = 1000;
+      }
+
+    }
+
+    for (int j = 0; j < i; j++) {
+      NextTickListEntry nextticklistentry = (NextTickListEntry)this.H.first();
+
+      if ((!flag) && (nextticklistentry.e > this.worldData.getTime()))
+      {
+        break;
+      }
+      this.H.remove(nextticklistentry);
+      this.I.remove(nextticklistentry);
+      byte b0 = 8;
+
+      if (a(nextticklistentry.a - b0, nextticklistentry.b - b0, nextticklistentry.c - b0, nextticklistentry.a + b0, nextticklistentry.b + b0, nextticklistentry.c + b0)) {
+        int k = getTypeId(nextticklistentry.a, nextticklistentry.b, nextticklistentry.c);
+
+        if ((k == nextticklistentry.d) && (k > 0)) {
+          Block.byId[k].a(this, nextticklistentry.a, nextticklistentry.b, nextticklistentry.c, this.random);
         }
+      }
     }
 
-    /**
-     * Checks to see if the biome rainfall values for a given x,y,z coordinate set are extremely high
-     */
-    public boolean C(int var1, int var2, int var3)
-    {
-        BiomeBase var4 = this.getBiome(var1, var3);
-        return var4.e();
-    }
+    return this.H.size() != 0;
+  }
 
-    /**
-     * Assigns the given String id to the given MapDataBase using the MapStorage, removing any existing ones of the same
-     * id.
-     */
-    public void a(String var1, WorldMapBase var2)
-    {
-        this.worldMaps.a(var1, var2);
-    }
+  public List a(Chunk chunk, boolean flag)
+  {
+    ArrayList arraylist = null;
+    ChunkCoordIntPair chunkcoordintpair = chunk.k();
+    int i = chunkcoordintpair.x << 4;
+    int j = i + 16;
+    int k = chunkcoordintpair.z << 4;
+    int l = k + 16;
+    Iterator iterator = this.I.iterator();
 
-    /**
-     * Loads an existing MapDataBase corresponding to the given String id from disk using the MapStorage, instantiating
-     * the given Class, or returns null if none such file exists. args: Class to instantiate, String dataid
-     */
-    public WorldMapBase a(Class var1, String var2)
-    {
-        return this.worldMaps.get(var1, var2);
-    }
+    while (iterator.hasNext()) {
+      NextTickListEntry nextticklistentry = (NextTickListEntry)iterator.next();
 
-    /**
-     * Returns an unique new data id from the MapStorage for the given prefix and saves the idCounts map to the
-     * 'idcounts' file.
-     */
-    public int b(String var1)
-    {
-        return this.worldMaps.a(var1);
-    }
-
-    public void func_82739_e(int var1, int var2, int var3, int var4, int var5)
-    {
-        for (int var6 = 0; var6 < this.w.size(); ++var6)
-        {
-            ((IWorldAccess)this.w.get(var6)).func_82746_a(var1, var2, var3, var4, var5);
+      if ((nextticklistentry.a >= i) && (nextticklistentry.a < j) && (nextticklistentry.c >= k) && (nextticklistentry.c < l)) {
+        if (flag) {
+          this.H.remove(nextticklistentry);
+          iterator.remove();
         }
-    }
 
-    /**
-     * Plays a sound or particle effect. Parameters: Effect ID, X, Y, Z, Data. For a list of ids and data, see
-     * http://wiki.vg/Protocol#Effects
-     */
-    public void triggerEffect(int var1, int var2, int var3, int var4, int var5)
-    {
-        this.a((EntityHuman)null, var1, var2, var3, var4, var5);
-    }
-
-    /**
-     * See description for playAuxSFX.
-     */
-    public void a(EntityHuman var1, int var2, int var3, int var4, int var5, int var6)
-    {
-        for (int var7 = 0; var7 < this.w.size(); ++var7)
-        {
-            ((IWorldAccess)this.w.get(var7)).a(var1, var2, var3, var4, var5, var6);
+        if (arraylist == null) {
+          arraylist = new ArrayList();
         }
+
+        arraylist.add(nextticklistentry);
+      }
     }
 
-    /**
-     * Returns maximum world height.
-     */
-    public int getHeight()
-    {
-        return 256;
-    }
+    return arraylist;
+  }
 
-    /**
-     * Returns current world height.
-     */
-    public int O()
-    {
-        return this.worldProvider.f ? 128 : 256;
-    }
+  public List getEntities(Entity entity, AxisAlignedBB axisalignedbb) {
+    this.S.clear();
+    int i = MathHelper.floor((axisalignedbb.a - MAX_ENTITY_RADIUS) / 16.0D);
+    int j = MathHelper.floor((axisalignedbb.d + MAX_ENTITY_RADIUS) / 16.0D);
+    int k = MathHelper.floor((axisalignedbb.c - MAX_ENTITY_RADIUS) / 16.0D);
+    int l = MathHelper.floor((axisalignedbb.f + MAX_ENTITY_RADIUS) / 16.0D);
 
-    public IUpdatePlayerListBox func_82735_a(EntityMinecart var1)
-    {
-        return null;
-    }
-
-    /**
-     * puts the World Random seed to a specific state dependant on the inputs
-     */
-    public Random D(int var1, int var2, int var3)
-    {
-        long var4 = (long)var1 * 341873128712L + (long)var2 * 132897987541L + this.getWorldData().getSeed() + (long)var3;
-        this.random.setSeed(var4);
-        return this.random;
-    }
-
-    /**
-     * Returns the location of the closest structure of the specified type. If not found returns null.
-     */
-    public ChunkPosition b(String var1, int var2, int var3, int var4)
-    {
-        return this.H().findNearestMapFeature(this, var1, var2, var3, var4);
-    }
-
-    /**
-     * Adds some basic stats of the world to the given crash report.
-     */
-    public CrashReport a(CrashReport var1)
-    {
-        var1.a("World " + this.worldData.getName() + " Entities", new CrashReportEntities(this));
-        var1.a("World " + this.worldData.getName() + " Players", new CrashReportPlayerCount(this));
-        var1.a("World " + this.worldData.getName() + " Chunk Stats", new CrashReportChunkStats(this));
-        return var1;
-    }
-
-    /**
-     * Starts (or continues) destroying a block with given ID at the given coordinates for the given partially destroyed
-     * value
-     */
-    public void g(int var1, int var2, int var3, int var4, int var5)
-    {
-        Iterator var6 = this.w.iterator();
-
-        while (var6.hasNext())
-        {
-            IWorldAccess var7 = (IWorldAccess)var6.next();
-            var7.b(var1, var2, var3, var4, var5);
+    for (int i1 = i; i1 <= j; i1++) {
+      for (int j1 = k; j1 <= l; j1++) {
+        if (isChunkLoaded(i1, j1)) {
+          getChunkAt(i1, j1).a(entity, axisalignedbb, this.S);
         }
+      }
     }
 
-    /**
-     * Return the Vec3Pool object for this world.
-     */
-    public Vec3DPool getVec3DPool()
-    {
-        return this.field_82741_K;
+    return this.S;
+  }
+
+  public List a(Class oclass, AxisAlignedBB axisalignedbb) {
+    int i = MathHelper.floor((axisalignedbb.a - MAX_ENTITY_RADIUS) / 16.0D);
+    int j = MathHelper.floor((axisalignedbb.d + MAX_ENTITY_RADIUS) / 16.0D);
+    int k = MathHelper.floor((axisalignedbb.c - MAX_ENTITY_RADIUS) / 16.0D);
+    int l = MathHelper.floor((axisalignedbb.f + MAX_ENTITY_RADIUS) / 16.0D);
+    ArrayList arraylist = new ArrayList();
+
+    for (int i1 = i; i1 <= j; i1++) {
+      for (int j1 = k; j1 <= l; j1++) {
+        if (isChunkLoaded(i1, j1)) {
+          getChunkAt(i1, j1).a(oclass, axisalignedbb, arraylist);
+        }
+      }
     }
 
-    /**
-     * returns a calendar object containing the current date
-     */
-    public Calendar S()
-    {
-        this.L.setTimeInMillis(System.currentTimeMillis());
-        return this.L;
+    return arraylist;
+  }
+
+  public Entity a(Class oclass, AxisAlignedBB axisalignedbb, Entity entity) {
+    List list = a(oclass, axisalignedbb);
+    Entity entity1 = null;
+    double d0 = 1.7976931348623157E+308D;
+    Iterator iterator = list.iterator();
+
+    while (iterator.hasNext()) {
+      Entity entity2 = (Entity)iterator.next();
+
+      if (entity2 != entity) {
+        double d1 = entity.j(entity2);
+
+        if (d1 <= d0) {
+          entity1 = entity2;
+          d0 = d1;
+        }
+      }
     }
+
+    return entity1;
+  }
+
+  public void b(int i, int j, int k, TileEntity tileentity) {
+    if (isLoaded(i, j, k)) {
+      getChunkAtWorldCoords(i, k).e();
+    }
+
+    for (int l = 0; l < this.u.size(); l++)
+      ((IWorldAccess)this.u.get(l)).a(i, j, k, tileentity);
+  }
+
+  public int a(Class oclass)
+  {
+    int i = 0;
+
+    for (int j = 0; j < this.entityList.size(); j++) {
+      Entity entity = (Entity)this.entityList.get(j);
+
+      if (oclass.isAssignableFrom(entity.getClass())) {
+        i++;
+      }
+    }
+
+    return i;
+  }
+
+  public void a(List list)
+  {
+    Entity entity = null;
+    for (int i = 0; i < list.size(); i++) {
+      entity = (Entity)list.get(i);
+      if (entity != null)
+      {
+        this.entityList.add(entity);
+
+        c((Entity)list.get(i));
+      }
+    }
+  }
+
+  public void b(List list) { this.G.addAll(list); }
+
+  public boolean mayPlace(int i, int j, int k, int l, boolean flag, int i1)
+  {
+    int j1 = getTypeId(j, k, l);
+    Block block = Block.byId[j1];
+    Block block1 = Block.byId[i];
+    AxisAlignedBB axisalignedbb = block1.e(this, j, k, l);
+
+    if (flag)
+      axisalignedbb = null;
+    boolean defaultReturn;
+    boolean defaultReturn;
+    if ((axisalignedbb != null) && (!containsEntity(axisalignedbb))) {
+      defaultReturn = false;
+    } else {
+      if ((block != null) && ((block == Block.WATER) || (block == Block.STATIONARY_WATER) || (block == Block.LAVA) || (block == Block.STATIONARY_LAVA) || (block == Block.FIRE) || (block.material.isReplacable()))) {
+        block = null;
+      }
+
+      if ((block != null) && (block.isBlockReplaceable(this, j, k, l))) {
+        block = null;
+      }
+
+      defaultReturn = (i > 0) && (block == null) && (block1.canPlace(this, j, k, l, i1));
+    }
+
+    BlockCanBuildEvent event = new BlockCanBuildEvent(getWorld().getBlockAt(j, k, l), i, defaultReturn);
+    getServer().getPluginManager().callEvent(event);
+
+    return event.isBuildable();
+  }
+
+  public PathEntity findPath(Entity entity, Entity entity1, float f, boolean flag, boolean flag1, boolean flag2, boolean flag3)
+  {
+    int i = MathHelper.floor(entity.locX);
+    int j = MathHelper.floor(entity.locY + 1.0D);
+    int k = MathHelper.floor(entity.locZ);
+    int l = (int)(f + 16.0F);
+    int i1 = i - l;
+    int j1 = j - l;
+    int k1 = k - l;
+    int l1 = i + l;
+    int i2 = j + l;
+    int j2 = k + l;
+    ChunkCache chunkcache = new ChunkCache(this, i1, j1, k1, l1, i2, j2);
+    PathEntity pathentity = new Pathfinder(chunkcache, flag, flag1, flag2, flag3).a(entity, entity1, f);
+
+    return pathentity;
+  }
+
+  public PathEntity a(Entity entity, int i, int j, int k, float f, boolean flag, boolean flag1, boolean flag2, boolean flag3)
+  {
+    int l = MathHelper.floor(entity.locX);
+    int i1 = MathHelper.floor(entity.locY);
+    int j1 = MathHelper.floor(entity.locZ);
+    int k1 = (int)(f + 8.0F);
+    int l1 = l - k1;
+    int i2 = i1 - k1;
+    int j2 = j1 - k1;
+    int k2 = l + k1;
+    int l2 = i1 + k1;
+    int i3 = j1 + k1;
+    ChunkCache chunkcache = new ChunkCache(this, l1, i2, j2, k2, l2, i3);
+    PathEntity pathentity = new Pathfinder(chunkcache, flag, flag1, flag2, flag3).a(entity, i, j, k, f);
+
+    return pathentity;
+  }
+
+  public boolean isBlockFacePowered(int i, int j, int k, int l) {
+    int i1 = getTypeId(i, j, k);
+
+    return i1 == 0 ? false : Block.byId[i1].d(this, i, j, k, l);
+  }
+
+  public boolean isBlockPowered(int i, int j, int k) {
+    return isBlockFacePowered(i - 1, j, k, 4) ? true : isBlockFacePowered(i, j, k + 1, 3) ? true : isBlockFacePowered(i, j, k - 1, 2) ? true : isBlockFacePowered(i, j + 1, k, 1) ? true : isBlockFacePowered(i, j - 1, k, 0) ? true : isBlockFacePowered(i + 1, j, k, 5);
+  }
+
+  public boolean isBlockFaceIndirectlyPowered(int i, int j, int k, int l) {
+    if (e(i, j, k)) {
+      return isBlockPowered(i, j, k);
+    }
+    int i1 = getTypeId(i, j, k);
+
+    return i1 == 0 ? false : Block.byId[i1].a(this, i, j, k, l);
+  }
+
+  public boolean isBlockIndirectlyPowered(int i, int j, int k)
+  {
+    return isBlockFaceIndirectlyPowered(i - 1, j, k, 4) ? true : isBlockFaceIndirectlyPowered(i, j, k + 1, 3) ? true : isBlockFaceIndirectlyPowered(i, j, k - 1, 2) ? true : isBlockFaceIndirectlyPowered(i, j + 1, k, 1) ? true : isBlockFaceIndirectlyPowered(i, j - 1, k, 0) ? true : isBlockFaceIndirectlyPowered(i + 1, j, k, 5);
+  }
+
+  public EntityHuman findNearbyPlayer(Entity entity, double d0) {
+    return findNearbyPlayer(entity.locX, entity.locY, entity.locZ, d0);
+  }
+
+  public EntityHuman findNearbyPlayer(double d0, double d1, double d2, double d3) {
+    double d4 = -1.0D;
+    EntityHuman entityhuman = null;
+
+    for (int i = 0; i < this.players.size(); i++) {
+      EntityHuman entityhuman1 = (EntityHuman)this.players.get(i);
+
+      if ((entityhuman1 != null) && (!entityhuman1.dead))
+      {
+        double d5 = entityhuman1.e(d0, d1, d2);
+
+        if (((d3 < 0.0D) || (d5 < d3 * d3)) && ((d4 == -1.0D) || (d5 < d4))) {
+          d4 = d5;
+          entityhuman = entityhuman1;
+        }
+      }
+    }
+    return entityhuman;
+  }
+
+  public EntityHuman a(double d0, double d1, double d2) {
+    double d3 = -1.0D;
+    EntityHuman entityhuman = null;
+
+    for (int i = 0; i < this.players.size(); i++) {
+      EntityHuman entityhuman1 = (EntityHuman)this.players.get(i);
+      double d4 = entityhuman1.e(d0, entityhuman1.locY, d1);
+
+      if (((d2 < 0.0D) || (d4 < d2 * d2)) && ((d3 == -1.0D) || (d4 < d3))) {
+        d3 = d4;
+        entityhuman = entityhuman1;
+      }
+    }
+
+    return entityhuman;
+  }
+
+  public EntityHuman findNearbyVulnerablePlayer(Entity entity, double d0) {
+    return findNearbyVulnerablePlayer(entity.locX, entity.locY, entity.locZ, d0);
+  }
+
+  public EntityHuman findNearbyVulnerablePlayer(double d0, double d1, double d2, double d3) {
+    double d4 = -1.0D;
+    EntityHuman entityhuman = null;
+
+    for (int i = 0; i < this.players.size(); i++) {
+      EntityHuman entityhuman1 = (EntityHuman)this.players.get(i);
+
+      if ((entityhuman1 != null) && (!entityhuman1.dead))
+      {
+        if (!entityhuman1.abilities.isInvulnerable) {
+          double d5 = entityhuman1.e(d0, d1, d2);
+
+          if (((d3 < 0.0D) || (d5 < d3 * d3)) && ((d4 == -1.0D) || (d5 < d4))) {
+            d4 = d5;
+            entityhuman = entityhuman1;
+          }
+        }
+      }
+    }
+    return entityhuman;
+  }
+
+  public EntityHuman a(String s) {
+    for (int i = 0; i < this.players.size(); i++) {
+      if (s.equals(((EntityHuman)this.players.get(i)).name)) {
+        return (EntityHuman)this.players.get(i);
+      }
+    }
+
+    return null;
+  }
+
+  public void m() {
+    this.dataManager.checkSession();
+  }
+
+  public void setTime(long i) {
+    this.worldData.a(i);
+  }
+
+  public void setTimeAndFixTicklists(long i) {
+    long j = i - this.worldData.getTime();
+    NextTickListEntry nextticklistentry;
+    for (Iterator iterator = this.I.iterator(); iterator.hasNext(); nextticklistentry.e += j) {
+      nextticklistentry = (NextTickListEntry)iterator.next();
+    }
+
+    setTime(i);
+  }
+
+  public long getSeed() {
+    return this.worldData.getSeed();
+  }
+
+  public long getTime() {
+    return this.worldData.getTime();
+  }
+
+  public ChunkCoordinates getSpawn() {
+    return new ChunkCoordinates(this.worldData.c(), this.worldData.d(), this.worldData.e());
+  }
+
+  public boolean a(EntityHuman entityhuman, int i, int j, int k) {
+    return true;
+  }
+  public void broadcastEntityEffect(Entity entity, byte b0) {
+  }
+
+  public IChunkProvider q() {
+    return this.chunkProvider;
+  }
+
+  public void playNote(int i, int j, int k, int l, int i1) {
+    int j1 = getTypeId(i, j, k);
+
+    if (j1 > 0)
+      Block.byId[j1].a(this, i, j, k, l, i1);
+  }
+
+  public IDataManager getDataManager()
+  {
+    return this.dataManager;
+  }
+
+  public WorldData getWorldData() {
+    return this.worldData;
+  }
+
+  public void everyoneSleeping() {
+    this.N = (!this.players.isEmpty());
+    Iterator iterator = this.players.iterator();
+
+    while (iterator.hasNext()) {
+      EntityHuman entityhuman = (EntityHuman)iterator.next();
+
+      if ((!entityhuman.isSleeping()) && (!entityhuman.fauxSleeping)) {
+        this.N = false;
+        break;
+      }
+    }
+  }
+
+  public void checkSleepStatus()
+  {
+    if (!this.isStatic)
+      everyoneSleeping();
+  }
+
+  protected void u()
+  {
+    this.N = false;
+    Iterator iterator = this.players.iterator();
+
+    while (iterator.hasNext()) {
+      EntityHuman entityhuman = (EntityHuman)iterator.next();
+
+      if (entityhuman.isSleeping()) {
+        entityhuman.a(false, false, true);
+      }
+    }
+
+    C();
+  }
+
+  public boolean everyoneDeeplySleeping() {
+    if ((this.N) && (!this.isStatic)) {
+      Iterator iterator = this.players.iterator();
+
+      boolean foundActualSleepers = false;
+      EntityHuman entityhuman;
+      do
+      {
+        if (!iterator.hasNext())
+        {
+          return foundActualSleepers;
+        }
+
+        entityhuman = (EntityHuman)iterator.next();
+
+        if (entityhuman.isDeeplySleeping())
+          foundActualSleepers = true;
+      }
+      while ((entityhuman.isDeeplySleeping()) || (entityhuman.fauxSleeping));
+
+      return false;
+    }
+    return false;
+  }
+
+  public float c(float f)
+  {
+    return (this.k + (this.l - this.k) * f) * d(f);
+  }
+
+  public float d(float f) {
+    return this.i + (this.j - this.i) * f;
+  }
+
+  public boolean w() {
+    return c(1.0F) > 0.9D;
+  }
+
+  public boolean x() {
+    return d(1.0F) > 0.2D;
+  }
+
+  public boolean y(int i, int j, int k) {
+    if (!x())
+      return false;
+    if (!isChunkLoaded(i, j, k))
+      return false;
+    if (f(i, k) > j) {
+      return false;
+    }
+    BiomeBase biomebase = getBiome(i, k);
+
+    return biomebase.c() ? false : biomebase.d();
+  }
+
+  public boolean z(int i, int j, int k)
+  {
+    BiomeBase biomebase = getBiome(i, k);
+
+    return biomebase.e();
+  }
+
+  public void a(String s, WorldMapBase worldmapbase) {
+    this.worldMaps.a(s, worldmapbase);
+  }
+
+  public WorldMapBase a(Class oclass, String s) {
+    return this.worldMaps.get(oclass, s);
+  }
+
+  public int b(String s) {
+    return this.worldMaps.a(s);
+  }
+
+  public void triggerEffect(int i, int j, int k, int l, int i1) {
+    a((EntityHuman)null, i, j, k, l, i1);
+  }
+
+  public void a(EntityHuman entityhuman, int i, int j, int k, int l, int i1) {
+    for (int j1 = 0; j1 < this.u.size(); j1++)
+      ((IWorldAccess)this.u.get(j1)).a(entityhuman, i, j, k, l, i1);
+  }
+
+  public int getHeight()
+  {
+    return this.worldProvider.e ? 128 : 256;
+  }
+
+  public Random A(int i, int j, int k) {
+    long l = i * 341873128712L + j * 132897987541L + getWorldData().getSeed() + k;
+
+    this.random.setSeed(l);
+    return this.random;
+  }
+
+  public boolean updateLights() {
+    return false;
+  }
+
+  public BiomeMeta a(EnumCreatureType enumcreaturetype, int i, int j, int k) {
+    List list = q().getMobsFor(enumcreaturetype, i, j, k);
+
+    return (list != null) && (!list.isEmpty()) ? (BiomeMeta)WeightedRandom.a(this.random, list) : null;
+  }
+
+  public ChunkPosition b(String s, int i, int j, int k) {
+    return q().findNearestMapFeature(this, s, i, j, k);
+  }
+
+  public UUID getUUID()
+  {
+    return this.dataManager.getUUID();
+  }
+
+  public void addTileEntity(TileEntity entity)
+  {
+    List dest = this.Q ? this.J : this.tileEntityList;
+    if (entity.canUpdate())
+    {
+      synchronized (dest) {
+        dest.add(entity);
+      }
+    }
+  }
+
+  public boolean isBlockSolidOnSide(int x, int y, int z, int side)
+  {
+    Block block = Block.byId[getTypeId(x, y, z)];
+    if (block == null) {
+      return false;
+    }
+    return block.isBlockSolidOnSide(this, x, y, z, side);
+  }
 }
+

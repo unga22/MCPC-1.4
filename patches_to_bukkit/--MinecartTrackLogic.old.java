@@ -1,503 +1,359 @@
 package net.minecraft.server;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
-class MinecartTrackLogic
+public class MinecartTrackLogic
 {
-    /** Reference to the World object. */
-    private World b;
-    private int c;
-    private int d;
-    private int e;
+  private World b;
+  private int c;
+  private int d;
+  private int e;
+  private final boolean f;
+  private List g;
+  final BlockMinecartTrack a;
+  private final boolean canMakeSlopes;
 
-    /**
-     * A boolean value that is true if the rail is powered, and false if its not.
-     */
-    private final boolean f;
-    private List g;
+  public MinecartTrackLogic(BlockMinecartTrack blockminecarttrack, World world, int i, int j, int k)
+  {
+    this.a = blockminecarttrack;
+    this.g = new ArrayList();
+    this.b = world;
+    this.c = i;
+    this.d = j;
+    this.e = k;
+    int l = world.getTypeId(i, j, k);
+    int i1 = world.getData(i, j, k);
 
-    final BlockMinecartTrack a;
+    BlockMinecartTrack target = (BlockMinecartTrack)Block.byId[l];
+    int var7 = target.getBasicRailMetadata(world, null, i, j, k);
+    this.f = (!target.isFlexibleRail(world, i, j, k));
+    this.canMakeSlopes = target.canMakeSlopes(world, i, j, k);
 
-    public MinecartTrackLogic(BlockMinecartTrack var1, World var2, int var3, int var4, int var5)
-    {
-        this.a = var1;
-        this.g = new ArrayList();
-        this.b = var2;
-        this.c = var3;
-        this.d = var4;
-        this.e = var5;
-        int var6 = var2.getTypeId(var3, var4, var5);
-        int var7 = var2.getData(var3, var4, var5);
+    a(var7);
+  }
 
-        if (BlockMinecartTrack.a((BlockMinecartTrack)Block.byId[var6]))
-        {
-            this.f = true;
-            var7 &= -9;
-        }
-        else
-        {
-            this.f = false;
-        }
-
-        this.a(var7);
+  private void a(int i) {
+    this.g.clear();
+    if (i == 0) {
+      this.g.add(new ChunkPosition(this.c, this.d, this.e - 1));
+      this.g.add(new ChunkPosition(this.c, this.d, this.e + 1));
+    } else if (i == 1) {
+      this.g.add(new ChunkPosition(this.c - 1, this.d, this.e));
+      this.g.add(new ChunkPosition(this.c + 1, this.d, this.e));
+    } else if (i == 2) {
+      this.g.add(new ChunkPosition(this.c - 1, this.d, this.e));
+      this.g.add(new ChunkPosition(this.c + 1, this.d + 1, this.e));
+    } else if (i == 3) {
+      this.g.add(new ChunkPosition(this.c - 1, this.d + 1, this.e));
+      this.g.add(new ChunkPosition(this.c + 1, this.d, this.e));
+    } else if (i == 4) {
+      this.g.add(new ChunkPosition(this.c, this.d + 1, this.e - 1));
+      this.g.add(new ChunkPosition(this.c, this.d, this.e + 1));
+    } else if (i == 5) {
+      this.g.add(new ChunkPosition(this.c, this.d, this.e - 1));
+      this.g.add(new ChunkPosition(this.c, this.d + 1, this.e + 1));
+    } else if (i == 6) {
+      this.g.add(new ChunkPosition(this.c + 1, this.d, this.e));
+      this.g.add(new ChunkPosition(this.c, this.d, this.e + 1));
+    } else if (i == 7) {
+      this.g.add(new ChunkPosition(this.c - 1, this.d, this.e));
+      this.g.add(new ChunkPosition(this.c, this.d, this.e + 1));
+    } else if (i == 8) {
+      this.g.add(new ChunkPosition(this.c - 1, this.d, this.e));
+      this.g.add(new ChunkPosition(this.c, this.d, this.e - 1));
+    } else if (i == 9) {
+      this.g.add(new ChunkPosition(this.c + 1, this.d, this.e));
+      this.g.add(new ChunkPosition(this.c, this.d, this.e - 1));
     }
+  }
 
-    private void a(int var1)
-    {
-        this.g.clear();
+  private void a() {
+    for (int i = 0; i < this.g.size(); i++) {
+      MinecartTrackLogic minecarttracklogic = a((ChunkPosition)this.g.get(i));
 
-        if (var1 == 0)
-        {
-            this.g.add(new ChunkPosition(this.c, this.d, this.e - 1));
-            this.g.add(new ChunkPosition(this.c, this.d, this.e + 1));
-        }
-        else if (var1 == 1)
-        {
-            this.g.add(new ChunkPosition(this.c - 1, this.d, this.e));
-            this.g.add(new ChunkPosition(this.c + 1, this.d, this.e));
-        }
-        else if (var1 == 2)
-        {
-            this.g.add(new ChunkPosition(this.c - 1, this.d, this.e));
-            this.g.add(new ChunkPosition(this.c + 1, this.d + 1, this.e));
-        }
-        else if (var1 == 3)
-        {
-            this.g.add(new ChunkPosition(this.c - 1, this.d + 1, this.e));
-            this.g.add(new ChunkPosition(this.c + 1, this.d, this.e));
-        }
-        else if (var1 == 4)
-        {
-            this.g.add(new ChunkPosition(this.c, this.d + 1, this.e - 1));
-            this.g.add(new ChunkPosition(this.c, this.d, this.e + 1));
-        }
-        else if (var1 == 5)
-        {
-            this.g.add(new ChunkPosition(this.c, this.d, this.e - 1));
-            this.g.add(new ChunkPosition(this.c, this.d + 1, this.e + 1));
-        }
-        else if (var1 == 6)
-        {
-            this.g.add(new ChunkPosition(this.c + 1, this.d, this.e));
-            this.g.add(new ChunkPosition(this.c, this.d, this.e + 1));
-        }
-        else if (var1 == 7)
-        {
-            this.g.add(new ChunkPosition(this.c - 1, this.d, this.e));
-            this.g.add(new ChunkPosition(this.c, this.d, this.e + 1));
-        }
-        else if (var1 == 8)
-        {
-            this.g.add(new ChunkPosition(this.c - 1, this.d, this.e));
-            this.g.add(new ChunkPosition(this.c, this.d, this.e - 1));
-        }
-        else if (var1 == 9)
-        {
-            this.g.add(new ChunkPosition(this.c + 1, this.d, this.e));
-            this.g.add(new ChunkPosition(this.c, this.d, this.e - 1));
-        }
+      if ((minecarttracklogic != null) && (minecarttracklogic.b(this)))
+        this.g.set(i, new ChunkPosition(minecarttracklogic.c, minecarttracklogic.d, minecarttracklogic.e));
+      else
+        this.g.remove(i--);
     }
+  }
 
-    /**
-     * Neighboring tracks have potentially been broken, so prune the connected track list
-     */
-    private void a()
-    {
-        for (int var1 = 0; var1 < this.g.size(); ++var1)
-        {
-            MinecartTrackLogic var2 = this.a((ChunkPosition)this.g.get(var1));
+  private boolean a(int i, int j, int k)
+  {
+    return BlockMinecartTrack.g(this.b, i, j + 1, k) ? true : BlockMinecartTrack.g(this.b, i, j, k) ? true : BlockMinecartTrack.g(this.b, i, j - 1, k);
+  }
 
-            if (var2 != null && var2.b(this))
-            {
-                this.g.set(var1, new ChunkPosition(var2.c, var2.d, var2.e));
-            }
-            else
-            {
-                this.g.remove(var1--);
-            }
-        }
-    }
+  private MinecartTrackLogic a(ChunkPosition chunkposition) {
+    return BlockMinecartTrack.g(this.b, chunkposition.x, chunkposition.y - 1, chunkposition.z) ? new MinecartTrackLogic(this.a, this.b, chunkposition.x, chunkposition.y - 1, chunkposition.z) : BlockMinecartTrack.g(this.b, chunkposition.x, chunkposition.y + 1, chunkposition.z) ? new MinecartTrackLogic(this.a, this.b, chunkposition.x, chunkposition.y + 1, chunkposition.z) : BlockMinecartTrack.g(this.b, chunkposition.x, chunkposition.y, chunkposition.z) ? new MinecartTrackLogic(this.a, this.b, chunkposition.x, chunkposition.y, chunkposition.z) : null;
+  }
 
-    private boolean a(int var1, int var2, int var3)
-    {
-        return BlockMinecartTrack.e_(this.b, var1, var2, var3) ? true : (BlockMinecartTrack.e_(this.b, var1, var2 + 1, var3) ? true : BlockMinecartTrack.e_(this.b, var1, var2 - 1, var3));
-    }
+  private boolean b(MinecartTrackLogic minecarttracklogic) {
+    for (int i = 0; i < this.g.size(); i++) {
+      ChunkPosition chunkposition = (ChunkPosition)this.g.get(i);
 
-    private MinecartTrackLogic a(ChunkPosition var1)
-    {
-        return BlockMinecartTrack.e_(this.b, var1.x, var1.y, var1.z) ? new MinecartTrackLogic(this.a, this.b, var1.x, var1.y, var1.z) : (BlockMinecartTrack.e_(this.b, var1.x, var1.y + 1, var1.z) ? new MinecartTrackLogic(this.a, this.b, var1.x, var1.y + 1, var1.z) : (BlockMinecartTrack.e_(this.b, var1.x, var1.y - 1, var1.z) ? new MinecartTrackLogic(this.a, this.b, var1.x, var1.y - 1, var1.z) : null));
-    }
-
-    private boolean b(MinecartTrackLogic var1)
-    {
-        Iterator var2 = this.g.iterator();
-        ChunkPosition var3;
-
-        do
-        {
-            if (!var2.hasNext())
-            {
-                return false;
-            }
-
-            var3 = (ChunkPosition)var2.next();
-        }
-        while (var3.x != var1.c || var3.z != var1.e);
-
+      if ((chunkposition.x == minecarttracklogic.c) && (chunkposition.z == minecarttracklogic.e)) {
         return true;
+      }
     }
 
-    /**
-     * Returns true if the specified block is in the same railway.
-     */
-    private boolean b(int var1, int var2, int var3)
-    {
-        Iterator var4 = this.g.iterator();
-        ChunkPosition var5;
+    return false;
+  }
 
-        do
-        {
-            if (!var4.hasNext())
-            {
-                return false;
-            }
+  private boolean b(int i, int j, int k) {
+    for (int l = 0; l < this.g.size(); l++) {
+      ChunkPosition chunkposition = (ChunkPosition)this.g.get(l);
 
-            var5 = (ChunkPosition)var4.next();
-        }
-        while (var5.x != var1 || var5.z != var3);
-
+      if ((chunkposition.x == i) && (chunkposition.z == k)) {
         return true;
+      }
     }
 
-    private int b()
-    {
-        int var1 = 0;
+    return false;
+  }
 
-        if (this.a(this.c, this.d, this.e - 1))
-        {
-            ++var1;
-        }
+  private int b() {
+    int i = 0;
 
-        if (this.a(this.c, this.d, this.e + 1))
-        {
-            ++var1;
-        }
-
-        if (this.a(this.c - 1, this.d, this.e))
-        {
-            ++var1;
-        }
-
-        if (this.a(this.c + 1, this.d, this.e))
-        {
-            ++var1;
-        }
-
-        return var1;
+    if (a(this.c, this.d, this.e - 1)) {
+      i++;
     }
 
-    /**
-     * Determines whether or not the track can bend to meet the specified rail
-     */
-    private boolean c(MinecartTrackLogic var1)
-    {
-        if (this.b(var1))
-        {
-            return true;
-        }
-        else if (this.g.size() == 2)
-        {
-            return false;
-        }
-        else if (this.g.isEmpty())
-        {
-            return true;
-        }
-        else
-        {
-            ChunkPosition var2 = (ChunkPosition)this.g.get(0);
-            return true;
-        }
+    if (a(this.c, this.d, this.e + 1)) {
+      i++;
     }
 
-    /**
-     * The specified neighbor has just formed a new connection, so update accordingly
-     */
-    private void d(MinecartTrackLogic var1)
-    {
-        this.g.add(new ChunkPosition(var1.c, var1.d, var1.e));
-        boolean var2 = this.b(this.c, this.d, this.e - 1);
-        boolean var3 = this.b(this.c, this.d, this.e + 1);
-        boolean var4 = this.b(this.c - 1, this.d, this.e);
-        boolean var5 = this.b(this.c + 1, this.d, this.e);
-        byte var6 = -1;
-
-        if (var2 || var3)
-        {
-            var6 = 0;
-        }
-
-        if (var4 || var5)
-        {
-            var6 = 1;
-        }
-
-        if (!this.f)
-        {
-            if (var3 && var5 && !var2 && !var4)
-            {
-                var6 = 6;
-            }
-
-            if (var3 && var4 && !var2 && !var5)
-            {
-                var6 = 7;
-            }
-
-            if (var2 && var4 && !var3 && !var5)
-            {
-                var6 = 8;
-            }
-
-            if (var2 && var5 && !var3 && !var4)
-            {
-                var6 = 9;
-            }
-        }
-
-        if (var6 == 0)
-        {
-            if (BlockMinecartTrack.e_(this.b, this.c, this.d + 1, this.e - 1))
-            {
-                var6 = 4;
-            }
-
-            if (BlockMinecartTrack.e_(this.b, this.c, this.d + 1, this.e + 1))
-            {
-                var6 = 5;
-            }
-        }
-
-        if (var6 == 1)
-        {
-            if (BlockMinecartTrack.e_(this.b, this.c + 1, this.d + 1, this.e))
-            {
-                var6 = 2;
-            }
-
-            if (BlockMinecartTrack.e_(this.b, this.c - 1, this.d + 1, this.e))
-            {
-                var6 = 3;
-            }
-        }
-
-        if (var6 < 0)
-        {
-            var6 = 0;
-        }
-
-        int var7 = var6;
-
-        if (this.f)
-        {
-            var7 = this.b.getData(this.c, this.d, this.e) & 8 | var6;
-        }
-
-        this.b.setData(this.c, this.d, this.e, var7);
+    if (a(this.c - 1, this.d, this.e)) {
+      i++;
     }
 
-    /**
-     * Determines whether or not the target rail can connect to this rail
-     */
-    private boolean c(int var1, int var2, int var3)
-    {
-        MinecartTrackLogic var4 = this.a(new ChunkPosition(var1, var2, var3));
-
-        if (var4 == null)
-        {
-            return false;
-        }
-        else
-        {
-            var4.a();
-            return var4.c(this);
-        }
+    if (a(this.c + 1, this.d, this.e)) {
+      i++;
     }
 
-    /**
-     * Completely recalculates the track shape based on neighboring tracks and power state
-     */
-    public void a(boolean var1, boolean var2)
-    {
-        boolean var3 = this.c(this.c, this.d, this.e - 1);
-        boolean var4 = this.c(this.c, this.d, this.e + 1);
-        boolean var5 = this.c(this.c - 1, this.d, this.e);
-        boolean var6 = this.c(this.c + 1, this.d, this.e);
-        byte var7 = -1;
+    return i;
+  }
 
-        if ((var3 || var4) && !var5 && !var6)
-        {
-            var7 = 0;
-        }
+  private boolean c(MinecartTrackLogic minecarttracklogic) {
+    if (b(minecarttracklogic))
+      return true;
+    if (this.g.size() == 2)
+      return false;
+    if (this.g.size() == 0) {
+      return true;
+    }
+    ChunkPosition chunkposition = (ChunkPosition)this.g.get(0);
 
-        if ((var5 || var6) && !var3 && !var4)
-        {
-            var7 = 1;
-        }
+    return (minecarttracklogic.d == this.d) && (chunkposition.y == this.d);
+  }
 
-        if (!this.f)
-        {
-            if (var4 && var6 && !var3 && !var5)
-            {
-                var7 = 6;
-            }
+  private void d(MinecartTrackLogic minecarttracklogic)
+  {
+    this.g.add(new ChunkPosition(minecarttracklogic.c, minecarttracklogic.d, minecarttracklogic.e));
+    boolean flag = b(this.c, this.d, this.e - 1);
+    boolean flag1 = b(this.c, this.d, this.e + 1);
+    boolean flag2 = b(this.c - 1, this.d, this.e);
+    boolean flag3 = b(this.c + 1, this.d, this.e);
+    byte b0 = -1;
 
-            if (var4 && var5 && !var3 && !var6)
-            {
-                var7 = 7;
-            }
-
-            if (var3 && var5 && !var4 && !var6)
-            {
-                var7 = 8;
-            }
-
-            if (var3 && var6 && !var4 && !var5)
-            {
-                var7 = 9;
-            }
-        }
-
-        if (var7 == -1)
-        {
-            if (var3 || var4)
-            {
-                var7 = 0;
-            }
-
-            if (var5 || var6)
-            {
-                var7 = 1;
-            }
-
-            if (!this.f)
-            {
-                if (var1)
-                {
-                    if (var4 && var6)
-                    {
-                        var7 = 6;
-                    }
-
-                    if (var5 && var4)
-                    {
-                        var7 = 7;
-                    }
-
-                    if (var6 && var3)
-                    {
-                        var7 = 9;
-                    }
-
-                    if (var3 && var5)
-                    {
-                        var7 = 8;
-                    }
-                }
-                else
-                {
-                    if (var3 && var5)
-                    {
-                        var7 = 8;
-                    }
-
-                    if (var6 && var3)
-                    {
-                        var7 = 9;
-                    }
-
-                    if (var5 && var4)
-                    {
-                        var7 = 7;
-                    }
-
-                    if (var4 && var6)
-                    {
-                        var7 = 6;
-                    }
-                }
-            }
-        }
-
-        if (var7 == 0)
-        {
-            if (BlockMinecartTrack.e_(this.b, this.c, this.d + 1, this.e - 1))
-            {
-                var7 = 4;
-            }
-
-            if (BlockMinecartTrack.e_(this.b, this.c, this.d + 1, this.e + 1))
-            {
-                var7 = 5;
-            }
-        }
-
-        if (var7 == 1)
-        {
-            if (BlockMinecartTrack.e_(this.b, this.c + 1, this.d + 1, this.e))
-            {
-                var7 = 2;
-            }
-
-            if (BlockMinecartTrack.e_(this.b, this.c - 1, this.d + 1, this.e))
-            {
-                var7 = 3;
-            }
-        }
-
-        if (var7 < 0)
-        {
-            var7 = 0;
-        }
-
-        this.a(var7);
-        int var8 = var7;
-
-        if (this.f)
-        {
-            var8 = this.b.getData(this.c, this.d, this.e) & 8 | var7;
-        }
-
-        if (var2 || this.b.getData(this.c, this.d, this.e) != var8)
-        {
-            this.b.setData(this.c, this.d, this.e, var8);
-            Iterator var9 = this.g.iterator();
-
-            while (var9.hasNext())
-            {
-                ChunkPosition var10 = (ChunkPosition)var9.next();
-                MinecartTrackLogic var11 = this.a(var10);
-
-                if (var11 != null)
-                {
-                    var11.a();
-
-                    if (var11.c(this))
-                    {
-                        var11.d(this);
-                    }
-                }
-            }
-        }
+    if ((flag) || (flag1)) {
+      b0 = 0;
     }
 
-    /**
-     * get number of adjacent tracks
-     */
-    static int a(MinecartTrackLogic var0)
-    {
-        return var0.b();
+    if ((flag2) || (flag3)) {
+      b0 = 1;
     }
+
+    if (!this.f) {
+      if ((flag1) && (flag3) && (!flag) && (!flag2)) {
+        b0 = 6;
+      }
+
+      if ((flag1) && (flag2) && (!flag) && (!flag3)) {
+        b0 = 7;
+      }
+
+      if ((flag) && (flag2) && (!flag1) && (!flag3)) {
+        b0 = 8;
+      }
+
+      if ((flag) && (flag3) && (!flag1) && (!flag2)) {
+        b0 = 9;
+      }
+    }
+
+    if ((b0 == 0) && (this.canMakeSlopes)) {
+      if (BlockMinecartTrack.g(this.b, this.c, this.d + 1, this.e - 1)) {
+        b0 = 4;
+      }
+
+      if (BlockMinecartTrack.g(this.b, this.c, this.d + 1, this.e + 1)) {
+        b0 = 5;
+      }
+    }
+
+    if ((b0 == 1) && (this.canMakeSlopes)) {
+      if (BlockMinecartTrack.g(this.b, this.c + 1, this.d + 1, this.e)) {
+        b0 = 2;
+      }
+
+      if (BlockMinecartTrack.g(this.b, this.c - 1, this.d + 1, this.e)) {
+        b0 = 3;
+      }
+    }
+
+    if (b0 < 0) {
+      b0 = 0;
+    }
+
+    int i = b0;
+
+    if (this.f) {
+      i = this.b.getData(this.c, this.d, this.e) & 0x8 | b0;
+    }
+
+    this.b.setData(this.c, this.d, this.e, i);
+  }
+
+  private boolean c(int i, int j, int k) {
+    MinecartTrackLogic minecarttracklogic = a(new ChunkPosition(i, j, k));
+
+    if (minecarttracklogic == null) {
+      return false;
+    }
+    minecarttracklogic.a();
+    return minecarttracklogic.c(this);
+  }
+
+  public void a(boolean flag, boolean flag1)
+  {
+    boolean flag2 = c(this.c, this.d, this.e - 1);
+    boolean flag3 = c(this.c, this.d, this.e + 1);
+    boolean flag4 = c(this.c - 1, this.d, this.e);
+    boolean flag5 = c(this.c + 1, this.d, this.e);
+    byte b0 = -1;
+
+    if (((flag2) || (flag3)) && (!flag4) && (!flag5)) {
+      b0 = 0;
+    }
+
+    if (((flag4) || (flag5)) && (!flag2) && (!flag3)) {
+      b0 = 1;
+    }
+
+    if (!this.f) {
+      if ((flag3) && (flag5) && (!flag2) && (!flag4)) {
+        b0 = 6;
+      }
+
+      if ((flag3) && (flag4) && (!flag2) && (!flag5)) {
+        b0 = 7;
+      }
+
+      if ((flag2) && (flag4) && (!flag3) && (!flag5)) {
+        b0 = 8;
+      }
+
+      if ((flag2) && (flag5) && (!flag3) && (!flag4)) {
+        b0 = 9;
+      }
+    }
+
+    if (b0 == -1) {
+      if ((flag2) || (flag3)) {
+        b0 = 0;
+      }
+
+      if ((flag4) || (flag5)) {
+        b0 = 1;
+      }
+
+      if (!this.f) {
+        if (flag) {
+          if ((flag3) && (flag5)) {
+            b0 = 6;
+          }
+
+          if ((flag4) && (flag3)) {
+            b0 = 7;
+          }
+
+          if ((flag5) && (flag2)) {
+            b0 = 9;
+          }
+
+          if ((flag2) && (flag4))
+            b0 = 8;
+        }
+        else {
+          if ((flag2) && (flag4)) {
+            b0 = 8;
+          }
+
+          if ((flag5) && (flag2)) {
+            b0 = 9;
+          }
+
+          if ((flag4) && (flag3)) {
+            b0 = 7;
+          }
+
+          if ((flag3) && (flag5)) {
+            b0 = 6;
+          }
+        }
+      }
+    }
+
+    if ((b0 == 0) && (this.canMakeSlopes)) {
+      if (BlockMinecartTrack.g(this.b, this.c, this.d + 1, this.e - 1)) {
+        b0 = 4;
+      }
+
+      if (BlockMinecartTrack.g(this.b, this.c, this.d + 1, this.e + 1)) {
+        b0 = 5;
+      }
+    }
+
+    if ((b0 == 1) && (this.canMakeSlopes)) {
+      if (BlockMinecartTrack.g(this.b, this.c + 1, this.d + 1, this.e)) {
+        b0 = 2;
+      }
+
+      if (BlockMinecartTrack.g(this.b, this.c - 1, this.d + 1, this.e)) {
+        b0 = 3;
+      }
+    }
+
+    if (b0 < 0) {
+      b0 = 0;
+    }
+
+    a(b0);
+    int i = b0;
+
+    if (this.f) {
+      i = this.b.getData(this.c, this.d, this.e) & 0x8 | b0;
+    }
+
+    if ((flag1) || (this.b.getData(this.c, this.d, this.e) != i)) {
+      this.b.setData(this.c, this.d, this.e, i);
+
+      for (int j = 0; j < this.g.size(); j++) {
+        MinecartTrackLogic minecarttracklogic = a((ChunkPosition)this.g.get(j));
+
+        if (minecarttracklogic != null) {
+          minecarttracklogic.a();
+          if (minecarttracklogic.c(this))
+            minecarttracklogic.d(this);
+        }
+      }
+    }
+  }
+
+  public static int a(MinecartTrackLogic minecarttracklogic)
+  {
+    return minecarttracklogic.b();
+  }
 }
+

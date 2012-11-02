@@ -1,110 +1,111 @@
 package net.minecraft.server;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 public class WorldType
 {
-    /** List of world types. */
-    public static final WorldType[] types = new WorldType[16];
+  public static final WorldType[] types = new WorldType[16];
+  public static final WorldType NORMAL = new WorldType(0, "default", 1).d();
+  public static final WorldType FLAT = new WorldType(1, "flat");
+  public static final WorldType VERSION_1_1f = new WorldType(8, "default_1_1", 0).a(false);
+  private final String name;
+  private final int version;
+  private boolean g;
+  private boolean h;
+  protected BiomeBase[] biomesForWorldType;
 
-    /** Default world type. */
-    public static final WorldType NORMAL = (new WorldType(0, "default", 1)).g();
+  protected WorldType(int i, String s)
+  {
+    this(i, s, 0);
+  }
 
-    /** Flat world type. */
-    public static final WorldType FLAT = new WorldType(1, "flat");
+  protected WorldType(int i, String s, int j) {
+    this.name = s;
+    this.version = j;
+    this.g = true;
+    types[i] = this;
+    switch (i) {
+    case 8:
+      this.biomesForWorldType = new BiomeBase[] { BiomeBase.DESERT, BiomeBase.FOREST, BiomeBase.EXTREME_HILLS, BiomeBase.SWAMPLAND, BiomeBase.PLAINS, BiomeBase.TAIGA };
+      break;
+    default:
+      this.biomesForWorldType = new BiomeBase[] { BiomeBase.DESERT, BiomeBase.FOREST, BiomeBase.EXTREME_HILLS, BiomeBase.SWAMPLAND, BiomeBase.PLAINS, BiomeBase.TAIGA, BiomeBase.JUNGLE };
+    }
+  }
 
-    /** Large Biome world Type. */
-    public static final WorldType LARGE_BIOMES = new WorldType(2, "largeBiomes");
+  public String name()
+  {
+    return this.name;
+  }
 
-    /** Default (1.1) world type. */
-    public static final WorldType NORMAL_1_1 = (new WorldType(8, "default_1_1", 0)).a(false);
+  public int getVersion() {
+    return this.version;
+  }
 
-    /** ID for this world type. */
-    private final int f;
-    private final String name;
+  public WorldType a(int i) {
+    return (this == NORMAL) && (i == 0) ? VERSION_1_1f : this;
+  }
 
-    /** The int version of the ChunkProvider that generated this world. */
-    private final int version;
+  private WorldType a(boolean flag) {
+    this.g = flag;
+    return this;
+  }
 
-    /**
-     * Whether this world type can be generated. Normally true; set to false for out-of-date generator versions.
-     */
-    private boolean i;
+  private WorldType d() {
+    this.h = true;
+    return this;
+  }
 
-    /** Whether this WorldType has a version or not. */
-    private boolean j;
+  public boolean c() {
+    return this.h;
+  }
 
-    private WorldType(int var1, String var2)
-    {
-        this(var1, var2, 0);
+  public static WorldType getType(String s) {
+    for (int i = 0; i < types.length; i++) {
+      if ((types[i] != null) && (types[i].name.equalsIgnoreCase(s))) {
+        return types[i];
+      }
     }
 
-    private WorldType(int var1, String var2, int var3)
-    {
-        this.name = var2;
-        this.version = var3;
-        this.i = true;
-        this.f = var1;
-        types[var1] = this;
-    }
+    return null;
+  }
 
-    public String name()
-    {
-        return this.name;
-    }
+  public WorldChunkManager getChunkManager(World world)
+  {
+    return this == FLAT ? new WorldChunkManagerHell(BiomeBase.PLAINS, 0.5F, 0.5F) : new WorldChunkManager(world);
+  }
 
-    /**
-     * Returns generatorVersion.
-     */
-    public int getVersion()
-    {
-        return this.version;
-    }
+  public IChunkProvider getChunkGenerator(World world)
+  {
+    return this == FLAT ? new ChunkProviderFlat(world, world.getSeed(), world.getWorldData().shouldGenerateMapFeatures()) : new ChunkProviderGenerate(world, world.getSeed(), world.getWorldData().shouldGenerateMapFeatures());
+  }
 
-    public WorldType a(int var1)
-    {
-        return this == NORMAL && var1 == 0 ? NORMAL_1_1 : this;
-    }
+  public int getMinimumSpawnHeight(World world)
+  {
+    return this == FLAT ? 4 : 64;
+  }
 
-    /**
-     * Sets canBeCreated to the provided value, and returns this.
-     */
-    private WorldType a(boolean var1)
-    {
-        this.i = var1;
-        return this;
-    }
+  public BiomeBase[] getBiomesForWorldType() {
+    return this.biomesForWorldType;
+  }
 
-    /**
-     * Flags this world type as having an associated version.
-     */
-    private WorldType g()
-    {
-        this.j = true;
-        return this;
-    }
+  public void addNewBiome(BiomeBase biome) {
+    List newBiomesForWorld = new ArrayList();
+    newBiomesForWorld.addAll(Arrays.asList(this.biomesForWorldType));
 
-    /**
-     * Returns true if this world Type has a version associated with it.
-     */
-    public boolean e()
-    {
-        return this.j;
-    }
+    if (!newBiomesForWorld.contains(biome))
+      newBiomesForWorld.add(biome);
+    this.biomesForWorldType = ((BiomeBase[])newBiomesForWorld.toArray(new BiomeBase[0]));
+  }
 
-    public static WorldType getType(String var0)
-    {
-        WorldType[] var1 = types;
-        int var2 = var1.length;
+  public void removeBiome(BiomeBase biome) {
+    List newBiomesForWorld = new ArrayList();
+    newBiomesForWorld.addAll(Arrays.asList(this.biomesForWorldType));
 
-        for (int var3 = 0; var3 < var2; ++var3)
-        {
-            WorldType var4 = var1[var3];
-
-            if (var4 != null && var4.name.equalsIgnoreCase(var0))
-            {
-                return var4;
-            }
-        }
-
-        return null;
-    }
+    newBiomesForWorld.remove(biome);
+    this.biomesForWorldType = ((BiomeBase[])newBiomesForWorld.toArray(new BiomeBase[0]));
+  }
 }
+

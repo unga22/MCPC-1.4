@@ -1,463 +1,320 @@
 package net.minecraft.server;
 
 import java.util.Iterator;
+import java.util.List;
 import java.util.Random;
 
 public class BlockChest extends BlockContainer
 {
-    private Random a = new Random();
+  private Random a = new Random();
 
-    protected BlockChest(int var1)
-    {
-        super(var1, Material.WOOD);
-        this.textureId = 26;
-        this.a(CreativeModeTab.c);
+  protected BlockChest(int i) {
+    super(i, Material.WOOD);
+    this.textureId = 26;
+  }
+
+  public boolean a() {
+    return false;
+  }
+
+  public boolean b() {
+    return false;
+  }
+
+  public int c() {
+    return 22;
+  }
+
+  public void onPlace(World world, int i, int j, int k) {
+    super.onPlace(world, i, j, k);
+    b(world, i, j, k);
+    int l = world.getTypeId(i, j, k - 1);
+    int i1 = world.getTypeId(i, j, k + 1);
+    int j1 = world.getTypeId(i - 1, j, k);
+    int k1 = world.getTypeId(i + 1, j, k);
+
+    if (l == this.id) {
+      b(world, i, j, k - 1);
     }
 
-    /**
-     * Is this block (a) opaque and (b) a full 1m cube?  This determines whether or not to render the shared face of two
-     * adjacent blocks and also whether the player can attach torches, redstone wire, etc to this block.
-     */
-    public boolean c()
+    if (i1 == this.id) {
+      b(world, i, j, k + 1);
+    }
+
+    if (j1 == this.id) {
+      b(world, i - 1, j, k);
+    }
+
+    if (k1 == this.id)
+      b(world, i + 1, j, k);
+  }
+
+  public void postPlace(World world, int i, int j, int k, EntityLiving entityliving)
+  {
+    int l = world.getTypeId(i, j, k - 1);
+    int i1 = world.getTypeId(i, j, k + 1);
+    int j1 = world.getTypeId(i - 1, j, k);
+    int k1 = world.getTypeId(i + 1, j, k);
+    byte b0 = 0;
+    int l1 = MathHelper.floor(entityliving.yaw * 4.0F / 360.0F + 0.5D) & 0x3;
+
+    if (l1 == 0) {
+      b0 = 2;
+    }
+
+    if (l1 == 1) {
+      b0 = 5;
+    }
+
+    if (l1 == 2) {
+      b0 = 3;
+    }
+
+    if (l1 == 3) {
+      b0 = 4;
+    }
+
+    if ((l != this.id) && (i1 != this.id) && (j1 != this.id) && (k1 != this.id)) {
+      world.setData(i, j, k, b0);
+    } else {
+      if (((l == this.id) || (i1 == this.id)) && ((b0 == 4) || (b0 == 5))) {
+        if (l == this.id)
+          world.setData(i, j, k - 1, b0);
+        else {
+          world.setData(i, j, k + 1, b0);
+        }
+
+        world.setData(i, j, k, b0);
+      }
+
+      if (((j1 == this.id) || (k1 == this.id)) && ((b0 == 2) || (b0 == 3))) {
+        if (j1 == this.id)
+          world.setData(i - 1, j, k, b0);
+        else {
+          world.setData(i + 1, j, k, b0);
+        }
+
+        world.setData(i, j, k, b0);
+      }
+    }
+  }
+
+  public void b(World world, int i, int j, int k) {
+    if (!world.isStatic) {
+      int l = world.getTypeId(i, j, k - 1);
+      int i1 = world.getTypeId(i, j, k + 1);
+      int j1 = world.getTypeId(i - 1, j, k);
+      int k1 = world.getTypeId(i + 1, j, k);
+      boolean flag = true;
+      byte b0;
+      if ((l != this.id) && (i1 != this.id)) {
+        if ((j1 != this.id) && (k1 != this.id)) {
+          byte b0 = 3;
+          if ((Block.n[l] != 0) && (Block.n[i1] == 0)) {
+            b0 = 3;
+          }
+
+          if ((Block.n[i1] != 0) && (Block.n[l] == 0)) {
+            b0 = 2;
+          }
+
+          if ((Block.n[j1] != 0) && (Block.n[k1] == 0)) {
+            b0 = 5;
+          }
+
+          if ((Block.n[k1] != 0) && (Block.n[j1] == 0))
+            b0 = 4;
+        }
+        else {
+          int l1 = world.getTypeId(j1 == this.id ? i - 1 : i + 1, j, k - 1);
+          int i2 = world.getTypeId(j1 == this.id ? i - 1 : i + 1, j, k + 1);
+          byte b0 = 3;
+          boolean flag1 = true;
+          int j2;
+          int j2;
+          if (j1 == this.id)
+            j2 = world.getData(i - 1, j, k);
+          else {
+            j2 = world.getData(i + 1, j, k);
+          }
+
+          if (j2 == 2) {
+            b0 = 2;
+          }
+
+          if (((Block.n[l] != 0) || (Block.n[l1] != 0)) && (Block.n[i1] == 0) && (Block.n[i2] == 0)) {
+            b0 = 3;
+          }
+
+          if (((Block.n[i1] != 0) || (Block.n[i2] != 0)) && (Block.n[l] == 0) && (Block.n[l1] == 0))
+            b0 = 2;
+        }
+      }
+      else {
+        int l1 = world.getTypeId(i - 1, j, l == this.id ? k - 1 : k + 1);
+        int i2 = world.getTypeId(i + 1, j, l == this.id ? k - 1 : k + 1);
+        b0 = 5;
+        boolean flag1 = true;
+        int j2;
+        int j2;
+        if (l == this.id)
+          j2 = world.getData(i, j, k - 1);
+        else {
+          j2 = world.getData(i, j, k + 1);
+        }
+
+        if (j2 == 4) {
+          b0 = 4;
+        }
+
+        if (((Block.n[j1] != 0) || (Block.n[l1] != 0)) && (Block.n[k1] == 0) && (Block.n[i2] == 0)) {
+          b0 = 5;
+        }
+
+        if (((Block.n[k1] != 0) || (Block.n[i2] != 0)) && (Block.n[j1] == 0) && (Block.n[l1] == 0)) {
+          b0 = 4;
+        }
+      }
+
+      world.setData(i, j, k, b0);
+    }
+  }
+
+  public int a(int i) {
+    return i == 3 ? this.textureId + 1 : i == 0 ? this.textureId - 1 : i == 1 ? this.textureId - 1 : this.textureId;
+  }
+
+  public boolean canPlace(World world, int i, int j, int k) {
+    int l = 0;
+
+    if (world.getTypeId(i - 1, j, k) == this.id) {
+      l++;
+    }
+
+    if (world.getTypeId(i + 1, j, k) == this.id) {
+      l++;
+    }
+
+    if (world.getTypeId(i, j, k - 1) == this.id) {
+      l++;
+    }
+
+    if (world.getTypeId(i, j, k + 1) == this.id) {
+      l++;
+    }
+
+    return l <= 1;
+  }
+
+  private boolean g(World world, int i, int j, int k) {
+    return world.getTypeId(i, j, k) == this.id;
+  }
+
+  public void doPhysics(World world, int i, int j, int k, int l) {
+    super.doPhysics(world, i, j, k, l);
+    TileEntityChest tileentitychest = (TileEntityChest)world.getTileEntity(i, j, k);
+
+    if (tileentitychest != null)
+      tileentitychest.h();
+  }
+
+  public void remove(World world, int i, int j, int k)
+  {
+    TileEntityChest tileentitychest = (TileEntityChest)world.getTileEntity(i, j, k);
+
+    if (tileentitychest != null) {
+      for (int l = 0; l < tileentitychest.getSize(); l++) {
+        ItemStack itemstack = tileentitychest.getItem(l);
+
+        if (itemstack != null) {
+          float f = this.a.nextFloat() * 0.8F + 0.1F;
+          float f1 = this.a.nextFloat() * 0.8F + 0.1F;
+          EntityItem entityitem;
+          for (float f2 = this.a.nextFloat() * 0.8F + 0.1F; itemstack.count > 0; world.addEntity(entityitem)) {
+            int i1 = this.a.nextInt(21) + 10;
+
+            if (i1 > itemstack.count) {
+              i1 = itemstack.count;
+            }
+
+            itemstack.count -= i1;
+            entityitem = new EntityItem(world, i + f, j + f1, k + f2, new ItemStack(itemstack.id, i1, itemstack.getData()));
+            float f3 = 0.05F;
+
+            entityitem.motX = (float)this.a.nextGaussian() * f3;
+            entityitem.motY = (float)this.a.nextGaussian() * f3 + 0.2F;
+            entityitem.motZ = (float)this.a.nextGaussian() * f3;
+            if (itemstack.hasTag()) {
+              entityitem.itemStack.setTag((NBTTagCompound)itemstack.getTag().clone());
+            }
+          }
+        }
+      }
+    }
+
+    super.remove(world, i, j, k);
+  }
+
+  public boolean interact(World world, int i, int j, int k, EntityHuman entityhuman) {
+    Object object = (TileEntityChest)world.getTileEntity(i, j, k);
+
+    if (object == null) {
+      return true;
+    }
+    if (world.isBlockSolidOnSide(i, j + 1, k, 0))
+      return true;
+    if ((world.getTypeId(i - 1, j, k) == this.id) && ((world.isBlockSolidOnSide(i - 1, j + 1, k, 0)) || (h(world, i - 1, j, k))))
+      return true;
+    if ((world.getTypeId(i + 1, j, k) == this.id) && ((world.isBlockSolidOnSide(i + 1, j + 1, k, 0)) || (h(world, i - 1, j, k))))
+      return true;
+    if ((world.getTypeId(i, j, k - 1) == this.id) && ((world.isBlockSolidOnSide(i, j + 1, k - 1, 0)) || (h(world, i - 1, j, k))))
+      return true;
+    if ((world.getTypeId(i, j, k + 1) == this.id) && ((world.isBlockSolidOnSide(i, j + 1, k + 1, 0)) || (h(world, i - 1, j, k)))) {
+      return true;
+    }
+    if (world.getTypeId(i - 1, j, k) == this.id) {
+      object = new InventoryLargeChest("Large chest", (TileEntityChest)world.getTileEntity(i - 1, j, k), (IInventory)object);
+    }
+
+    if (world.getTypeId(i + 1, j, k) == this.id) {
+      object = new InventoryLargeChest("Large chest", (IInventory)object, (TileEntityChest)world.getTileEntity(i + 1, j, k));
+    }
+
+    if (world.getTypeId(i, j, k - 1) == this.id) {
+      object = new InventoryLargeChest("Large chest", (TileEntityChest)world.getTileEntity(i, j, k - 1), (IInventory)object);
+    }
+
+    if (world.getTypeId(i, j, k + 1) == this.id) {
+      object = new InventoryLargeChest("Large chest", (IInventory)object, (TileEntityChest)world.getTileEntity(i, j, k + 1));
+    }
+
+    if (world.isStatic) {
+      return true;
+    }
+    entityhuman.openContainer((IInventory)object);
+    return true;
+  }
+
+  public TileEntity a_()
+  {
+    return new TileEntityChest();
+  }
+
+  private static boolean h(World world, int i, int j, int k) {
+    Iterator iterator = world.a(EntityOcelot.class, AxisAlignedBB.b(i, j + 1, k, i + 1, j + 2, k + 1)).iterator();
+    EntityOcelot entityocelot;
+    do
     {
+      if (!iterator.hasNext()) {
         return false;
-    }
+      }
 
-    /**
-     * If this block doesn't render as an ordinary block it will return False (examples: signs, buttons, stairs, etc)
-     */
-    public boolean b()
-    {
-        return false;
-    }
+      Entity entity = (Entity)iterator.next();
 
-    /**
-     * The type of render function that is called for this block
-     */
-    public int d()
-    {
-        return 22;
-    }
+      entityocelot = (EntityOcelot)entity;
+    }while (!entityocelot.isSitting());
 
-    /**
-     * Called whenever the block is added into the world. Args: world, x, y, z
-     */
-    public void onPlace(World var1, int var2, int var3, int var4)
-    {
-        super.onPlace(var1, var2, var3, var4);
-        this.d_(var1, var2, var3, var4);
-        int var5 = var1.getTypeId(var2, var3, var4 - 1);
-        int var6 = var1.getTypeId(var2, var3, var4 + 1);
-        int var7 = var1.getTypeId(var2 - 1, var3, var4);
-        int var8 = var1.getTypeId(var2 + 1, var3, var4);
-
-        if (var5 == this.id)
-        {
-            this.d_(var1, var2, var3, var4 - 1);
-        }
-
-        if (var6 == this.id)
-        {
-            this.d_(var1, var2, var3, var4 + 1);
-        }
-
-        if (var7 == this.id)
-        {
-            this.d_(var1, var2 - 1, var3, var4);
-        }
-
-        if (var8 == this.id)
-        {
-            this.d_(var1, var2 + 1, var3, var4);
-        }
-    }
-
-    /**
-     * Called when the block is placed in the world.
-     */
-    public void postPlace(World var1, int var2, int var3, int var4, EntityLiving var5)
-    {
-        int var6 = var1.getTypeId(var2, var3, var4 - 1);
-        int var7 = var1.getTypeId(var2, var3, var4 + 1);
-        int var8 = var1.getTypeId(var2 - 1, var3, var4);
-        int var9 = var1.getTypeId(var2 + 1, var3, var4);
-        byte var10 = 0;
-        int var11 = MathHelper.floor((double)(var5.yaw * 4.0F / 360.0F) + 0.5D) & 3;
-
-        if (var11 == 0)
-        {
-            var10 = 2;
-        }
-
-        if (var11 == 1)
-        {
-            var10 = 5;
-        }
-
-        if (var11 == 2)
-        {
-            var10 = 3;
-        }
-
-        if (var11 == 3)
-        {
-            var10 = 4;
-        }
-
-        if (var6 != this.id && var7 != this.id && var8 != this.id && var9 != this.id)
-        {
-            var1.setData(var2, var3, var4, var10);
-        }
-        else
-        {
-            if ((var6 == this.id || var7 == this.id) && (var10 == 4 || var10 == 5))
-            {
-                if (var6 == this.id)
-                {
-                    var1.setData(var2, var3, var4 - 1, var10);
-                }
-                else
-                {
-                    var1.setData(var2, var3, var4 + 1, var10);
-                }
-
-                var1.setData(var2, var3, var4, var10);
-            }
-
-            if ((var8 == this.id || var9 == this.id) && (var10 == 2 || var10 == 3))
-            {
-                if (var8 == this.id)
-                {
-                    var1.setData(var2 - 1, var3, var4, var10);
-                }
-                else
-                {
-                    var1.setData(var2 + 1, var3, var4, var10);
-                }
-
-                var1.setData(var2, var3, var4, var10);
-            }
-        }
-    }
-
-    /**
-     * Turns the adjacent chests to a double chest.
-     */
-    public void d_(World var1, int var2, int var3, int var4)
-    {
-        if (!var1.isStatic)
-        {
-            int var5 = var1.getTypeId(var2, var3, var4 - 1);
-            int var6 = var1.getTypeId(var2, var3, var4 + 1);
-            int var7 = var1.getTypeId(var2 - 1, var3, var4);
-            int var8 = var1.getTypeId(var2 + 1, var3, var4);
-            boolean var9 = true;
-            int var10;
-            int var11;
-            boolean var12;
-            byte var13;
-            int var14;
-
-            if (var5 != this.id && var6 != this.id)
-            {
-                if (var7 != this.id && var8 != this.id)
-                {
-                    var13 = 3;
-
-                    if (Block.q[var5] && !Block.q[var6])
-                    {
-                        var13 = 3;
-                    }
-
-                    if (Block.q[var6] && !Block.q[var5])
-                    {
-                        var13 = 2;
-                    }
-
-                    if (Block.q[var7] && !Block.q[var8])
-                    {
-                        var13 = 5;
-                    }
-
-                    if (Block.q[var8] && !Block.q[var7])
-                    {
-                        var13 = 4;
-                    }
-                }
-                else
-                {
-                    var10 = var1.getTypeId(var7 == this.id ? var2 - 1 : var2 + 1, var3, var4 - 1);
-                    var11 = var1.getTypeId(var7 == this.id ? var2 - 1 : var2 + 1, var3, var4 + 1);
-                    var13 = 3;
-                    var12 = true;
-
-                    if (var7 == this.id)
-                    {
-                        var14 = var1.getData(var2 - 1, var3, var4);
-                    }
-                    else
-                    {
-                        var14 = var1.getData(var2 + 1, var3, var4);
-                    }
-
-                    if (var14 == 2)
-                    {
-                        var13 = 2;
-                    }
-
-                    if ((Block.q[var5] || Block.q[var10]) && !Block.q[var6] && !Block.q[var11])
-                    {
-                        var13 = 3;
-                    }
-
-                    if ((Block.q[var6] || Block.q[var11]) && !Block.q[var5] && !Block.q[var10])
-                    {
-                        var13 = 2;
-                    }
-                }
-            }
-            else
-            {
-                var10 = var1.getTypeId(var2 - 1, var3, var5 == this.id ? var4 - 1 : var4 + 1);
-                var11 = var1.getTypeId(var2 + 1, var3, var5 == this.id ? var4 - 1 : var4 + 1);
-                var13 = 5;
-                var12 = true;
-
-                if (var5 == this.id)
-                {
-                    var14 = var1.getData(var2, var3, var4 - 1);
-                }
-                else
-                {
-                    var14 = var1.getData(var2, var3, var4 + 1);
-                }
-
-                if (var14 == 4)
-                {
-                    var13 = 4;
-                }
-
-                if ((Block.q[var7] || Block.q[var10]) && !Block.q[var8] && !Block.q[var11])
-                {
-                    var13 = 5;
-                }
-
-                if ((Block.q[var8] || Block.q[var11]) && !Block.q[var7] && !Block.q[var10])
-                {
-                    var13 = 4;
-                }
-            }
-
-            var1.setData(var2, var3, var4, var13);
-        }
-    }
-
-    /**
-     * Returns the block texture based on the side being looked at.  Args: side
-     */
-    public int a(int var1)
-    {
-        return 4;
-    }
-
-    /**
-     * Checks to see if its valid to put this block at the specified coordinates. Args: world, x, y, z
-     */
-    public boolean canPlace(World var1, int var2, int var3, int var4)
-    {
-        int var5 = 0;
-
-        if (var1.getTypeId(var2 - 1, var3, var4) == this.id)
-        {
-            ++var5;
-        }
-
-        if (var1.getTypeId(var2 + 1, var3, var4) == this.id)
-        {
-            ++var5;
-        }
-
-        if (var1.getTypeId(var2, var3, var4 - 1) == this.id)
-        {
-            ++var5;
-        }
-
-        if (var1.getTypeId(var2, var3, var4 + 1) == this.id)
-        {
-            ++var5;
-        }
-
-        return var5 > 1 ? false : (this.l(var1, var2 - 1, var3, var4) ? false : (this.l(var1, var2 + 1, var3, var4) ? false : (this.l(var1, var2, var3, var4 - 1) ? false : !this.l(var1, var2, var3, var4 + 1))));
-    }
-
-    /**
-     * Checks the neighbor blocks to see if there is a chest there. Args: world, x, y, z
-     */
-    private boolean l(World var1, int var2, int var3, int var4)
-    {
-        return var1.getTypeId(var2, var3, var4) != this.id ? false : (var1.getTypeId(var2 - 1, var3, var4) == this.id ? true : (var1.getTypeId(var2 + 1, var3, var4) == this.id ? true : (var1.getTypeId(var2, var3, var4 - 1) == this.id ? true : var1.getTypeId(var2, var3, var4 + 1) == this.id)));
-    }
-
-    /**
-     * Lets the block know when one of its neighbor changes. Doesn't know which neighbor changed (coordinates passed are
-     * their own) Args: x, y, z, neighbor blockID
-     */
-    public void doPhysics(World var1, int var2, int var3, int var4, int var5)
-    {
-        super.doPhysics(var1, var2, var3, var4, var5);
-        TileEntityChest var6 = (TileEntityChest)var1.getTileEntity(var2, var3, var4);
-
-        if (var6 != null)
-        {
-            var6.h();
-        }
-    }
-
-    /**
-     * ejects contained items into the world, and notifies neighbours of an update, as appropriate
-     */
-    public void remove(World var1, int var2, int var3, int var4, int var5, int var6)
-    {
-        TileEntityChest var7 = (TileEntityChest)var1.getTileEntity(var2, var3, var4);
-
-        if (var7 != null)
-        {
-            for (int var8 = 0; var8 < var7.getSize(); ++var8)
-            {
-                ItemStack var9 = var7.getItem(var8);
-
-                if (var9 != null)
-                {
-                    float var10 = this.a.nextFloat() * 0.8F + 0.1F;
-                    float var11 = this.a.nextFloat() * 0.8F + 0.1F;
-                    EntityItem var14;
-
-                    for (float var12 = this.a.nextFloat() * 0.8F + 0.1F; var9.count > 0; var1.addEntity(var14))
-                    {
-                        int var13 = this.a.nextInt(21) + 10;
-
-                        if (var13 > var9.count)
-                        {
-                            var13 = var9.count;
-                        }
-
-                        var9.count -= var13;
-                        var14 = new EntityItem(var1, (double)((float)var2 + var10), (double)((float)var3 + var11), (double)((float)var4 + var12), new ItemStack(var9.id, var13, var9.getData()));
-                        float var15 = 0.05F;
-                        var14.motX = (double)((float)this.a.nextGaussian() * var15);
-                        var14.motY = (double)((float)this.a.nextGaussian() * var15 + 0.2F);
-                        var14.motZ = (double)((float)this.a.nextGaussian() * var15);
-
-                        if (var9.hasTag())
-                        {
-                            var14.itemStack.setTag((NBTTagCompound)var9.getTag().clone());
-                        }
-                    }
-                }
-            }
-        }
-
-        super.remove(var1, var2, var3, var4, var5, var6);
-    }
-
-    /**
-     * Called upon block activation (right click on the block.)
-     */
-    public boolean interact(World var1, int var2, int var3, int var4, EntityHuman var5, int var6, float var7, float var8, float var9)
-    {
-        Object var10 = (TileEntityChest)var1.getTileEntity(var2, var3, var4);
-
-        if (var10 == null)
-        {
-            return true;
-        }
-        else if (var1.s(var2, var3 + 1, var4))
-        {
-            return true;
-        }
-        else if (n(var1, var2, var3, var4))
-        {
-            return true;
-        }
-        else if (var1.getTypeId(var2 - 1, var3, var4) == this.id && (var1.s(var2 - 1, var3 + 1, var4) || n(var1, var2 - 1, var3, var4)))
-        {
-            return true;
-        }
-        else if (var1.getTypeId(var2 + 1, var3, var4) == this.id && (var1.s(var2 + 1, var3 + 1, var4) || n(var1, var2 + 1, var3, var4)))
-        {
-            return true;
-        }
-        else if (var1.getTypeId(var2, var3, var4 - 1) == this.id && (var1.s(var2, var3 + 1, var4 - 1) || n(var1, var2, var3, var4 - 1)))
-        {
-            return true;
-        }
-        else if (var1.getTypeId(var2, var3, var4 + 1) == this.id && (var1.s(var2, var3 + 1, var4 + 1) || n(var1, var2, var3, var4 + 1)))
-        {
-            return true;
-        }
-        else
-        {
-            if (var1.getTypeId(var2 - 1, var3, var4) == this.id)
-            {
-                var10 = new InventoryLargeChest("container.chestDouble", (TileEntityChest)var1.getTileEntity(var2 - 1, var3, var4), (IInventory)var10);
-            }
-
-            if (var1.getTypeId(var2 + 1, var3, var4) == this.id)
-            {
-                var10 = new InventoryLargeChest("container.chestDouble", (IInventory)var10, (TileEntityChest)var1.getTileEntity(var2 + 1, var3, var4));
-            }
-
-            if (var1.getTypeId(var2, var3, var4 - 1) == this.id)
-            {
-                var10 = new InventoryLargeChest("container.chestDouble", (TileEntityChest)var1.getTileEntity(var2, var3, var4 - 1), (IInventory)var10);
-            }
-
-            if (var1.getTypeId(var2, var3, var4 + 1) == this.id)
-            {
-                var10 = new InventoryLargeChest("container.chestDouble", (IInventory)var10, (TileEntityChest)var1.getTileEntity(var2, var3, var4 + 1));
-            }
-
-            if (var1.isStatic)
-            {
-                return true;
-            }
-            else
-            {
-                var5.openContainer((IInventory)var10);
-                return true;
-            }
-        }
-    }
-
-    /**
-     * Returns a new instance of a block's tile entity class. Called on placing the block.
-     */
-    public TileEntity a(World var1)
-    {
-        return new TileEntityChest();
-    }
-
-    /**
-     * Looks for a sitting ocelot within certain bounds. Such an ocelot is considered to be blocking access to the
-     * chest.
-     */
-    private static boolean n(World var0, int var1, int var2, int var3)
-    {
-        Iterator var4 = var0.a(EntityOcelot.class, AxisAlignedBB.a().a((double)var1, (double)(var2 + 1), (double)var3, (double)(var1 + 1), (double)(var2 + 2), (double)(var3 + 1))).iterator();
-        EntityOcelot var6;
-
-        do
-        {
-            if (!var4.hasNext())
-            {
-                return false;
-            }
-
-            EntityOcelot var5 = (EntityOcelot)var4.next();
-            var6 = (EntityOcelot)var5;
-        }
-        while (!var6.isSitting());
-
-        return true;
-    }
+    return true;
+  }
 }
+

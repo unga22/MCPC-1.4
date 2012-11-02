@@ -1,241 +1,143 @@
 package net.minecraft.server;
 
+import forge.ForgeHooks;
+import java.util.Random;
+import org.bukkit.DyeColor;
+import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.entity.Player;
+import org.bukkit.entity.Sheep;
+import org.bukkit.event.entity.SheepDyeWoolEvent;
+import org.bukkit.plugin.PluginManager;
+
 public class ItemDye extends Item
 {
-    /** List of dye color names */
-    public static final String[] a = new String[] {"black", "red", "green", "brown", "blue", "purple", "cyan", "silver", "gray", "pink", "lime", "yellow", "lightBlue", "magenta", "orange", "white"};
-    public static final int[] b = new int[] {1973019, 11743532, 3887386, 5320730, 2437522, 8073150, 2651799, 2651799, 4408131, 14188952, 4312372, 14602026, 6719955, 12801229, 15435844, 15790320};
+  public static final String[] a = { "black", "red", "green", "brown", "blue", "purple", "cyan", "silver", "gray", "pink", "lime", "yellow", "lightBlue", "magenta", "orange", "white" };
+  public static final int[] b = { 1973019, 11743532, 3887386, 5320730, 2437522, 8073150, 2651799, 2651799, 4408131, 14188952, 4312372, 14602026, 6719955, 12801229, 15435844, 15790320 };
 
-    public ItemDye(int var1)
-    {
-        super(var1);
-        this.a(true);
-        this.setMaxDurability(0);
-        this.a(CreativeModeTab.l);
+  public ItemDye(int i) {
+    super(i);
+    a(true);
+    setMaxDurability(0);
+  }
+
+  public String a(ItemStack itemstack) {
+    int i = MathHelper.a(itemstack.getData(), 0, 15);
+
+    return super.getName() + "." + a[i];
+  }
+
+  public boolean interactWith(ItemStack itemstack, EntityHuman entityhuman, World world, int i, int j, int k, int l) {
+    if ((entityhuman != null) && (!entityhuman.d(i, j, k))) {
+      return false;
     }
-
-    public String c_(ItemStack var1)
-    {
-        int var2 = MathHelper.a(var1.getData(), 0, 15);
-        return super.getName() + "." + a[var2];
-    }
-
-    /**
-     * Callback for item usage. If the item does something special on right clicking, he will have one of those. Return
-     * True if something happen and false if it don't. This is for ITEMS, not BLOCKS
-     */
-    public boolean interactWith(ItemStack var1, EntityHuman var2, World var3, int var4, int var5, int var6, int var7, float var8, float var9, float var10)
-    {
-        if (!var2.func_82247_a(var4, var5, var6, var7, var1))
+    if (itemstack.getData() == 15) {
+      int i1 = world.getTypeId(i, j, k);
+      if (ForgeHooks.onUseBonemeal(world, i1, i, j, k))
+      {
+        if (!world.isStatic)
         {
-            return false;
+          itemstack.count -= 1;
         }
-        else
+        return true;
+      }
+
+      if (i1 == Block.SAPLING.id) {
+        if (!world.isStatic)
         {
-            int var11;
-            int var12;
+          Player player = (entityhuman instanceof EntityPlayer) ? (Player)entityhuman.getBukkitEntity() : null;
+          ((BlockSapling)Block.SAPLING).grow(world, i, j, k, world.random, true, player, itemstack);
+        }
 
-            if (var1.getData() == 15)
-            {
-                var11 = var3.getTypeId(var4, var5, var6);
+        return true;
+      }
 
-                if (var11 == Block.SAPLING.id)
-                {
-                    if (!var3.isStatic)
-                    {
-                        ((BlockSapling)Block.SAPLING).grow(var3, var4, var5, var6, var3.random);
-                        --var1.count;
-                    }
+      if ((i1 == Block.BROWN_MUSHROOM.id) || (i1 == Block.RED_MUSHROOM.id))
+      {
+        if (!world.isStatic) {
+          Player player = (entityhuman instanceof EntityPlayer) ? (Player)entityhuman.getBukkitEntity() : null;
+          ((BlockMushroom)Block.byId[i1]).grow(world, i, j, k, world.random, true, player, itemstack);
+        }
 
-                    return true;
-                }
+        return true;
+      }
 
-                if (var11 == Block.BROWN_MUSHROOM.id || var11 == Block.RED_MUSHROOM.id)
-                {
-                    if (!var3.isStatic && ((BlockMushroom)Block.byId[var11]).grow(var3, var4, var5, var6, var3.random))
-                    {
-                        --var1.count;
-                    }
+      if ((i1 == Block.MELON_STEM.id) || (i1 == Block.PUMPKIN_STEM.id)) {
+        if (!world.isStatic) {
+          ((BlockStem)Block.byId[i1]).g(world, i, j, k);
+          itemstack.count -= 1;
+        }
 
-                    return true;
-                }
+        return true;
+      }
 
-                if (var11 == Block.MELON_STEM.id || var11 == Block.PUMPKIN_STEM.id)
-                {
-                    if (var3.getData(var4, var5, var6) == 7)
-                    {
-                        return false;
-                    }
+      if (i1 == Block.CROPS.id) {
+        if (!world.isStatic) {
+          ((BlockCrops)Block.CROPS).g(world, i, j, k);
+          itemstack.count -= 1;
+        }
 
-                    if (!var3.isStatic)
-                    {
-                        ((BlockStem)Block.byId[var11]).l(var3, var4, var5, var6);
-                        --var1.count;
-                    }
+        return true;
+      }
 
-                    return true;
-                }
+      if (i1 == Block.GRASS.id) {
+        if (!world.isStatic) {
+          itemstack.count -= 1;
 
-                if (var11 > 0 && Block.byId[var11] instanceof BlockCrops)
-                {
-                    if (var3.getData(var4, var5, var6) == 7)
-                    {
-                        return false;
-                    }
+          label564: for (int j1 = 0; j1 < 128; j1++) {
+            int k1 = i;
+            int l1 = j + 1;
+            int i2 = k;
 
-                    if (!var3.isStatic)
-                    {
-                        ((BlockCrops)Block.byId[var11]).c_(var3, var4, var5, var6);
-                        --var1.count;
-                    }
-
-                    return true;
-                }
-
-                if (var11 == Block.COCOA.id)
-                {
-                    if (!var3.isStatic)
-                    {
-                        var3.setData(var4, var5, var6, 8 | BlockDirectional.e(var3.getData(var4, var5, var6)));
-                        --var1.count;
-                    }
-
-                    return true;
-                }
-
-                if (var11 == Block.GRASS.id)
-                {
-                    if (!var3.isStatic)
-                    {
-                        --var1.count;
-                        label137:
-
-                        for (var12 = 0; var12 < 128; ++var12)
-                        {
-                            int var13 = var4;
-                            int var14 = var5 + 1;
-                            int var15 = var6;
-
-                            for (int var16 = 0; var16 < var12 / 16; ++var16)
-                            {
-                                var13 += d.nextInt(3) - 1;
-                                var14 += (d.nextInt(3) - 1) * d.nextInt(3) / 2;
-                                var15 += d.nextInt(3) - 1;
-
-                                if (var3.getTypeId(var13, var14 - 1, var15) != Block.GRASS.id || var3.s(var13, var14, var15))
-                                {
-                                    continue label137;
-                                }
-                            }
-
-                            if (var3.getTypeId(var13, var14, var15) == 0)
-                            {
-                                if (d.nextInt(10) != 0)
-                                {
-                                    if (Block.LONG_GRASS.d(var3, var13, var14, var15))
-                                    {
-                                        var3.setTypeIdAndData(var13, var14, var15, Block.LONG_GRASS.id, 1);
-                                    }
-                                }
-                                else if (d.nextInt(3) != 0)
-                                {
-                                    if (Block.YELLOW_FLOWER.d(var3, var13, var14, var15))
-                                    {
-                                        var3.setTypeId(var13, var14, var15, Block.YELLOW_FLOWER.id);
-                                    }
-                                }
-                                else if (Block.RED_ROSE.d(var3, var13, var14, var15))
-                                {
-                                    var3.setTypeId(var13, var14, var15, Block.RED_ROSE.id);
-                                }
-                            }
-                        }
-                    }
-
-                    return true;
-                }
+            for (int j2 = 0; j2 < j1 / 16; j2++) {
+              k1 += c.nextInt(3) - 1;
+              l1 += (c.nextInt(3) - 1) * c.nextInt(3) / 2;
+              i2 += c.nextInt(3) - 1;
+              if ((world.getTypeId(k1, l1 - 1, i2) != Block.GRASS.id) || (world.e(k1, l1, i2)))
+              {
+                break label564;
+              }
             }
-            else if (var1.getData() == 3)
-            {
-                var11 = var3.getTypeId(var4, var5, var6);
-                var12 = var3.getData(var4, var5, var6);
-
-                if (var11 == Block.LOG.id && BlockLog.e(var12) == 3)
+            if (world.getTypeId(k1, l1, i2) == 0) {
+              if (c.nextInt(10) != 0) {
+                if ((!mod_MinecraftForge.DISABLE_DARK_ROOMS) || (Block.LONG_GRASS.f(world, k1, l1, i2)))
                 {
-                    if (var7 == 0)
-                    {
-                        return false;
-                    }
-
-                    if (var7 == 1)
-                    {
-                        return false;
-                    }
-
-                    if (var7 == 2)
-                    {
-                        --var6;
-                    }
-
-                    if (var7 == 3)
-                    {
-                        ++var6;
-                    }
-
-                    if (var7 == 4)
-                    {
-                        --var4;
-                    }
-
-                    if (var7 == 5)
-                    {
-                        ++var4;
-                    }
-
-                    if (var3.isEmpty(var4, var5, var6))
-                    {
-                        var3.setTypeId(var4, var5, var6, Block.COCOA.id);
-
-                        if (var3.getTypeId(var4, var5, var6) == Block.COCOA.id)
-                        {
-                            Block.byId[Block.COCOA.id].postPlace(var3, var4, var5, var6, var7, var8, var9, var10);
-                        }
-
-                        if (!var2.abilities.canInstantlyBuild)
-                        {
-                            --var1.count;
-                        }
-                    }
-
-                    return true;
+                  world.setTypeIdAndData(k1, l1, i2, Block.LONG_GRASS.id, 1);
                 }
+              } else ForgeHooks.plantGrassPlant(world, k1, l1, i2);
             }
+          }
 
-            return false;
         }
+
+        return true;
+      }
     }
 
-    /**
-     * Called when a player right clicks a entity with a item.
-     */
-    public boolean a(ItemStack var1, EntityLiving var2)
-    {
-        if (var2 instanceof EntitySheep)
-        {
-            EntitySheep var3 = (EntitySheep)var2;
-            int var4 = BlockCloth.e_(var1.getData());
+    return false;
+  }
 
-            if (!var3.isSheared() && var3.getColor() != var4)
-            {
-                var3.setColor(var4);
-                --var1.count;
-            }
+  public void a(ItemStack itemstack, EntityLiving entityliving)
+  {
+    if ((entityliving instanceof EntitySheep)) {
+      EntitySheep entitysheep = (EntitySheep)entityliving;
+      int i = BlockCloth.d(itemstack.getData());
 
-            return true;
+      if ((!entitysheep.isSheared()) && (entitysheep.getColor() != i))
+      {
+        byte bColor = new Integer(i).byteValue();
+        SheepDyeWoolEvent event = new SheepDyeWoolEvent((Sheep)entitysheep.getBukkitEntity(), DyeColor.getByData(bColor));
+        entitysheep.world.getServer().getPluginManager().callEvent(event);
+
+        if (event.isCancelled()) {
+          return;
         }
-        else
-        {
-            return false;
-        }
+
+        i = event.getColor().getData();
+
+        entitysheep.setColor(i);
+        itemstack.count -= 1;
+      }
     }
+  }
 }
+

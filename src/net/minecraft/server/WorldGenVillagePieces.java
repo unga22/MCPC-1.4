@@ -1,5 +1,6 @@
 package net.minecraft.server;
 
+import cpw.mods.fml.common.registry.VillagerRegistry;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -19,6 +20,7 @@ public class WorldGenVillagePieces
         var2.add(new WorldGenVillagePieceWeight(WorldGenVillageFarm.class, 3, MathHelper.nextInt(var0, 2 + var1, 4 + var1 * 2)));
         var2.add(new WorldGenVillagePieceWeight(WorldGenVillageBlacksmith.class, 15, MathHelper.nextInt(var0, 0, 1 + var1)));
         var2.add(new WorldGenVillagePieceWeight(WorldGenVillageHouse2.class, 8, MathHelper.nextInt(var0, 0 + var1, 3 + var1 * 2)));
+        VillagerRegistry.addExtraVillageComponents(var2, var0, var1);
         Iterator var3 = var2.iterator();
 
         while (var3.hasNext())
@@ -36,13 +38,13 @@ public class WorldGenVillagePieces
     {
         boolean var1 = false;
         int var2 = 0;
-        WorldGenVillagePieceWeight var4;
+        WorldGenVillagePieceWeight var3;
 
-        for (Iterator var3 = var0.iterator(); var3.hasNext(); var2 += var4.b)
+        for (Iterator var4 = var0.iterator(); var4.hasNext(); var2 += var3.b)
         {
-            var4 = (WorldGenVillagePieceWeight)var3.next();
+            var3 = (WorldGenVillagePieceWeight)var4.next();
 
-            if (var4.d > 0 && var4.c < var4.d)
+            if (var3.d > 0 && var3.c < var3.d)
             {
                 var1 = true;
             }
@@ -91,6 +93,10 @@ public class WorldGenVillagePieces
         else if (var9 == WorldGenVillageHouse2.class)
         {
             var10 = WorldGenVillageHouse2.func_74921_a(var0, var2, var3, var4, var5, var6, var7, var8);
+        }
+        else
+        {
+            var10 = VillagerRegistry.getVillageComponent(var1, var0, var2, var3, var4, var5, var6, var7, var8);
         }
 
         return (WorldGenVillagePiece)var10;

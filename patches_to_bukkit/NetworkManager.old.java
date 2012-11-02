@@ -1,536 +1,314 @@
 package net.minecraft.server;
 
+import forge.ForgeHooks;
+import forge.MessageManager;
+import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.PrintStream;
 import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.SocketException;
-import java.security.PrivateKey;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
-import javax.crypto.SecretKey;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
-public class NetworkManager implements INetworkManager
+public class NetworkManager
 {
-    public static AtomicInteger field_74471_a = new AtomicInteger();
-    public static AtomicInteger field_74469_b = new AtomicInteger();
+  public static final Object a = new Object();
+  public static int b;
+  public static int c;
+  private Object g = new Object();
+  public Socket socket;
+  private final SocketAddress i;
+  private DataInputStream input;
+  private DataOutputStream output;
+  private boolean l = true;
+  private Queue m = new ConcurrentLinkedQueue();
+  private List highPriorityQueue = Collections.synchronizedList(new ArrayList());
+  private List lowPriorityQueue = Collections.synchronizedList(new ArrayList());
+  private NetHandler packetListener;
+  private boolean q = false;
+  private Thread r;
+  private Thread s;
+  private boolean t = false;
+  private String u = "";
+  private Object[] v;
+  private int w = 0;
+  private int x = 0;
+  public static int[] d = new int[256];
+  public static int[] e = new int[256];
+  public int f = 0;
+  private int lowPriorityQueueDelay = 50;
 
-    /** The object used for synchronization on the send queue. */
-    private Object h = new Object();
-
-    /** The socket used by this network manager. */
-    private Socket socket;
-
-    /** The InetSocketAddress of the remote endpoint */
-    private final SocketAddress j;
-
-    /** The input stream connected to the socket. */
-    private volatile DataInputStream input;
-
-    /** The output stream connected to the socket. */
-    private volatile DataOutputStream output;
-
-    /** Whether the network is currently operational. */
-    private volatile boolean m = true;
-
-    /**
-     * Whether this network manager is currently terminating (and should ignore further errors).
-     */
-    private volatile boolean n = false;
-
-    /**
-     * Linked list of packets that have been read and are awaiting processing.
-     */
-    private List inboundQueue = Collections.synchronizedList(new ArrayList());
-
-    /** Linked list of packets awaiting sending. */
-    private List highPriorityQueue = Collections.synchronizedList(new ArrayList());
-
-    /** Linked list of packets with chunk data that are awaiting sending. */
-    private List lowPriorityQueue = Collections.synchronizedList(new ArrayList());
-
-    /** A reference to the NetHandler object. */
-    private NetHandler packetListener;
-
-    /**
-     * Whether this server is currently terminating. If this is a client, this is always false.
-     */
-    private boolean s = false;
-
-    /** The thread used for writing. */
-    private Thread t;
-
-    /** The thread used for reading. */
-    private Thread u;
-
-    /** A String indicating why the network has shutdown. */
-    private String v = "";
-    private Object[] field_74480_w;
-    private int field_74490_x = 0;
-
-    /**
-     * The length in bytes of the packets in both send queues (data and chunkData).
-     */
-    private int y = 0;
-    public static int[] field_74470_c = new int[256];
-    public static int[] field_74467_d = new int[256];
-    public int field_74468_e = 0;
-    boolean f = false;
-    boolean g = false;
-    private SecretKey z = null;
-    private PrivateKey field_74463_A = null;
-    private int field_74464_B = 50;
-
-    public NetworkManager(Socket var1, String var2, NetHandler var3, PrivateKey var4)
+  public NetworkManager(Socket socket, String s, NetHandler nethandler) {
+    this.socket = socket;
+    this.i = socket.getRemoteSocketAddress();
+    this.packetListener = nethandler;
+    try
     {
-        this.field_74463_A = var4;
-        this.socket = var1;
-        this.j = var1.getRemoteSocketAddress();
-        this.packetListener = var3;
-
-        try
-        {
-            var1.setSoTimeout(30000);
-            var1.setTrafficClass(24);
-        }
-        catch (SocketException var6)
-        {
-            System.err.println(var6.getMessage());
-        }
-
-        this.input = new DataInputStream(var1.getInputStream());
-        this.output = new DataOutputStream(new BufferedOutputStream(var1.getOutputStream(), 5120));
-        this.u = new NetworkReaderThread(this, var2 + " read thread");
-        this.t = new NetworkWriterThread(this, var2 + " write thread");
-        this.u.start();
-        this.t.start();
+      socket.setTrafficClass(24);
+    }
+    catch (SocketException e)
+    {
+    }
+    try {
+      socket.setSoTimeout(30000);
+      this.input = new DataInputStream(new BufferedInputStream(socket.getInputStream(), 2));
+      this.output = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream(), 5120));
+    }
+    catch (IOException socketexception) {
+      System.err.println(socketexception.getMessage());
     }
 
-    /**
-     * Sets the NetHandler for this NetworkManager. Server-only.
-     */
-    public void a(NetHandler var1)
-    {
-        this.packetListener = var1;
-    }
+    this.s = new NetworkReaderThread(this, s + " read thread");
+    this.r = new NetworkWriterThread(this, s + " write thread");
+    this.s.start();
+    this.r.start();
+  }
 
-    /**
-     * Adds the packet to the correct send queue (chunk data packets go to a separate queue).
-     */
-    public void queue(Packet var1)
-    {
-        if (!this.s)
-        {
-            Object var2 = this.h;
+  public void a(NetHandler nethandler) {
+    this.packetListener = nethandler;
+  }
 
-            synchronized (this.h)
-            {
-                this.y += var1.a() + 1;
+  public void queue(Packet packet) {
+    if (!this.q) {
+      Object object = this.g;
 
-                if (var1.lowPriority)
-                {
-                    this.lowPriorityQueue.add(var1);
-                }
-                else
-                {
-                    this.highPriorityQueue.add(var1);
-                }
-            }
-        }
-    }
-
-    /**
-     * Sends a data packet if there is one to send, or sends a chunk data packet if there is one and the counter is up,
-     * or does nothing.
-     */
-    private boolean h()
-    {
-        boolean var1 = false;
-
-        try
-        {
-            Packet var2;
-            int var10001;
-            int[] var10000;
-
-            if (this.field_74468_e == 0 || System.currentTimeMillis() - ((Packet)this.highPriorityQueue.get(0)).timestamp >= (long)this.field_74468_e)
-            {
-                var2 = this.func_74460_a(false);
-
-                if (var2 != null)
-                {
-                    Packet.a(var2, this.output);
-
-                    if (var2 instanceof Packet252KeyResponse && !this.g)
-                    {
-                        if (!this.packetListener.a())
-                        {
-                            this.z = ((Packet252KeyResponse)var2).func_73304_d();
-                        }
-
-                        this.k();
-                    }
-
-                    var10000 = field_74467_d;
-                    var10001 = var2.k();
-                    var10000[var10001] += var2.a() + 1;
-                    var1 = true;
-                }
-            }
-
-            if (this.field_74464_B-- <= 0 && (this.field_74468_e == 0 || System.currentTimeMillis() - ((Packet)this.lowPriorityQueue.get(0)).timestamp >= (long)this.field_74468_e))
-            {
-                var2 = this.func_74460_a(true);
-
-                if (var2 != null)
-                {
-                    Packet.a(var2, this.output);
-                    var10000 = field_74467_d;
-                    var10001 = var2.k();
-                    var10000[var10001] += var2.a() + 1;
-                    this.field_74464_B = 0;
-                    var1 = true;
-                }
-            }
-
-            return var1;
-        }
-        catch (Exception var3)
-        {
-            if (!this.n)
-            {
-                this.a(var3);
-            }
-
-            return false;
-        }
-    }
-
-    private Packet func_74460_a(boolean var1)
-    {
-        Packet var2 = null;
-        List var3 = var1 ? this.lowPriorityQueue : this.highPriorityQueue;
-        Object var4 = this.h;
-
-        synchronized (this.h)
-        {
-            while (!var3.isEmpty() && var2 == null)
-            {
-                var2 = (Packet)var3.remove(0);
-                this.y -= var2.a() + 1;
-
-                if (this.func_74454_a(var2, var1))
-                {
-                    var2 = null;
-                }
-            }
-
-            return var2;
-        }
-    }
-
-    private boolean func_74454_a(Packet var1, boolean var2)
-    {
-        if (!var1.e())
-        {
-            return false;
-        }
+      synchronized (this.g) {
+        this.x += packet.a() + 1;
+        if (packet.lowPriority)
+          this.lowPriorityQueue.add(packet);
         else
-        {
-            List var3 = var2 ? this.lowPriorityQueue : this.highPriorityQueue;
-            Iterator var4 = var3.iterator();
-            Packet var5;
-
-            do
-            {
-                if (!var4.hasNext())
-                {
-                    return false;
-                }
-
-                var5 = (Packet)var4.next();
-            }
-            while (var5.k() != var1.k());
-
-            return var1.a(var5);
-        }
+          this.highPriorityQueue.add(packet);
+      }
     }
+  }
 
-    /**
-     * Wakes reader and writer threads
-     */
-    public void a()
+  private boolean g()
+  {
+    boolean flag = false;
+    try
     {
-        if (this.u != null)
-        {
-            this.u.interrupt();
+      if ((!this.highPriorityQueue.isEmpty()) && ((this.f == 0) || (System.currentTimeMillis() - ((Packet)this.highPriorityQueue.get(0)).timestamp >= this.f))) {
+        Object object = this.g;
+        Packet packet;
+        synchronized (this.g) {
+          packet = (Packet)this.highPriorityQueue.remove(0);
+          this.x -= packet.a() + 1;
         }
 
-        if (this.t != null)
-        {
-            this.t.interrupt();
-        }
-    }
+        Packet.a(packet, this.output);
+        int[] aint = e;
+        int i = packet.b();
+        aint[i] += packet.a() + 1;
+        flag = true;
+      }
 
-    /**
-     * Reads a single packet from the input stream and adds it to the read queue. If no packet is read, it shuts down
-     * the network.
-     */
-    private boolean i()
-    {
-        boolean var1 = false;
-
-        try
-        {
-            Packet var2 = Packet.a(this.input, this.packetListener.a(), this.socket);
-
-            if (var2 != null)
-            {
-                if (var2 instanceof Packet252KeyResponse && !this.f)
-                {
-                    if (this.packetListener.a())
-                    {
-                        this.z = ((Packet252KeyResponse)var2).func_73303_a(this.field_74463_A);
-                    }
-
-                    this.j();
-                }
-
-                int[] var10000 = field_74470_c;
-                int var10001 = var2.k();
-                var10000[var10001] += var2.a() + 1;
-
-                if (!this.s)
-                {
-                    if (var2.a_() && this.packetListener.b())
-                    {
-                        this.field_74490_x = 0;
-                        var2.handle(this.packetListener);
-                    }
-                    else
-                    {
-                        this.inboundQueue.add(var2);
-                    }
-                }
-
-                var1 = true;
-            }
-            else
-            {
-                this.a("disconnect.endOfStream", new Object[0]);
-            }
-
-            return var1;
-        }
-        catch (Exception var3)
-        {
-            if (!this.n)
-            {
-                this.a(var3);
-            }
-
-            return false;
-        }
-    }
-
-    /**
-     * Used to report network errors and causes a network shutdown.
-     */
-    private void a(Exception var1)
-    {
-        var1.printStackTrace();
-        this.a("disconnect.genericReason", new Object[] {"Internal exception: " + var1.toString()});
-    }
-
-    /**
-     * Shuts down the network with the specified reason. Closes all streams and sockets, spawns NetworkMasterThread to
-     * stop reading and writing threads.
-     */
-    public void a(String var1, Object ... var2)
-    {
-        if (this.m)
-        {
-            this.n = true;
-            this.v = var1;
-            this.field_74480_w = var2;
-            this.m = false;
-            (new NetworkMasterThread(this)).start();
-
-            try
-            {
-                this.input.close();
-                this.input = null;
-                this.output.close();
-                this.output = null;
-                this.socket.close();
-                this.socket = null;
-            }
-            catch (Throwable var4)
-            {
-                ;
-            }
-        }
-    }
-
-    /**
-     * Checks timeouts and processes all pending read packets.
-     */
-    public void b()
-    {
-        if (this.y > 2097152)
-        {
-            this.a("disconnect.overflow", new Object[0]);
+      if (((flag) || (this.lowPriorityQueueDelay-- <= 0)) && (!this.lowPriorityQueue.isEmpty()) && ((this.highPriorityQueue.isEmpty()) || (((Packet)this.highPriorityQueue.get(0)).timestamp > ((Packet)this.lowPriorityQueue.get(0)).timestamp))) {
+        Object object = this.g;
+        Packet packet;
+        synchronized (this.g) {
+          packet = (Packet)this.lowPriorityQueue.remove(0);
+          this.x -= packet.a() + 1;
         }
 
-        if (this.inboundQueue.isEmpty())
-        {
-            if (this.field_74490_x++ == 1200)
-            {
-                this.a("disconnect.timeout", new Object[0]);
-            }
+        Packet.a(packet, this.output);
+        int[] aint = e;
+        int i = packet.b();
+        aint[i] += packet.a() + 1;
+        this.lowPriorityQueueDelay = 0;
+      }return true;
+    }
+    catch (Exception exception)
+    {
+      if (!this.t) {
+        a(exception);
+      }
+    }
+    return false;
+  }
+
+  public void a()
+  {
+    this.s.interrupt();
+    this.r.interrupt();
+  }
+
+  private boolean h() {
+    boolean flag = false;
+    try
+    {
+      this.input.mark(2);
+      if ((this.input.read() == 2) && (this.input.read() != 0)) {
+        Packet.a(this.input, 16);
+        Packet.a(this.input, 255);
+        this.input.readInt();
+
+        if (this.q) {
+          return true;
         }
-        else
-        {
-            this.field_74490_x = 0;
+
+        this.m.clear();
+        this.m.add(new Packet2Handshake(null));
+        return true;
+      }
+      this.input.reset();
+
+      Packet packet = Packet.a(this.input, this.packetListener.c());
+
+      if (packet != null) {
+        int[] aint = d;
+        int i = packet.b();
+
+        aint[i] += packet.a() + 1;
+        if (!this.q) {
+          this.m.add(packet);
         }
 
-        int var1 = 1000;
+        flag = true;
+      } else {
+        a("disconnect.endOfStream", new Object[0]);
+      }
 
-        while (!this.inboundQueue.isEmpty() && var1-- >= 0)
-        {
-            Packet var2 = (Packet)this.inboundQueue.remove(0);
-            var2.handle(this.packetListener);
-        }
+      return flag;
+    } catch (Exception exception) {
+      if (!this.t) {
+        a(exception);
+      }
+    }
+    return false;
+  }
 
-        this.a();
+  private void a(Exception exception)
+  {
+    a("disconnect.genericReason", new Object[] { "Internal exception: " + exception.toString() });
+  }
 
-        if (this.n && this.inboundQueue.isEmpty())
-        {
-            this.packetListener.a(this.v, this.field_74480_w);
-        }
+  public void a(String s, Object[] aobject) {
+    if (this.l) {
+      this.t = true;
+      this.u = s;
+      this.v = aobject;
+      new NetworkMasterThread(this).start();
+      this.l = false;
+      try
+      {
+        this.input.close();
+        this.input = null;
+      }
+      catch (Throwable throwable)
+      {
+      }
+      try {
+        this.output.close();
+        this.output = null;
+      }
+      catch (Throwable throwable1)
+      {
+      }
+      try {
+        this.socket.close();
+        this.socket = null;
+      }
+      catch (Throwable throwable2) {
+      }
+    }
+    ForgeHooks.onDisconnect(this, s, aobject);
+    MessageManager.getInstance().removeConnection(this);
+  }
+
+  public void b() {
+    if (this.x > 1048576) {
+      a("disconnect.overflow", new Object[0]);
     }
 
-    /**
-     * Returns the socket address of the remote side. Server-only.
-     */
-    public SocketAddress getSocketAddress()
-    {
-        return this.j;
+    if (this.m.isEmpty()) {
+      if (this.w++ == 1200)
+        a("disconnect.timeout", new Object[0]);
+    }
+    else {
+      this.w = 0;
     }
 
-    /**
-     * Shuts down the server. (Only actually used on the server)
-     */
-    public void d()
-    {
-        if (!this.s)
-        {
-            this.a();
-            this.s = true;
-            this.u.interrupt();
-            (new NetworkMonitorThread(this)).start();
-        }
+    int i = 1000;
+
+    while ((!this.m.isEmpty()) && (i-- >= 0)) {
+      Packet packet = (Packet)this.m.poll();
+
+      if (!this.q) packet.handle(this.packetListener);
     }
 
-    private void j()
-    {
-        this.f = true;
-        this.input = new DataInputStream(MinecraftEncryption.a(this.z, this.socket.getInputStream()));
-    }
+    a();
+    if ((this.t) && (this.m.isEmpty()))
+      this.packetListener.a(this.u, this.v);
+  }
 
-    /**
-     * flushes the stream and replaces it with an encryptedOutputStream
-     */
-    private void k()
-    {
-        this.output.flush();
-        this.g = true;
-        this.output = new DataOutputStream(new BufferedOutputStream(MinecraftEncryption.a(this.z, this.socket.getOutputStream()), 5120));
-    }
+  public SocketAddress getSocketAddress()
+  {
+    return this.i;
+  }
 
-    /**
-     * Returns the number of chunk data packets waiting to be sent.
-     */
-    public int e()
-    {
-        return this.lowPriorityQueue.size();
+  public void d() {
+    if (!this.q) {
+      a();
+      this.q = true;
+      this.s.interrupt();
+      new NetworkMonitorThread(this).start();
     }
+  }
 
-    public Socket getSocket()
-    {
-        return this.socket;
-    }
+  public int e() {
+    return this.lowPriorityQueue.size();
+  }
 
-    /**
-     * Whether the network is operational.
-     */
-    static boolean a(NetworkManager var0)
-    {
-        return var0.m;
-    }
+  public Socket getSocket() {
+    return this.socket;
+  }
 
-    /**
-     * Is the server terminating? Client side aways returns false.
-     */
-    static boolean b(NetworkManager var0)
-    {
-        return var0.s;
-    }
+  static boolean a(NetworkManager networkmanager) {
+    return networkmanager.l;
+  }
 
-    /**
-     * Static accessor to readPacket.
-     */
-    static boolean c(NetworkManager var0)
-    {
-        return var0.i();
-    }
+  static boolean b(NetworkManager networkmanager) {
+    return networkmanager.q;
+  }
 
-    /**
-     * Static accessor to sendPacket.
-     */
-    static boolean d(NetworkManager var0)
-    {
-        return var0.h();
-    }
+  static boolean c(NetworkManager networkmanager) {
+    return networkmanager.h();
+  }
 
-    static DataOutputStream e(NetworkManager var0)
-    {
-        return var0.output;
-    }
+  static boolean d(NetworkManager networkmanager) {
+    return networkmanager.g();
+  }
 
-    /**
-     * Gets whether the Network manager is terminating.
-     */
-    static boolean f(NetworkManager var0)
-    {
-        return var0.n;
-    }
+  static DataOutputStream e(NetworkManager networkmanager) {
+    return networkmanager.output;
+  }
 
-    /**
-     * Sends the network manager an error
-     */
-    static void a(NetworkManager var0, Exception var1)
-    {
-        var0.a(var1);
-    }
+  static boolean f(NetworkManager networkmanager) {
+    return networkmanager.t;
+  }
 
-    /**
-     * Returns the read thread.
-     */
-    static Thread g(NetworkManager var0)
-    {
-        return var0.u;
-    }
+  static void a(NetworkManager networkmanager, Exception exception) {
+    networkmanager.a(exception);
+  }
 
-    /**
-     * Returns the write thread.
-     */
-    static Thread h(NetworkManager var0)
-    {
-        return var0.t;
-    }
+  static Thread g(NetworkManager networkmanager) {
+    return networkmanager.s;
+  }
+
+  static Thread h(NetworkManager networkmanager) {
+    return networkmanager.r;
+  }
+
+  public NetHandler getNetHandler()
+  {
+    return this.packetListener;
+  }
 }
+

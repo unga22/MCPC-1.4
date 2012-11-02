@@ -1,5 +1,9 @@
 package net.minecraft.server;
 
+import cpw.mods.fml.common.registry.GameRegistry;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.entity.player.PlayerDestroyItemEvent;
+
 public class SlotResult extends Slot
 {
     /** The craft matrix inventory linked to this result slot. */
@@ -104,6 +108,7 @@ public class SlotResult extends Slot
 
     public void a(EntityHuman var1, ItemStack var2)
     {
+        GameRegistry.onItemCrafted(var1, var2, this.a);
         this.b(var2);
 
         for (int var3 = 0; var3 < this.a.getSize(); ++var3)
@@ -116,9 +121,15 @@ public class SlotResult extends Slot
 
                 if (var4.getItem().s())
                 {
-                    ItemStack var5 = new ItemStack(var4.getItem().r());
+                    ItemStack var5 = var4.getItem().getContainerItemStack(var4);
 
-                    if (!var4.getItem().h(var4) || !this.b.inventory.pickup(var5))
+                    if (var5.f() && var5.getData() > var5.k())
+                    {
+                        MinecraftForge.EVENT_BUS.post(new PlayerDestroyItemEvent(this.b, var5));
+                        var5 = null;
+                    }
+
+                    if (var5 != null && (!var4.getItem().h(var4) || !this.b.inventory.pickup(var5)))
                     {
                         if (this.a.getItem(var3) == null)
                         {

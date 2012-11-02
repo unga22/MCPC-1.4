@@ -4,35 +4,38 @@ import java.util.Random;
 
 public class WorldGenDeadBush extends WorldGenerator
 {
-    /** stores the ID for WorldGenDeadBush */
-    private int a;
+  private int a;
 
-    public WorldGenDeadBush(int var1)
+  public WorldGenDeadBush(int i)
+  {
+    this.a = i;
+  }
+
+  public boolean a(World world, Random random, int i, int j, int k)
+  {
+    Block block = null;
+    do
     {
-        this.a = var1;
+      block = Block.byId[world.getTypeId(i, j, k)];
+      if ((block != null) && (!block.isLeaves(world, i, j, k)))
+      {
+        break;
+      }
+      j--;
+    }
+    while (j > 0);
+
+    for (int i1 = 0; i1 < 4; i1++) {
+      int j1 = i + random.nextInt(8) - random.nextInt(8);
+      int k1 = j + random.nextInt(4) - random.nextInt(4);
+      int l1 = k + random.nextInt(8) - random.nextInt(8);
+
+      if ((world.isEmpty(j1, k1, l1)) && (((BlockFlower)Block.byId[this.a]).f(world, j1, k1, l1))) {
+        world.setRawTypeId(j1, k1, l1, this.a);
+      }
     }
 
-    public boolean a(World var1, Random var2, int var3, int var4, int var5)
-    {
-        int var11;
-
-        for (boolean var6 = false; ((var11 = var1.getTypeId(var3, var4, var5)) == 0 || var11 == Block.LEAVES.id) && var4 > 0; --var4)
-        {
-            ;
-        }
-
-        for (int var7 = 0; var7 < 4; ++var7)
-        {
-            int var8 = var3 + var2.nextInt(8) - var2.nextInt(8);
-            int var9 = var4 + var2.nextInt(4) - var2.nextInt(4);
-            int var10 = var5 + var2.nextInt(8) - var2.nextInt(8);
-
-            if (var1.isEmpty(var8, var9, var10) && Block.byId[this.a].d(var1, var8, var9, var10))
-            {
-                var1.setRawTypeId(var8, var9, var10, this.a);
-            }
-        }
-
-        return true;
-    }
+    return true;
+  }
 }
+

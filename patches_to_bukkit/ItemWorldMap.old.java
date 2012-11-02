@@ -1,302 +1,244 @@
 package net.minecraft.server;
 
+import org.bukkit.Bukkit;
+import org.bukkit.Server;
+import org.bukkit.event.server.MapInitializeEvent;
+import org.bukkit.plugin.PluginManager;
+
 public class ItemWorldMap extends ItemWorldMapBase
 {
-    protected ItemWorldMap(int var1)
-    {
-        super(var1);
-        this.a(true);
+  protected ItemWorldMap(int i)
+  {
+    super(i);
+    e(1);
+  }
+
+  public WorldMap getSavedMap(ItemStack itemstack, World world)
+  {
+    WorldMap worldmap = (WorldMap)world.a(WorldMap.class, "map_" + itemstack.getData());
+
+    if (worldmap == null) {
+      itemstack.setData(world.b("map"));
+      String s = "map_" + itemstack.getData();
+
+      worldmap = new WorldMap(s);
+      worldmap.centerX = world.getWorldData().c();
+      worldmap.centerZ = world.getWorldData().e();
+      worldmap.scale = 3;
+      worldmap.map = (byte)((WorldServer)world).dimension;
+      worldmap.a();
+      world.a(s, worldmap);
+
+      MapInitializeEvent event = new MapInitializeEvent(worldmap.mapView);
+      Bukkit.getServer().getPluginManager().callEvent(event);
     }
 
-    public WorldMap getSavedMap(ItemStack var1, World var2)
-    {
-        String var3 = "map_" + var1.getData();
-        WorldMap var4 = (WorldMap)var2.a(WorldMap.class, var3);
+    return worldmap;
+  }
 
-        if (var4 == null && !var2.isStatic)
-        {
-            var1.setData(var2.b("map"));
-            var3 = "map_" + var1.getData();
-            var4 = new WorldMap(var3);
-            var4.scale = 3;
-            int var5 = 128 * (1 << var4.scale);
-            var4.centerX = Math.round((float)var2.getWorldData().c() / (float)var5) * var5;
-            var4.centerZ = Math.round((float)(var2.getWorldData().e() / var5)) * var5;
-            var4.map = (byte)var2.worldProvider.dimension;
-            var4.c();
-            var2.a(var3, var4);
-        }
+  public void a(World world, Entity entity, WorldMap worldmap) {
+    if (((WorldServer)world).dimension == worldmap.map) {
+      short short1 = 128;
+      short short2 = 128;
+      int i = 1 << worldmap.scale;
+      int j = worldmap.centerX;
+      int k = worldmap.centerZ;
+      int l = MathHelper.floor(entity.locX - j) / i + short1 / 2;
+      int i1 = MathHelper.floor(entity.locZ - k) / i + short2 / 2;
+      int j1 = 128 / i;
 
-        return var4;
-    }
+      if (world.worldProvider.e) {
+        j1 /= 2;
+      }
 
-    public void a(World var1, Entity var2, WorldMap var3)
-    {
-        if (var1.worldProvider.dimension == var3.map && var2 instanceof EntityHuman)
-        {
-            short var4 = 128;
-            short var5 = 128;
-            int var6 = 1 << var3.scale;
-            int var7 = var3.centerX;
-            int var8 = var3.centerZ;
-            int var9 = MathHelper.floor(var2.locX - (double)var7) / var6 + var4 / 2;
-            int var10 = MathHelper.floor(var2.locZ - (double)var8) / var6 + var5 / 2;
-            int var11 = 128 / var6;
+      worldmap.g += 1;
 
-            if (var1.worldProvider.f)
-            {
-                var11 /= 2;
-            }
+      for (int k1 = l - j1 + 1; k1 < l + j1; k1++)
+        if ((k1 & 0xF) == (worldmap.g & 0xF)) {
+          int l1 = 255;
+          int i2 = 0;
+          double d0 = 0.0D;
 
-            WorldMapHumanTracker var12 = var3.func_82568_a((EntityHuman)var2);
-            ++var12.field_82569_d;
+          for (int j2 = i1 - j1 - 1; j2 < i1 + j1; j2++) {
+            if ((k1 >= 0) && (j2 >= -1) && (k1 < short1) && (j2 < short2)) {
+              int k2 = k1 - l;
+              int l2 = j2 - i1;
+              boolean flag = k2 * k2 + l2 * l2 > (j1 - 2) * (j1 - 2);
+              int i3 = (j / i + k1 - short1 / 2) * i;
+              int j3 = (k / i + j2 - short2 / 2) * i;
+              byte b0 = 0;
+              byte b1 = 0;
+              byte b2 = 0;
+              int[] aint = new int[Block.byId.length];
+              Chunk chunk = world.getChunkAtWorldCoords(i3, j3);
+              if (!chunk.isEmpty()) {
+                int k3 = i3 & 0xF;
+                int l3 = j3 & 0xF;
+                int i4 = 0;
+                double d1 = 0.0D;
 
-            for (int var13 = var9 - var11 + 1; var13 < var9 + var11; ++var13)
-            {
-                if ((var13 & 15) == (var12.field_82569_d & 15))
-                {
-                    int var14 = 255;
-                    int var15 = 0;
-                    double var16 = 0.0D;
+                if (world.worldProvider.e) {
+                  int l4 = i3 + j3 * 231871;
+                  l4 = l4 * l4 * 31287121 + l4 * 11;
+                  if ((l4 >> 20 & 0x1) == 0)
+                    aint[Block.DIRT.id] += 10;
+                  else {
+                    aint[Block.STONE.id] += 10;
+                  }
 
-                    for (int var18 = var10 - var11 - 1; var18 < var10 + var11; ++var18)
-                    {
-                        if (var13 >= 0 && var18 >= -1 && var13 < var4 && var18 < var5)
+                  d1 = 100.0D;
+                } else {
+                  for (l4 = 0; l4 < i; l4++) {
+                    for (int j4 = 0; j4 < i; j4++) {
+                      int k4 = chunk.b(l4 + k3, j4 + l3) + 1;
+                      int j5 = 0;
+
+                      if (k4 > 1) {
+                        boolean flag1 = false;
+                        do
                         {
-                            int var19 = var13 - var9;
-                            int var20 = var18 - var10;
-                            boolean var21 = var19 * var19 + var20 * var20 > (var11 - 2) * (var11 - 2);
-                            int var22 = (var7 / var6 + var13 - var4 / 2) * var6;
-                            int var23 = (var8 / var6 + var18 - var5 / 2) * var6;
-                            int[] var24 = new int[256];
-                            Chunk var25 = var1.getChunkAtWorldCoords(var22, var23);
+                          flag1 = true;
+                          j5 = chunk.getTypeId(l4 + k3, k4 - 1, j4 + l3);
+                          if (j5 == 0)
+                            flag1 = false;
+                          else if ((k4 > 0) && (j5 > 0) && (Block.byId[j5].material.F == MaterialMapColor.b)) {
+                            flag1 = false;
+                          }
 
-                            if (!var25.isEmpty())
-                            {
-                                int var26 = var22 & 15;
-                                int var27 = var23 & 15;
-                                int var28 = 0;
-                                double var29 = 0.0D;
-                                int var31;
-                                int var32;
-                                int var33;
-                                int var36;
-
-                                if (var1.worldProvider.f)
-                                {
-                                    var31 = var22 + var23 * 231871;
-                                    var31 = var31 * var31 * 31287121 + var31 * 11;
-
-                                    if ((var31 >> 20 & 1) == 0)
-                                    {
-                                        var24[Block.DIRT.id] += 10;
-                                    }
-                                    else
-                                    {
-                                        var24[Block.STONE.id] += 10;
-                                    }
-
-                                    var29 = 100.0D;
-                                }
-                                else
-                                {
-                                    for (var31 = 0; var31 < var6; ++var31)
-                                    {
-                                        for (var32 = 0; var32 < var6; ++var32)
-                                        {
-                                            var33 = var25.b(var31 + var26, var32 + var27) + 1;
-                                            int var34 = 0;
-
-                                            if (var33 > 1)
-                                            {
-                                                boolean var35;
-
-                                                do
-                                                {
-                                                    var35 = true;
-                                                    var34 = var25.getTypeId(var31 + var26, var33 - 1, var32 + var27);
-
-                                                    if (var34 == 0)
-                                                    {
-                                                        var35 = false;
-                                                    }
-                                                    else if (var33 > 0 && var34 > 0 && Block.byId[var34].material.G == MaterialMapColor.b)
-                                                    {
-                                                        var35 = false;
-                                                    }
-
-                                                    if (!var35)
-                                                    {
-                                                        --var33;
-
-                                                        if (var33 <= 0)
-                                                        {
-                                                            break;
-                                                        }
-
-                                                        var34 = var25.getTypeId(var31 + var26, var33 - 1, var32 + var27);
-                                                    }
-                                                }
-                                                while (var33 > 0 && !var35);
-
-                                                if (var33 > 0 && var34 != 0 && Block.byId[var34].material.isLiquid())
-                                                {
-                                                    var36 = var33 - 1;
-                                                    boolean var37 = false;
-                                                    int var43;
-
-                                                    do
-                                                    {
-                                                        var43 = var25.getTypeId(var31 + var26, var36--, var32 + var27);
-                                                        ++var28;
-                                                    }
-                                                    while (var36 > 0 && var43 != 0 && Block.byId[var43].material.isLiquid());
-                                                }
-                                            }
-
-                                            var29 += (double)var33 / (double)(var6 * var6);
-                                            ++var24[var34];
-                                        }
-                                    }
-                                }
-
-                                var28 /= var6 * var6;
-                                var31 = 0;
-                                var32 = 0;
-
-                                for (var33 = 0; var33 < 256; ++var33)
-                                {
-                                    if (var24[var33] > var31)
-                                    {
-                                        var32 = var33;
-                                        var31 = var24[var33];
-                                    }
-                                }
-
-                                double var40 = (var29 - var16) * 4.0D / (double)(var6 + 4) + ((double)(var13 + var18 & 1) - 0.5D) * 0.4D;
-                                byte var39 = 1;
-
-                                if (var40 > 0.6D)
-                                {
-                                    var39 = 2;
-                                }
-
-                                if (var40 < -0.6D)
-                                {
-                                    var39 = 0;
-                                }
-
-                                var36 = 0;
-
-                                if (var32 > 0)
-                                {
-                                    MaterialMapColor var42 = Block.byId[var32].material.G;
-
-                                    if (var42 == MaterialMapColor.n)
-                                    {
-                                        var40 = (double)var28 * 0.1D + (double)(var13 + var18 & 1) * 0.2D;
-                                        var39 = 1;
-
-                                        if (var40 < 0.5D)
-                                        {
-                                            var39 = 2;
-                                        }
-
-                                        if (var40 > 0.9D)
-                                        {
-                                            var39 = 0;
-                                        }
-                                    }
-
-                                    var36 = var42.q;
-                                }
-
-                                var16 = var29;
-
-                                if (var18 >= 0 && var19 * var19 + var20 * var20 < var11 * var11 && (!var21 || (var13 + var18 & 1) != 0))
-                                {
-                                    byte var41 = var3.colors[var13 + var18 * var4];
-                                    byte var38 = (byte)(var36 * 4 + var39);
-
-                                    if (var41 != var38)
-                                    {
-                                        if (var14 > var18)
-                                        {
-                                            var14 = var18;
-                                        }
-
-                                        if (var15 < var18)
-                                        {
-                                            var15 = var18;
-                                        }
-
-                                        var3.colors[var13 + var18 * var4] = var38;
-                                    }
-                                }
-                            }
+                          if (!flag1) {
+                            k4--;
+                            if (k4 <= 0) break;
+                            j5 = chunk.getTypeId(l4 + k3, k4 - 1, j4 + l3);
+                          }
                         }
-                    }
+                        while ((k4 > 0) && (!flag1));
 
-                    if (var14 <= var15)
-                    {
-                        var3.func_76194_a(var13, var14, var15);
+                        if ((k4 > 0) && (j5 != 0) && (Block.byId[j5].material.isLiquid())) {
+                          int i5 = k4 - 1;
+                          boolean flag2 = false;
+                          int k5;
+                          do {
+                            k5 = chunk.getTypeId(l4 + k3, i5--, j4 + l3);
+                            i4++;
+                          }while ((i5 > 0) && (k5 != 0) && (Block.byId[k5].material.isLiquid()));
+                        }
+                      }
+
+                      d1 += k4 / i * i;
+                      aint[j5] += 1;
                     }
+                  }
                 }
+
+                i4 /= i * i;
+                int l5 = b0 / (i * i);
+
+                l5 = b1 / (i * i);
+                l5 = b2 / (i * i);
+                int l4 = 0;
+                int j4 = 0;
+
+                for (int k4 = 0; k4 < Block.byId.length; k4++) {
+                  if (aint[k4] > l4) {
+                    j4 = k4;
+                    l4 = aint[k4];
+                  }
+                }
+
+                double d2 = (d1 - d0) * 4.0D / i + 4 + (k1 + j2 & 0x1 - 0.5D) * 0.4D;
+                byte b3 = 1;
+
+                if (d2 > 0.6D) {
+                  b3 = 2;
+                }
+
+                if (d2 < -0.6D) {
+                  b3 = 0;
+                }
+
+                int i5 = 0;
+                if (j4 > 0) {
+                  MaterialMapColor materialmapcolor = Block.byId[j4].material.F;
+
+                  if (materialmapcolor == MaterialMapColor.n) {
+                    d2 = i4 * 0.1D + k1 + j2 & 0x1 * 0.2D;
+                    b3 = 1;
+                    if (d2 < 0.5D) {
+                      b3 = 2;
+                    }
+
+                    if (d2 > 0.9D) {
+                      b3 = 0;
+                    }
+                  }
+
+                  i5 = materialmapcolor.q;
+                }
+
+                d0 = d1;
+                if ((j2 >= 0) && (k2 * k2 + l2 * l2 < j1 * j1) && ((!flag) || ((k1 + j2 & 0x1) != 0))) {
+                  byte b4 = worldmap.colors[(k1 + j2 * short1)];
+                  byte b5 = (byte)(i5 * 4 + b3);
+
+                  if (b4 != b5) {
+                    if (l1 > j2) {
+                      l1 = j2;
+                    }
+
+                    if (i2 < j2) {
+                      i2 = j2;
+                    }
+
+                    worldmap.colors[(k1 + j2 * short1)] = b5;
+                  }
+                }
+              }
             }
+          }
+          if (l1 <= i2)
+            worldmap.flagDirty(k1, l1, i2);
         }
     }
+  }
 
-    /**
-     * Called each tick as long the item is on a player inventory. Uses by maps to check if is on a player hand and
-     * update it's contents.
-     */
-    public void a(ItemStack var1, World var2, Entity var3, int var4, boolean var5)
-    {
-        if (!var2.isStatic)
-        {
-            WorldMap var6 = this.getSavedMap(var1, var2);
+  public void a(ItemStack itemstack, World world, Entity entity, int i, boolean flag)
+  {
+    if (!world.isStatic) {
+      WorldMap worldmap = getSavedMap(itemstack, world);
 
-            if (var3 instanceof EntityHuman)
-            {
-                EntityHuman var7 = (EntityHuman)var3;
-                var6.a(var7, var1);
-            }
+      if ((entity instanceof EntityHuman)) {
+        EntityHuman entityhuman = (EntityHuman)entity;
 
-            if (var5)
-            {
-                this.a(var2, var3, var6);
-            }
-        }
+        worldmap.a(entityhuman, itemstack);
+      }
+
+      if (flag)
+        a(world, entity, worldmap);
     }
+  }
 
-    public Packet c(ItemStack var1, World var2, EntityHuman var3)
-    {
-        byte[] var4 = this.getSavedMap(var1, var2).func_76193_a(var1, var2, var3);
-        return var4 == null ? null : new Packet131ItemData((short)Item.MAP.id, (short)var1.getData(), var4);
-    }
+  public void d(ItemStack itemstack, World world, EntityHuman entityhuman)
+  {
+    itemstack.setData(world.b("map"));
+    String s = "map_" + itemstack.getData();
+    WorldMap worldmap = new WorldMap(s);
 
-    /**
-     * Called when item is crafted/smelted. Used only by maps so far.
-     */
-    public void d(ItemStack var1, World var2, EntityHuman var3)
-    {
-        if (var1.hasTag() && var1.getTag().getBoolean("map_is_scaling"))
-        {
-            WorldMap var4 = Item.MAP.getSavedMap(var1, var2);
-            var1.setData(var2.b("map"));
-            WorldMap var5 = new WorldMap("map_" + var1.getData());
-            var5.scale = (byte)(var4.scale + 1);
+    world.a(s, worldmap);
+    worldmap.centerX = MathHelper.floor(entityhuman.locX);
+    worldmap.centerZ = MathHelper.floor(entityhuman.locZ);
+    worldmap.scale = 3;
+    worldmap.map = (byte)((WorldServer)world).dimension;
+    worldmap.a();
 
-            if (var5.scale > 4)
-            {
-                var5.scale = 4;
-            }
+    MapInitializeEvent event = new MapInitializeEvent(worldmap.mapView);
+    Bukkit.getServer().getPluginManager().callEvent(event);
+  }
 
-            var5.centerX = var4.centerX;
-            var5.centerZ = var4.centerZ;
-            var5.map = var4.map;
-            var5.c();
-            var2.a("map_" + var1.getData(), var5);
-        }
-    }
+  public Packet c(ItemStack itemstack, World world, EntityHuman entityhuman)
+  {
+    byte[] abyte = getSavedMap(itemstack, world).getUpdatePacket(itemstack, world, entityhuman);
+
+    return abyte == null ? null : new Packet131ItemData((short)Item.MAP.id, (short)itemstack.getData(), abyte);
+  }
 }
+

@@ -1,358 +1,344 @@
 package net.minecraft.server;
 
+import forge.ForgeHooks;
+import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.CraftWorld;
+import org.bukkit.craftbukkit.event.CraftEventFactory;
+import org.bukkit.entity.Player;
+import org.bukkit.event.Event.Result;
+import org.bukkit.event.block.Action;
+import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockDamageEvent;
+import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.plugin.PluginManager;
+
 public class ItemInWorldManager
 {
-    /** The world object that this object is connected to. */
-    public World world;
+  private double blockReachDistance = 5.0D;
+  public World world;
+  public EntityHuman player;
+  private int c = -1;
+  private float d = 0.0F;
+  private int lastDigTick;
+  private int f;
+  private int g;
+  private int h;
+  private int currentTick;
+  private boolean j;
+  private int k;
+  private int l;
+  private int m;
+  private int n;
 
-    /** The EntityPlayerMP object that this object is connected to. */
-    public EntityPlayer player;
-    private EnumGamemode gamemode;
+  public ItemInWorldManager(World world)
+  {
+    this.world = world;
+  }
 
-    /**
-     * set to true on first call of destroyBlockInWorldPartially, false before any further calls
-     */
-    private boolean d;
-    private int lastDigTick;
-    private int f;
-    private int g;
-    private int h;
-    private int currentTick;
-    private boolean field_73097_j;
-    private int k;
-    private int l;
-    private int m;
-    private int field_73093_n;
-    private int o;
+  public ItemInWorldManager(WorldServer world)
+  {
+    this.world = world;
+  }
 
-    public ItemInWorldManager(World var1)
-    {
-        this.gamemode = EnumGamemode.NOT_SET;
-        this.o = -1;
-        this.world = var1;
+  public void setGameMode(int i)
+  {
+    this.c = i;
+    if (i == 0) {
+      this.player.abilities.canFly = false;
+      this.player.abilities.isFlying = false;
+      this.player.abilities.canInstantlyBuild = false;
+      this.player.abilities.isInvulnerable = false;
+    } else {
+      this.player.abilities.canFly = true;
+      this.player.abilities.canInstantlyBuild = true;
+      this.player.abilities.isInvulnerable = true;
     }
 
-    public void setGameMode(EnumGamemode var1)
-    {
-        this.gamemode = var1;
-        var1.a(this.player.abilities);
-        this.player.updateAbilities();
+    this.player.updateAbilities();
+  }
+
+  public int getGameMode() {
+    return this.c;
+  }
+
+  public boolean isCreative() {
+    return this.c == 1;
+  }
+
+  public void b(int i) {
+    if (this.c == -1) {
+      this.c = i;
     }
 
-    public EnumGamemode getGameMode()
+    setGameMode(this.c);
+  }
+
+  public void c() {
+    this.currentTick = (int)(System.currentTimeMillis() / 50L);
+    if (this.j) {
+      int i = this.currentTick - this.n;
+      int j = this.world.getTypeId(this.k, this.l, this.m);
+
+      if (j != 0) {
+        Block block = Block.byId[j];
+        float f = block.blockStrength(this.world, this.player, this.l, this.m, this.n) * i + 1;
+
+        if (f >= 1.0F) {
+          this.j = false;
+          breakBlock(this.k, this.l, this.m);
+        }
+      } else {
+        this.j = false;
+      }
+    }
+  }
+
+  public void dig(int i, int j, int k, int l)
+  {
+    PlayerInteractEvent event = CraftEventFactory.callPlayerInteractEvent(this.player, Action.LEFT_CLICK_BLOCK, i, j, k, l, this.player.inventory.getItemInHand());
+
+    if (isCreative())
     {
-        return this.gamemode;
+      if (event.isCancelled())
+      {
+        ((EntityPlayer)this.player).netServerHandler.sendPacket(new Packet53BlockChange(i, j, k, this.world));
+        return;
+      }
+
+      if (!this.world.douseFire((EntityHuman)null, i, j, k, l))
+        breakBlock(i, j, k);
+    }
+    else {
+      this.lastDigTick = (int)(System.currentTimeMillis() / 50L);
+      int i1 = this.world.getTypeId(i, j, k);
+
+      if (i1 <= 0) {
+        return;
+      }
+
+      if (event.useInteractedBlock() == Event.Result.DENY)
+      {
+        if (i1 == Block.WOODEN_DOOR.id)
+        {
+          boolean bottom = (this.world.getData(i, j, k) & 0x8) == 0;
+          ((EntityPlayer)this.player).netServerHandler.sendPacket(new Packet53BlockChange(i, j, k, this.world));
+          ((EntityPlayer)this.player).netServerHandler.sendPacket(new Packet53BlockChange(i, j + (bottom ? 1 : -1), k, this.world));
+        } else if (i1 == Block.TRAP_DOOR.id) {
+          ((EntityPlayer)this.player).netServerHandler.sendPacket(new Packet53BlockChange(i, j, k, this.world));
+        }
+      } else {
+        Block.byId[i1].attack(this.world, i, j, k, this.player);
+
+        this.world.douseFire((EntityHuman)null, i, j, k, l);
+      }
+
+      float toolDamage = Block.byId[i1].blockStrength(this.world, this.player, i, j, k);
+      if (event.useItemInHand() == Event.Result.DENY)
+      {
+        if (toolDamage > 1.0F) {
+          ((EntityPlayer)this.player).netServerHandler.sendPacket(new Packet53BlockChange(i, j, k, this.world));
+        }
+        return;
+      }
+      BlockDamageEvent blockEvent = CraftEventFactory.callBlockDamageEvent(this.player, i, j, k, this.player.inventory.getItemInHand(), toolDamage >= 1.0F);
+
+      if (blockEvent.isCancelled())
+      {
+        ((EntityPlayer)this.player).netServerHandler.sendPacket(new Packet53BlockChange(i, j, k, this.world));
+        return;
+      }
+
+      if (blockEvent.getInstaBreak()) {
+        toolDamage = 2.0F;
+      }
+
+      if (toolDamage >= 1.0F)
+      {
+        breakBlock(i, j, k);
+      } else {
+        this.f = i;
+        this.g = j;
+        this.h = k;
+      }
+    }
+  }
+
+  public void a(int i, int j, int k) {
+    if ((i == this.f) && (j == this.g) && (k == this.h)) {
+      this.currentTick = (int)(System.currentTimeMillis() / 50L);
+      int l = this.currentTick - this.lastDigTick;
+      int i1 = this.world.getTypeId(i, j, k);
+
+      if (i1 != 0) {
+        Block block = Block.byId[i1];
+        float f = block.blockStrength(this.world, this.player, i, j, k) * l + 1;
+
+        if (f >= 0.7F) {
+          breakBlock(i, j, k);
+        } else if (!this.j) {
+          this.j = true;
+          this.k = i;
+          this.l = j;
+          this.m = k;
+          this.n = this.lastDigTick;
+        }
+      }
+    }
+    else {
+      ((EntityPlayer)this.player).netServerHandler.sendPacket(new Packet53BlockChange(i, j, k, this.world));
     }
 
-    /**
-     * Get if we are in creative game mode.
-     */
-    public boolean isCreative()
-    {
-        return this.gamemode.d();
+    this.d = 0.0F;
+  }
+
+  public boolean b(int i, int j, int k) {
+    Block block = Block.byId[this.world.getTypeId(i, j, k)];
+    int l = this.world.getData(i, j, k);
+    boolean flag = (block != null) && (block.removeBlockByPlayer(this.world, this.player, i, j, k));
+
+    if ((block != null) && (flag)) {
+      block.postBreak(this.world, i, j, k, l);
     }
 
-    /**
-     * if the gameType is currently NOT_SET then change it to par1
-     */
-    public void b(EnumGamemode var1)
-    {
-        if (this.gamemode == EnumGamemode.NOT_SET)
-        {
-            this.gamemode = var1;
-        }
+    return flag;
+  }
 
-        this.setGameMode(this.gamemode);
+  public boolean breakBlock(int i, int j, int k) {
+    ItemStack stack = this.player.U();
+    if ((stack != null) && (stack.getItem().onBlockStartBreak(stack, i, j, k, this.player))) {
+      return false;
     }
 
-    public void a()
-    {
-        ++this.currentTick;
-        int var1;
-        float var4;
-        int var5;
+    if ((this.player instanceof EntityPlayer)) {
+      org.bukkit.block.Block block = this.world.getWorld().getBlockAt(i, j, k);
 
-        if (this.field_73097_j)
-        {
-            var1 = this.currentTick - this.field_73093_n;
-            int var2 = this.world.getTypeId(this.k, this.l, this.m);
+      if (this.world.getTileEntity(i, j, k) == null) {
+        Packet53BlockChange packet = new Packet53BlockChange(i, j, k, this.world);
 
-            if (var2 == 0)
-            {
-                this.field_73097_j = false;
-            }
-            else
-            {
-                Block var3 = Block.byId[var2];
-                var4 = var3.getDamage(this.player, this.player.world, this.k, this.l, this.m) * (float)(var1 + 1);
-                var5 = (int)(var4 * 10.0F);
+        packet.material = 0;
+        packet.data = 0;
+        ((EntityPlayer)this.player).netServerHandler.sendPacket(packet);
+      }
 
-                if (var5 != this.o)
-                {
-                    this.world.g(this.player.id, this.k, this.l, this.m, var5);
-                    this.o = var5;
-                }
+      BlockBreakEvent event = new BlockBreakEvent(block, (Player)this.player.getBukkitEntity());
+      this.world.getServer().getPluginManager().callEvent(event);
 
-                if (var4 >= 1.0F)
-                {
-                    this.field_73097_j = false;
-                    this.breakBlock(this.k, this.l, this.m);
-                }
-            }
-        }
-        else if (this.d)
-        {
-            var1 = this.world.getTypeId(this.f, this.g, this.h);
-            Block var6 = Block.byId[var1];
+      if (event.isCancelled())
+      {
+        ((EntityPlayer)this.player).netServerHandler.sendPacket(new Packet53BlockChange(i, j, k, this.world));
+        return false;
+      }
 
-            if (var6 == null)
-            {
-                this.world.g(this.player.id, this.f, this.g, this.h, -1);
-                this.o = -1;
-                this.d = false;
-            }
-            else
-            {
-                int var7 = this.currentTick - this.lastDigTick;
-                var4 = var6.getDamage(this.player, this.player.world, this.f, this.g, this.h) * (float)(var7 + 1);
-                var5 = (int)(var4 * 10.0F);
-
-                if (var5 != this.o)
-                {
-                    this.world.g(this.player.id, this.f, this.g, this.h, var5);
-                    this.o = var5;
-                }
-            }
-        }
     }
 
-    public void dig(int var1, int var2, int var3, int var4)
-    {
-        if (!this.gamemode.isAdventure() || this.player.func_82246_f(var1, var2, var3))
-        {
-            if (this.isCreative())
-            {
-                if (!this.world.douseFire((EntityHuman)null, var1, var2, var3, var4))
-                {
-                    this.breakBlock(var1, var2, var3);
-                }
-            }
-            else
-            {
-                this.world.douseFire(this.player, var1, var2, var3, var4);
-                this.lastDigTick = this.currentTick;
-                float var5 = 1.0F;
-                int var6 = this.world.getTypeId(var1, var2, var3);
+    int l = this.world.getTypeId(i, j, k);
+    int i1 = this.world.getData(i, j, k);
 
-                if (var6 > 0)
-                {
-                    Block.byId[var6].attack(this.world, var1, var2, var3, this.player);
-                    var5 = Block.byId[var6].getDamage(this.player, this.player.world, var1, var2, var3);
-                }
+    this.world.a(this.player, 2001, i, j, k, l + (this.world.getData(i, j, k) << 12));
+    boolean flag = b(i, j, k);
 
-                if (var6 > 0 && var5 >= 1.0F)
-                {
-                    this.breakBlock(var1, var2, var3);
-                }
-                else
-                {
-                    this.d = true;
-                    this.f = var1;
-                    this.g = var2;
-                    this.h = var3;
-                    int var7 = (int)(var5 * 10.0F);
-                    this.world.g(this.player.id, var1, var2, var3, var7);
-                    this.o = var7;
-                }
-            }
+    if (isCreative()) {
+      ((EntityPlayer)this.player).netServerHandler.sendPacket(new Packet53BlockChange(i, j, k, this.world));
+    } else {
+      ItemStack itemstack = this.player.U();
+      boolean flag1 = Block.byId[l].canHarvestBlock(this.player, i1);
+
+      if (itemstack != null) {
+        itemstack.a(l, i, j, k, this.player);
+        if (itemstack.count == 0) {
+          itemstack.a(this.player);
+          this.player.V();
+          ForgeHooks.onDestroyCurrentItem(this.player, itemstack);
         }
+      }
+
+      if ((flag) && (flag1)) {
+        Block.byId[l].a(this.world, this.player, i, j, k, i1);
+      }
     }
 
-    public void a(int var1, int var2, int var3)
-    {
-        if (var1 == this.f && var2 == this.g && var3 == this.h)
-        {
-            int var4 = this.currentTick - this.lastDigTick;
-            int var5 = this.world.getTypeId(var1, var2, var3);
+    return flag;
+  }
 
-            if (var5 != 0)
-            {
-                Block var6 = Block.byId[var5];
-                float var7 = var6.getDamage(this.player, this.player.world, var1, var2, var3) * (float)(var4 + 1);
+  public boolean useItem(EntityHuman entityhuman, World world, ItemStack itemstack) {
+    int i = itemstack.count;
+    int j = itemstack.getData();
+    ItemStack itemstack1 = itemstack.a(world, entityhuman);
 
-                if (var7 >= 0.7F)
-                {
-                    this.d = false;
-                    this.world.g(this.player.id, var1, var2, var3, -1);
-                    this.breakBlock(var1, var2, var3);
-                }
-                else if (!this.field_73097_j)
-                {
-                    this.d = false;
-                    this.field_73097_j = true;
-                    this.k = var1;
-                    this.l = var2;
-                    this.m = var3;
-                    this.field_73093_n = this.lastDigTick;
-                }
-            }
-        }
+    if ((itemstack1 == itemstack) && ((itemstack1 == null) || (itemstack1.count == i)) && ((itemstack1 == null) || (itemstack1.l() <= 0))) {
+      return false;
+    }
+    entityhuman.inventory.items[entityhuman.inventory.itemInHandIndex] = itemstack1;
+    if (isCreative()) {
+      itemstack1.count = i;
+      itemstack1.setData(j);
     }
 
-    /**
-     * note: this ignores the pars passed in and continues to destroy the onClickedBlock
-     */
-    public void c(int var1, int var2, int var3)
-    {
-        this.d = false;
-        this.world.g(this.player.id, this.f, this.g, this.h, -1);
+    if (itemstack1.count == 0) {
+      entityhuman.inventory.items[entityhuman.inventory.itemInHandIndex] = null;
     }
 
-    /**
-     * Removes a block and triggers the appropriate events
-     */
-    private boolean d(int var1, int var2, int var3)
+    return true;
+  }
+
+  public boolean interact(EntityHuman entityhuman, World world, ItemStack itemstack, int i, int j, int k, int l)
+  {
+    PlayerInteractEvent event = CraftEventFactory.callPlayerInteractEvent(entityhuman, Action.RIGHT_CLICK_BLOCK, i, j, k, l, itemstack);
+
+    if ((itemstack != null) && (event.useItemInHand() != Event.Result.DENY) && (event.useInteractedBlock() != Event.Result.DENY) && (itemstack.getItem().onItemUseFirst(itemstack, entityhuman, world, i, j, k, l)))
     {
-        Block var4 = Block.byId[this.world.getTypeId(var1, var2, var3)];
-        int var5 = this.world.getData(var1, var2, var3);
-
-        if (var4 != null)
-        {
-            var4.a(this.world, var1, var2, var3, var5, this.player);
-        }
-
-        boolean var6 = this.world.setTypeId(var1, var2, var3, 0);
-
-        if (var4 != null && var6)
-        {
-            var4.postBreak(this.world, var1, var2, var3, var5);
-        }
-
-        return var6;
+      return true;
     }
 
-    /**
-     * Attempts to harvest a block at the given coordinate
-     */
-    public boolean breakBlock(int var1, int var2, int var3)
-    {
-        if (this.gamemode.isAdventure() && !this.player.func_82246_f(var1, var2, var3))
-        {
-            return false;
+    int i1 = world.getTypeId(i, j, k);
+
+    boolean result = false;
+    if (i1 > 0) {
+      if (event.useInteractedBlock() == Event.Result.DENY)
+      {
+        if (i1 == Block.WOODEN_DOOR.id) {
+          boolean bottom = (world.getData(i, j, k) & 0x8) == 0;
+          ((EntityPlayer)entityhuman).netServerHandler.sendPacket(new Packet53BlockChange(i, j + (bottom ? 1 : -1), k, world));
         }
-        else
-        {
-            int var4 = this.world.getTypeId(var1, var2, var3);
-            int var5 = this.world.getData(var1, var2, var3);
-            this.world.a(this.player, 2001, var1, var2, var3, var4 + (this.world.getData(var1, var2, var3) << 12));
-            boolean var6 = this.d(var1, var2, var3);
+        result = event.useItemInHand() != Event.Result.ALLOW;
+      } else {
+        result = Block.byId[i1].interact(world, i, j, k, entityhuman);
+      }
 
-            if (this.isCreative())
-            {
-                this.player.netServerHandler.sendPacket(new Packet53BlockChange(var1, var2, var3, this.world));
-            }
-            else
-            {
-                ItemStack var7 = this.player.bP();
-                boolean var8 = this.player.b(Block.byId[var4]);
+      if ((itemstack != null) && (!result)) {
+        int j1 = itemstack.getData();
+        int k1 = itemstack.count;
 
-                if (var7 != null)
-                {
-                    var7.a(this.world, var4, var1, var2, var3, this.player);
+        result = itemstack.placeItem(entityhuman, world, i, j, k, l);
 
-                    if (var7.count == 0)
-                    {
-                        this.player.bQ();
-                    }
-                }
-
-                if (var6 && var8)
-                {
-                    Block.byId[var4].a(this.world, this.player, var1, var2, var3, var5);
-                }
-            }
-
-            return var6;
+        if (isCreative()) {
+          itemstack.setData(j1);
+          itemstack.count = k1;
+        } else if ((result) && (itemstack.count == 0)) {
+          ForgeHooks.onDestroyCurrentItem(entityhuman, itemstack);
         }
+
+      }
+
+      if ((itemstack != null) && (((!result) && (event.useItemInHand() != Event.Result.DENY)) || (event.useItemInHand() == Event.Result.ALLOW))) {
+        useItem(entityhuman, world, itemstack);
+      }
     }
+    return result;
+  }
 
-    /**
-     * Attempts to right-click use an item by the given EntityPlayer in the given World
-     */
-    public boolean useItem(EntityHuman var1, World var2, ItemStack var3)
-    {
-        int var4 = var3.count;
-        int var5 = var3.getData();
-        ItemStack var6 = var3.a(var2, var1);
+  public void a(WorldServer worldserver)
+  {
+    this.world = worldserver;
+  }
 
-        if (var6 == var3 && (var6 == null || var6.count == var4 && var6.m() <= 0 && var6.getData() == var5))
-        {
-            return false;
-        }
-        else
-        {
-            var1.inventory.items[var1.inventory.itemInHandIndex] = var6;
+  public double getBlockReachDistance()
+  {
+    return this.blockReachDistance;
+  }
 
-            if (this.isCreative())
-            {
-                var6.count = var4;
-
-                if (var6.f())
-                {
-                    var6.setData(var5);
-                }
-            }
-
-            if (var6.count == 0)
-            {
-                var1.inventory.items[var1.inventory.itemInHandIndex] = null;
-            }
-
-            if (!var1.bI())
-            {
-                ((EntityPlayer)var1).updateInventory(var1.defaultContainer);
-            }
-
-            return true;
-        }
-    }
-
-    /**
-     * Activate the clicked on block, otherwise use the held item. Args: player, world, itemStack, x, y, z, side,
-     * xOffset, yOffset, zOffset
-     */
-    public boolean interact(EntityHuman var1, World var2, ItemStack var3, int var4, int var5, int var6, int var7, float var8, float var9, float var10)
-    {
-        int var11 = var2.getTypeId(var4, var5, var6);
-
-        if (var11 > 0 && Block.byId[var11].interact(var2, var4, var5, var6, var1, var7, var8, var9, var10))
-        {
-            return true;
-        }
-        else if (var3 == null)
-        {
-            return false;
-        }
-        else if (this.isCreative())
-        {
-            int var12 = var3.getData();
-            int var13 = var3.count;
-            boolean var14 = var3.placeItem(var1, var2, var4, var5, var6, var7, var8, var9, var10);
-            var3.setData(var12);
-            var3.count = var13;
-            return var14;
-        }
-        else
-        {
-            return var3.placeItem(var1, var2, var4, var5, var6, var7, var8, var9, var10);
-        }
-    }
-
-    /**
-     * Sets the world instance.
-     */
-    public void a(WorldServer var1)
-    {
-        this.world = var1;
-    }
+  public void setBlockReachDistance(double distance) {
+    this.blockReachDistance = distance;
+  }
 }
+

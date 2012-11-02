@@ -1,2088 +1,1569 @@
 package net.minecraft.server;
 
-import java.util.Iterator;
+import java.io.PrintStream;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.UUID;
+import org.bukkit.Bukkit;
+import org.bukkit.Server;
+import org.bukkit.block.BlockFace;
+import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.CraftWorld;
+import org.bukkit.craftbukkit.entity.CraftEntity;
+import org.bukkit.craftbukkit.entity.CraftPlayer;
+import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Painting;
+import org.bukkit.entity.Vehicle;
+import org.bukkit.event.entity.EntityCombustByBlockEvent;
+import org.bukkit.event.entity.EntityCombustByEntityEvent;
+import org.bukkit.event.entity.EntityCombustEvent;
+import org.bukkit.event.entity.EntityDamageByBlockEvent;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
+import org.bukkit.event.painting.PaintingBreakByEntityEvent;
+import org.bukkit.event.vehicle.VehicleBlockCollisionEvent;
+import org.bukkit.event.vehicle.VehicleEnterEvent;
+import org.bukkit.event.vehicle.VehicleExitEvent;
+import org.bukkit.plugin.PluginManager;
+import org.bukkit.util.NumberConversions;
 
 public abstract class Entity
+  implements net.minecraft.src.Entity
 {
-    private static int entityCount = 0;
-    public int id;
-    public double l;
+  public EntitySize size;
+  private static int entityCount = 0;
+  public int id;
+  public double be;
+  public boolean bf;
+  public Entity passenger;
+  public Entity vehicle;
+  public World world;
+  public double lastX;
+  public double lastY;
+  public double lastZ;
+  public double locX;
+  public double locY;
+  public double locZ;
+  public double motX;
+  public double motY;
+  public double motZ;
+  public float yaw;
+  public float pitch;
+  public float lastYaw;
+  public float lastPitch;
+  public final AxisAlignedBB boundingBox;
+  public boolean onGround;
+  public boolean positionChanged;
+  public boolean bz;
+  public boolean bA;
+  public boolean velocityChanged;
+  protected boolean bC;
+  public boolean bD;
+  public boolean dead;
+  public float height;
+  public float width;
+  public float length;
+  public float bI;
+  public float bJ;
+  public float fallDistance;
+  private int b;
+  public double bL;
+  public double bM;
+  public double bN;
+  public float bO;
+  public float bP;
+  public boolean bQ;
+  public float bR;
+  protected Random random;
+  public int ticksLived;
+  public int maxFireTicks;
+  public int fireTicks;
+  protected boolean bV;
+  public int noDamageTicks;
+  private boolean justCreated;
+  protected boolean fireProof;
+  protected DataWatcher datawatcher;
+  private double e;
+  private double f;
+  public boolean bZ;
+  public int ca;
+  public int cb;
+  public int cc;
+  public boolean cd;
+  public boolean ce;
+  public UUID uniqueId = UUID.randomUUID();
+  public boolean valid = true;
+  private NBTTagCompound customEntityData;
+  protected boolean captureDrops = false;
+  protected ArrayList<EntityItem> capturedDrops = new ArrayList();
+  protected org.bukkit.entity.Entity bukkitEntity;
 
-    /**
-     * Blocks entities from spawning when they do their AABB check to make sure the spot is clear of entities that can
-     * prevent spawning.
-     */
-    public boolean m;
+  public Entity(World world)
+  {
+    this.id = (entityCount++);
+    this.be = 1.0D;
+    this.bf = false;
+    this.boundingBox = AxisAlignedBB.a(0.0D, 0.0D, 0.0D, 0.0D, 0.0D, 0.0D);
+    this.onGround = false;
+    this.bA = false;
+    this.velocityChanged = false;
+    this.bD = true;
+    this.dead = false;
+    this.height = 0.0F;
+    this.width = 0.6F;
+    this.size = EntitySize.SIZE_2;
+    this.length = 1.8F;
+    this.bI = 0.0F;
+    this.bJ = 0.0F;
+    this.fallDistance = 0.0F;
+    this.b = 1;
+    this.bO = 0.0F;
+    this.bP = 0.0F;
+    this.bQ = false;
+    this.bR = 0.0F;
+    this.random = new Random();
+    this.ticksLived = 0;
+    this.maxFireTicks = 1;
+    this.fireTicks = 0;
+    this.bV = false;
+    this.noDamageTicks = 0;
+    this.justCreated = true;
+    this.fireProof = false;
+    this.datawatcher = new DataWatcher();
+    this.bZ = false;
+    this.world = world;
+    setPosition(0.0D, 0.0D, 0.0D);
+    this.datawatcher.a(0, Byte.valueOf((byte)0));
+    this.datawatcher.a(1, Short.valueOf((short)300));
+    b();
+  }
 
-    /** The entity that is riding this entity */
-    public Entity passenger;
+  protected abstract void b();
 
-    /** The entity we are currently riding */
-    public Entity vehicle;
-
-    /** Reference to the World object. */
-    public World world;
-    public double lastX;
-    public double lastY;
-    public double lastZ;
-
-    /** Entity position X */
-    public double locX;
-
-    /** Entity position Y */
-    public double locY;
-
-    /** Entity position Z */
-    public double locZ;
-
-    /** Entity motion X */
-    public double motX;
-
-    /** Entity motion Y */
-    public double motY;
-
-    /** Entity motion Z */
-    public double motZ;
-
-    /** Entity rotation Yaw */
-    public float yaw;
-
-    /** Entity rotation Pitch */
-    public float pitch;
-    public float lastYaw;
-    public float lastPitch;
-
-    /** Axis aligned bounding box. */
-    public final AxisAlignedBB boundingBox;
-    public boolean onGround;
-
-    /**
-     * True if after a move this entity has collided with something on X- or Z-axis
-     */
-    public boolean positionChanged;
-
-    /**
-     * True if after a move this entity has collided with something on Y-axis
-     */
-    public boolean G;
-
-    /**
-     * True if after a move this entity has collided with something either vertically or horizontally
-     */
-    public boolean H;
-    public boolean velocityChanged;
-    protected boolean J;
-    public boolean field_70135_K;
-
-    /**
-     * gets set by setEntityDead, so this must be the flag whether an Entity is dead (inactive may be better term)
-     */
-    public boolean dead;
-    public float height;
-
-    /** How wide this entity is considered to be */
-    public float width;
-
-    /** How high this entity is considered to be */
-    public float length;
-
-    /** The previous ticks distance walked multiplied by 0.6 */
-    public float P;
-
-    /** The distance walked multiplied by 0.6 */
-    public float Q;
-    public float field_82151_R;
-    public float fallDistance;
-
-    /**
-     * The distance that has to be exceeded in order to triger a new step sound and an onEntityWalking event on a block
-     */
-    private int c;
-
-    /**
-     * The entity's X coordinate at the previous tick, used to calculate position during rendering routines
-     */
-    public double T;
-
-    /**
-     * The entity's Y coordinate at the previous tick, used to calculate position during rendering routines
-     */
-    public double U;
-
-    /**
-     * The entity's Z coordinate at the previous tick, used to calculate position during rendering routines
-     */
-    public double V;
-    public float W;
-
-    /**
-     * How high this entity can step up when running into a block to try to get over it (currently make note the entity
-     * will always step up this amount and not just the amount needed)
-     */
-    public float X;
-
-    /**
-     * Whether this entity won't clip with collision or not (make note it won't disable gravity)
-     */
-    public boolean Y;
-
-    /**
-     * Reduces the velocity applied by entity collisions by the specified percent.
-     */
-    public float Z;
-    protected Random random;
-
-    /** How many ticks has this entity had ran since being alive */
-    public int ticksLived;
-
-    /**
-     * The amount of ticks you have to stand inside of fire before be set on fire
-     */
-    public int maxFireTicks;
-    private int fireTicks;
-
-    /**
-     * Whether this entity is currently inside of water (if it handles water movement that is)
-     */
-    protected boolean ad;
-
-    /**
-     * Remaining time an entity will be "immune" to further damage after being hurt.
-     */
-    public int noDamageTicks;
-    private boolean justCreated;
-    protected boolean fireProof;
-    protected DataWatcher datawatcher;
-    private double f;
-    private double g;
-
-    /** Has this entity been added to the chunk its within */
-    public boolean ah;
-    public int ai;
-    public int aj;
-    public int ak;
-
-    /**
-     * Render entity even if it is outside the camera frustum. Only true in EntityFish for now. Used in RenderGlobal:
-     * render if ignoreFrustumCheck or in frustum.
-     */
-    public boolean al;
-    public boolean am;
-    public int an;
-
-    /** Whether the entity is inside a Portal */
-    protected boolean ao;
-    private int field_82153_h;
-
-    /** Which dimension the player is in (-1 = the Nether, 0 = normal world) */
-    public int dimension;
-    protected int field_82152_aq;
-    public EnumEntitySize ar;
-
-    public Entity(World var1)
+  public NBTTagCompound getEntityData()
+  {
+    if (this.customEntityData == null)
     {
-        this.id = entityCount++;
-        this.l = 1.0D;
-        this.m = false;
-        this.boundingBox = AxisAlignedBB.a(0.0D, 0.0D, 0.0D, 0.0D, 0.0D, 0.0D);
-        this.onGround = false;
-        this.H = false;
-        this.velocityChanged = false;
-        this.field_70135_K = true;
-        this.dead = false;
-        this.height = 0.0F;
-        this.width = 0.6F;
-        this.length = 1.8F;
-        this.P = 0.0F;
-        this.Q = 0.0F;
-        this.field_82151_R = 0.0F;
+      this.customEntityData = new NBTTagCompound();
+    }
+    return this.customEntityData;
+  }
+
+  public boolean shouldRiderSit()
+  {
+    return true;
+  }
+
+  public DataWatcher getDataWatcher() {
+    return this.datawatcher;
+  }
+
+  public boolean equals(Object object) {
+    return ((Entity)object).id == this.id;
+  }
+
+  public int hashCode() {
+    return this.id;
+  }
+
+  public void die() {
+    this.dead = true;
+  }
+
+  protected void b(float f, float f1) {
+    this.width = f;
+    this.length = f1;
+
+    float mod = f % 2.0F;
+    if (mod < 0.375D)
+      this.size = EntitySize.SIZE_1;
+    else if (mod < 0.75D)
+      this.size = EntitySize.SIZE_2;
+    else if (mod < 1.0D)
+      this.size = EntitySize.SIZE_3;
+    else if (mod < 1.375D)
+      this.size = EntitySize.SIZE_4;
+    else if (mod < 1.75D)
+      this.size = EntitySize.SIZE_5;
+    else
+      this.size = EntitySize.SIZE_6;
+  }
+
+  protected void c(float f, float f1)
+  {
+    if (Float.isNaN(f)) {
+      f = 0.0F;
+    }
+
+    if ((f == (1.0F / 1.0F)) || (f == (1.0F / -1.0F))) {
+      if ((this instanceof EntityPlayer)) {
+        System.err.println(((CraftPlayer)getBukkitEntity()).getName() + " was caught trying to crash the server with an invalid yaw");
+        ((CraftPlayer)getBukkitEntity()).kickPlayer("Nope");
+      }
+      f = 0.0F;
+    }
+
+    if (Float.isNaN(f1)) {
+      f1 = 0.0F;
+    }
+
+    if ((f1 == (1.0F / 1.0F)) || (f1 == (1.0F / -1.0F))) {
+      if ((this instanceof EntityPlayer)) {
+        System.err.println(((CraftPlayer)getBukkitEntity()).getName() + " was caught trying to crash the server with an invalid pitch");
+        ((CraftPlayer)getBukkitEntity()).kickPlayer("Nope");
+      }
+      f1 = 0.0F;
+    }
+
+    this.yaw = (f % 360.0F);
+    this.pitch = (f1 % 360.0F);
+  }
+
+  public void setPosition(double d0, double d1, double d2) {
+    this.locX = d0;
+    this.locY = d1;
+    this.locZ = d2;
+    float f = this.width / 2.0F;
+    float f1 = this.length;
+
+    this.boundingBox.c(d0 - f, d1 - this.height + this.bO, d2 - f, d0 + f, d1 - this.height + this.bO + f1, d2 + f);
+  }
+
+  public void F_() {
+    aA();
+  }
+
+  public void aA()
+  {
+    if ((this.vehicle != null) && (this.vehicle.dead)) {
+      this.vehicle = null;
+    }
+
+    this.ticksLived += 1;
+    this.bI = this.bJ;
+    this.lastX = this.locX;
+    this.lastY = this.locY;
+    this.lastZ = this.locZ;
+    this.lastPitch = this.pitch;
+    this.lastYaw = this.yaw;
+
+    if ((isSprinting()) && (!aU())) {
+      int j = MathHelper.floor(this.locX);
+      int k = MathHelper.floor(this.locY - 0.2000000029802322D - this.height);
+
+      int i = MathHelper.floor(this.locZ);
+      int l = this.world.getTypeId(j, k, i);
+
+      if (l > 0) {
+        this.world.a("tilecrack_" + l, this.locX + (this.random.nextFloat() - 0.5D) * this.width, this.boundingBox.b + 0.1D, this.locZ + (this.random.nextFloat() - 0.5D) * this.width, -this.motX * 4.0D, 1.5D, -this.motZ * 4.0D);
+      }
+    }
+
+    if (h_()) {
+      if ((!this.bV) && (!this.justCreated)) {
+        float f = MathHelper.sqrt(this.motX * this.motX * 0.2000000029802322D + this.motY * this.motY + this.motZ * this.motZ * 0.2000000029802322D) * 0.2F;
+
+        if (f > 1.0F) {
+          f = 1.0F;
+        }
+
+        this.world.makeSound(this, "random.splash", f, 1.0F + (this.random.nextFloat() - this.random.nextFloat()) * 0.4F);
+        float f1 = MathHelper.floor(this.boundingBox.b);
+
+        for (int i = 0; i < 1.0F + this.width * 20.0F; i++) {
+          float f3 = (this.random.nextFloat() * 2.0F - 1.0F) * this.width;
+          float f2 = (this.random.nextFloat() * 2.0F - 1.0F) * this.width;
+          this.world.a("bubble", this.locX + f3, f1 + 1.0F, this.locZ + f2, this.motX, this.motY - this.random.nextFloat() * 0.2F, this.motZ);
+        }
+
+        for (i = 0; i < 1.0F + this.width * 20.0F; i++) {
+          float f3 = (this.random.nextFloat() * 2.0F - 1.0F) * this.width;
+          float f2 = (this.random.nextFloat() * 2.0F - 1.0F) * this.width;
+          this.world.a("splash", this.locX + f3, f1 + 1.0F, this.locZ + f2, this.motX, this.motY, this.motZ);
+        }
+      }
+
+      this.fallDistance = 0.0F;
+      this.bV = true;
+      this.fireTicks = 0;
+    } else {
+      this.bV = false;
+    }
+
+    if (this.world.isStatic)
+      this.fireTicks = 0;
+    else if (this.fireTicks > 0) {
+      if (this.fireProof) {
+        this.fireTicks -= 4;
+        if (this.fireTicks < 0)
+          this.fireTicks = 0;
+      }
+      else {
+        if (this.fireTicks % 20 == 0)
+        {
+          if ((this instanceof EntityLiving)) {
+            EntityDamageEvent event = new EntityDamageEvent(getBukkitEntity(), EntityDamageEvent.DamageCause.FIRE_TICK, 1);
+            this.world.getServer().getPluginManager().callEvent(event);
+
+            if (!event.isCancelled()) {
+              event.getEntity().setLastDamageCause(event);
+              damageEntity(DamageSource.BURN, event.getDamage());
+            }
+          } else {
+            damageEntity(DamageSource.BURN, 1);
+          }
+
+        }
+
+        this.fireTicks -= 1;
+      }
+    }
+
+    if (aV()) {
+      aQ();
+      this.fallDistance *= 0.5F;
+    }
+
+    if (this.locY < -64.0D) {
+      aI();
+    }
+
+    if (!this.world.isStatic) {
+      a(0, this.fireTicks > 0);
+      a(2, this.vehicle != null);
+    }
+
+    this.justCreated = false;
+  }
+
+  protected void aQ()
+  {
+    if (!this.fireProof)
+    {
+      if ((this instanceof EntityLiving)) {
+        Server server = this.world.getServer();
+
+        org.bukkit.block.Block damager = null;
+        org.bukkit.entity.Entity damagee = getBukkitEntity();
+
+        EntityDamageByBlockEvent event = new EntityDamageByBlockEvent(damager, damagee, EntityDamageEvent.DamageCause.LAVA, 4);
+        server.getPluginManager().callEvent(event);
+
+        if (!event.isCancelled()) {
+          damagee.setLastDamageCause(event);
+          damageEntity(DamageSource.LAVA, event.getDamage());
+        }
+
+        if (this.fireTicks <= 0)
+        {
+          EntityCombustEvent combustEvent = new EntityCombustByBlockEvent(damager, damagee, 15);
+          server.getPluginManager().callEvent(combustEvent);
+
+          if (!combustEvent.isCancelled())
+            setOnFire(combustEvent.getDuration());
+        }
+        else
+        {
+          setOnFire(15);
+        }
+        return;
+      }
+
+      damageEntity(DamageSource.LAVA, 4);
+      setOnFire(15);
+    }
+  }
+
+  public void setOnFire(int i) {
+    int j = i * 20;
+
+    if (this.fireTicks < j)
+      this.fireTicks = j;
+  }
+
+  public void extinguish()
+  {
+    this.fireTicks = 0;
+  }
+
+  protected void aI() {
+    die();
+  }
+
+  public boolean d(double d0, double d1, double d2) {
+    AxisAlignedBB axisalignedbb = this.boundingBox.c(d0, d1, d2);
+    List list = this.world.getCubes(this, axisalignedbb);
+
+    return list.size() <= 0;
+  }
+
+  public void move(double d0, double d1, double d2) {
+    if (this.bQ) {
+      this.boundingBox.d(d0, d1, d2);
+      this.locX = ((this.boundingBox.a + this.boundingBox.d) / 2.0D);
+      this.locY = (this.boundingBox.b + this.height - this.bO);
+      this.locZ = ((this.boundingBox.c + this.boundingBox.f) / 2.0D);
+    }
+    else {
+      this.bO *= 0.4F;
+      double d3 = this.locX;
+      double d4 = this.locZ;
+
+      if (this.bC) {
+        this.bC = false;
+        d0 *= 0.25D;
+        d1 *= 0.0500000007450581D;
+        d2 *= 0.25D;
+        this.motX = 0.0D;
+        this.motY = 0.0D;
+        this.motZ = 0.0D;
+      }
+
+      double d5 = d0;
+      double d6 = d1;
+      double d7 = d2;
+      AxisAlignedBB axisalignedbb = this.boundingBox.clone();
+      boolean flag = (this.onGround) && (isSneaking()) && ((this instanceof EntityHuman));
+
+      if (flag)
+      {
+        for (double d8 = 0.05D; (d0 != 0.0D) && (this.world.getCubes(this, this.boundingBox.c(d0, -1.0D, 0.0D)).size() == 0); d5 = d0) {
+          if ((d0 < d8) && (d0 >= -d8))
+            d0 = 0.0D;
+          else if (d0 > 0.0D)
+            d0 -= d8;
+          else {
+            d0 += d8;
+          }
+        }
+
+        for (; (d2 != 0.0D) && (this.world.getCubes(this, this.boundingBox.c(0.0D, -1.0D, d2)).size() == 0); d7 = d2) {
+          if ((d2 < d8) && (d2 >= -d8))
+            d2 = 0.0D;
+          else if (d2 > 0.0D)
+            d2 -= d8;
+          else {
+            d2 += d8;
+          }
+        }
+
+        while ((d0 != 0.0D) && (d2 != 0.0D) && (this.world.getCubes(this, this.boundingBox.c(d0, -1.0D, d2)).size() == 0)) {
+          if ((d0 < d8) && (d0 >= -d8))
+            d0 = 0.0D;
+          else if (d0 > 0.0D)
+            d0 -= d8;
+          else {
+            d0 += d8;
+          }
+
+          if ((d2 < d8) && (d2 >= -d8))
+            d2 = 0.0D;
+          else if (d2 > 0.0D)
+            d2 -= d8;
+          else {
+            d2 += d8;
+          }
+
+          d5 = d0;
+          d7 = d2;
+        }
+      }
+
+      List list = this.world.getCubes(this, this.boundingBox.a(d0, d1, d2));
+
+      for (int i = 0; i < list.size(); i++) {
+        d1 = ((AxisAlignedBB)list.get(i)).b(this.boundingBox, d1);
+      }
+
+      this.boundingBox.d(0.0D, d1, 0.0D);
+      if ((!this.bD) && (d6 != d1)) {
+        d2 = 0.0D;
+        d1 = 0.0D;
+        d0 = 0.0D;
+      }
+
+      boolean flag1 = (this.onGround) || ((d6 != d1) && (d6 < 0.0D));
+
+      for (int j = 0; j < list.size(); j++) {
+        d0 = ((AxisAlignedBB)list.get(j)).a(this.boundingBox, d0);
+      }
+
+      this.boundingBox.d(d0, 0.0D, 0.0D);
+      if ((!this.bD) && (d5 != d0)) {
+        d2 = 0.0D;
+        d1 = 0.0D;
+        d0 = 0.0D;
+      }
+
+      for (j = 0; j < list.size(); j++) {
+        d2 = ((AxisAlignedBB)list.get(j)).c(this.boundingBox, d2);
+      }
+
+      this.boundingBox.d(0.0D, 0.0D, d2);
+      if ((!this.bD) && (d7 != d2)) {
+        d2 = 0.0D;
+        d1 = 0.0D;
+        d0 = 0.0D;
+      }
+
+      if ((this.bP > 0.0F) && (flag1) && ((flag) || (this.bO < 0.05F)) && ((d5 != d0) || (d7 != d2))) {
+        double d9 = d0;
+        double d10 = d1;
+        double d11 = d2;
+
+        d0 = d5;
+        d1 = this.bP;
+        d2 = d7;
+        AxisAlignedBB axisalignedbb1 = this.boundingBox.clone();
+
+        this.boundingBox.b(axisalignedbb);
+        list = this.world.getCubes(this, this.boundingBox.a(d5, d1, d7));
+
+        for (int k = 0; k < list.size(); k++) {
+          d1 = ((AxisAlignedBB)list.get(k)).b(this.boundingBox, d1);
+        }
+
+        this.boundingBox.d(0.0D, d1, 0.0D);
+        if ((!this.bD) && (d6 != d1)) {
+          d2 = 0.0D;
+          d1 = 0.0D;
+          d0 = 0.0D;
+        }
+
+        for (k = 0; k < list.size(); k++) {
+          d0 = ((AxisAlignedBB)list.get(k)).a(this.boundingBox, d0);
+        }
+
+        this.boundingBox.d(d0, 0.0D, 0.0D);
+        if ((!this.bD) && (d5 != d0)) {
+          d2 = 0.0D;
+          d1 = 0.0D;
+          d0 = 0.0D;
+        }
+
+        for (k = 0; k < list.size(); k++) {
+          d2 = ((AxisAlignedBB)list.get(k)).c(this.boundingBox, d2);
+        }
+
+        this.boundingBox.d(0.0D, 0.0D, d2);
+        if ((!this.bD) && (d7 != d2)) {
+          d2 = 0.0D;
+          d1 = 0.0D;
+          d0 = 0.0D;
+        }
+
+        if ((!this.bD) && (d6 != d1)) {
+          d2 = 0.0D;
+          d1 = 0.0D;
+          d0 = 0.0D;
+        } else {
+          d1 = -this.bP;
+
+          for (k = 0; k < list.size(); k++) {
+            d1 = ((AxisAlignedBB)list.get(k)).b(this.boundingBox, d1);
+          }
+
+          this.boundingBox.d(0.0D, d1, 0.0D);
+        }
+
+        if (d9 * d9 + d11 * d11 >= d0 * d0 + d2 * d2) {
+          d0 = d9;
+          d1 = d10;
+          d2 = d11;
+          this.boundingBox.b(axisalignedbb1);
+        } else {
+          double d12 = this.boundingBox.b - (int)this.boundingBox.b;
+
+          if (d12 > 0.0D) {
+            this.bO = (float)(this.bO + d12 + 0.01D);
+          }
+
+        }
+
+      }
+
+      this.locX = ((this.boundingBox.a + this.boundingBox.d) / 2.0D);
+      this.locY = (this.boundingBox.b + this.height - this.bO);
+      this.locZ = ((this.boundingBox.c + this.boundingBox.f) / 2.0D);
+      this.positionChanged = ((d5 != d0) || (d7 != d2));
+      this.bz = (d6 != d1);
+      this.onGround = ((d6 != d1) && (d6 < 0.0D));
+      this.bA = ((this.positionChanged) || (this.bz));
+      a(d1, this.onGround);
+      if (d5 != d0) {
+        this.motX = 0.0D;
+      }
+
+      if (d6 != d1) {
+        this.motY = 0.0D;
+      }
+
+      if (d7 != d2) {
+        this.motZ = 0.0D;
+      }
+
+      double d9 = this.locX - d3;
+      double d10 = this.locZ - d4;
+
+      if ((this.positionChanged) && ((getBukkitEntity() instanceof Vehicle))) {
+        Vehicle vehicle = (Vehicle)getBukkitEntity();
+        org.bukkit.block.Block block = this.world.getWorld().getBlockAt(MathHelper.floor(this.locX), MathHelper.floor(this.locY - this.height), MathHelper.floor(this.locZ));
+
+        if (d5 > d0)
+          block = block.getRelative(BlockFace.SOUTH);
+        else if (d5 < d0)
+          block = block.getRelative(BlockFace.NORTH);
+        else if (d7 > d2)
+          block = block.getRelative(BlockFace.WEST);
+        else if (d7 < d2) {
+          block = block.getRelative(BlockFace.EAST);
+        }
+
+        VehicleBlockCollisionEvent event = new VehicleBlockCollisionEvent(vehicle, block);
+        this.world.getServer().getPluginManager().callEvent(event);
+      }
+
+      if ((g_()) && (!flag) && (this.vehicle == null)) {
+        this.bJ = (float)(this.bJ + MathHelper.sqrt(d9 * d9 + d10 * d10) * 0.6D);
+        int l = MathHelper.floor(this.locX);
+        int i1 = MathHelper.floor(this.locY - 0.2000000029802322D - this.height);
+        int j1 = MathHelper.floor(this.locZ);
+        int k = this.world.getTypeId(l, i1, j1);
+        if ((k == 0) && (this.world.getTypeId(l, i1 - 1, j1) == Block.FENCE.id)) {
+          k = this.world.getTypeId(l, i1 - 1, j1);
+        }
+
+        if ((this.bJ > this.b) && (k > 0)) {
+          this.b = ((int)this.bJ + 1);
+          a(l, i1, j1, k);
+          Block.byId[k].b(this.world, l, i1, j1, this);
+        }
+      }
+
+      int l = MathHelper.floor(this.boundingBox.a + 0.001D);
+      int i1 = MathHelper.floor(this.boundingBox.b + 0.001D);
+      int j1 = MathHelper.floor(this.boundingBox.c + 0.001D);
+      int k = MathHelper.floor(this.boundingBox.d - 0.001D);
+      int k1 = MathHelper.floor(this.boundingBox.e - 0.001D);
+      int l1 = MathHelper.floor(this.boundingBox.f - 0.001D);
+
+      if (this.world.a(l, i1, j1, k, k1, l1)) {
+        for (int i2 = l; i2 <= k; i2++) {
+          for (int j2 = i1; j2 <= k1; j2++) {
+            for (int k2 = j1; k2 <= l1; k2++) {
+              int l2 = this.world.getTypeId(i2, j2, k2);
+
+              if (l2 > 0) {
+                Block.byId[l2].a(this.world, i2, j2, k2, this);
+              }
+            }
+          }
+        }
+      }
+
+      boolean flag2 = aT();
+
+      if (this.world.d(this.boundingBox.shrink(0.001D, 0.001D, 0.001D))) {
+        burn(1);
+        if (!flag2) {
+          this.fireTicks += 1;
+
+          if (this.fireTicks <= 0) {
+            EntityCombustEvent event = new EntityCombustEvent(getBukkitEntity(), 8);
+            this.world.getServer().getPluginManager().callEvent(event);
+
+            if (!event.isCancelled())
+              setOnFire(event.getDuration());
+          }
+          else
+          {
+            setOnFire(8);
+          }
+        }
+      } else if (this.fireTicks <= 0) {
+        this.fireTicks = (-this.maxFireTicks);
+      }
+
+      if ((flag2) && (this.fireTicks > 0)) {
+        this.world.makeSound(this, "random.fizz", 0.7F, 1.6F + (this.random.nextFloat() - this.random.nextFloat()) * 0.4F);
+        this.fireTicks = (-this.maxFireTicks);
+      }
+    }
+  }
+
+  protected void a(int i, int j, int k, int l)
+  {
+    StepSound stepsound = Block.byId[l].stepSound;
+
+    if (this.world.getTypeId(i, j + 1, k) == Block.SNOW.id) {
+      stepsound = Block.SNOW.stepSound;
+      this.world.makeSound(this, stepsound.getName(), stepsound.getVolume1() * 0.15F, stepsound.getVolume2());
+    } else if (!Block.byId[l].material.isLiquid()) {
+      this.world.makeSound(this, stepsound.getName(), stepsound.getVolume1() * 0.15F, stepsound.getVolume2());
+    }
+  }
+
+  protected boolean g_() {
+    return true;
+  }
+
+  protected void a(double d0, boolean flag) {
+    if (flag) {
+      if (this.fallDistance > 0.0F) {
+        if ((this instanceof EntityLiving)) {
+          int i = MathHelper.floor(this.locX);
+          int j = MathHelper.floor(this.locY - 0.2000000029802322D - this.height);
+          int k = MathHelper.floor(this.locZ);
+          int l = this.world.getTypeId(i, j, k);
+
+          if ((l == 0) && (this.world.getTypeId(i, j - 1, k) == Block.FENCE.id)) {
+            l = this.world.getTypeId(i, j - 1, k);
+          }
+
+          if (l > 0) {
+            Block.byId[l].a(this.world, i, j, k, this, this.fallDistance);
+          }
+        }
+
+        a(this.fallDistance);
         this.fallDistance = 0.0F;
-        this.c = 1;
-        this.W = 0.0F;
-        this.X = 0.0F;
-        this.Y = false;
-        this.Z = 0.0F;
-        this.random = new Random();
-        this.ticksLived = 0;
-        this.maxFireTicks = 1;
-        this.fireTicks = 0;
-        this.ad = false;
-        this.noDamageTicks = 0;
-        this.justCreated = true;
-        this.fireProof = false;
-        this.datawatcher = new DataWatcher();
-        this.ah = false;
-        this.field_82152_aq = 0;
-        this.ar = EnumEntitySize.SIZE_2;
-        this.world = var1;
-        this.setPosition(0.0D, 0.0D, 0.0D);
+      }
+    } else if (d0 < 0.0D)
+      this.fallDistance = (float)(this.fallDistance - d0);
+  }
 
-        if (var1 != null)
-        {
-            this.dimension = var1.worldProvider.dimension;
+  public AxisAlignedBB h()
+  {
+    return null;
+  }
+
+  protected void burn(int i) {
+    if (!this.fireProof)
+    {
+      if ((this instanceof EntityLiving)) {
+        EntityDamageEvent event = new EntityDamageEvent(getBukkitEntity(), EntityDamageEvent.DamageCause.FIRE, i);
+        this.world.getServer().getPluginManager().callEvent(event);
+
+        if (event.isCancelled()) {
+          return;
         }
 
-        this.datawatcher.a(0, Byte.valueOf((byte)0));
-        this.datawatcher.a(1, Short.valueOf((short)300));
-        this.a();
+        i = event.getDamage();
+        event.getEntity().setLastDamageCause(event);
+      }
+
+      damageEntity(DamageSource.FIRE, i);
+    }
+  }
+
+  public final boolean isFireproof() {
+    return this.fireProof;
+  }
+
+  protected void a(float f) {
+    if (this.passenger != null)
+      this.passenger.a(f);
+  }
+
+  public boolean aT()
+  {
+    return (this.bV) || (this.world.y(MathHelper.floor(this.locX), MathHelper.floor(this.locY), MathHelper.floor(this.locZ)));
+  }
+
+  public boolean aU() {
+    return this.bV;
+  }
+
+  public boolean h_() {
+    return this.world.a(this.boundingBox.grow(0.0D, -0.4000000059604645D, 0.0D).shrink(0.001D, 0.001D, 0.001D), Material.WATER, this);
+  }
+
+  public boolean a(Material material) {
+    double d0 = this.locY + getHeadHeight();
+    int i = MathHelper.floor(this.locX);
+    int j = MathHelper.d(MathHelper.floor(d0));
+    int k = MathHelper.floor(this.locZ);
+    int l = this.world.getTypeId(i, j, k);
+
+    if ((l != 0) && (Block.byId[l].material == material)) {
+      float f = BlockFluids.d(this.world.getData(i, j, k)) - 0.1111111F;
+      float f1 = j + 1 - f;
+
+      return d0 < f1;
+    }
+    return false;
+  }
+
+  public float getHeadHeight()
+  {
+    return 0.0F;
+  }
+
+  public boolean aV() {
+    return this.world.a(this.boundingBox.grow(-0.1000000014901161D, -0.4000000059604645D, -0.1000000014901161D), Material.LAVA);
+  }
+
+  public void a(float f, float f1, float f2) {
+    float f3 = MathHelper.c(f * f + f1 * f1);
+
+    if (f3 >= 0.01F) {
+      if (f3 < 1.0F) {
+        f3 = 1.0F;
+      }
+
+      f3 = f2 / f3;
+      f *= f3;
+      f1 *= f3;
+      float f4 = MathHelper.sin(this.yaw * 3.141593F / 180.0F);
+      float f5 = MathHelper.cos(this.yaw * 3.141593F / 180.0F);
+
+      this.motX += f * f5 - f1 * f4;
+      this.motZ += f1 * f5 + f * f4;
+    }
+  }
+
+  public float b(float f) {
+    int i = MathHelper.floor(this.locX);
+    int j = MathHelper.floor(this.locZ);
+
+    if (this.world.isLoaded(i, 0, j)) {
+      double d0 = (this.boundingBox.e - this.boundingBox.b) * 0.66D;
+      int k = MathHelper.floor(this.locY - this.height + d0);
+
+      return this.world.p(i, k, j);
+    }
+    return 0.0F;
+  }
+
+  public void spawnIn(World world)
+  {
+    if (world == null) {
+      die();
+      this.world = ((CraftWorld)Bukkit.getServer().getWorlds().get(0)).getHandle();
+      return;
     }
 
-    protected abstract void a();
+    this.world = world;
+  }
 
-    public DataWatcher getDataWatcher()
-    {
-        return this.datawatcher;
+  public void setLocation(double d0, double d1, double d2, float f, float f1) {
+    this.lastX = (this.locX = d0);
+    this.lastY = (this.locY = d1);
+    this.lastZ = (this.locZ = d2);
+    this.lastYaw = (this.yaw = f);
+    this.lastPitch = (this.pitch = f1);
+    this.bO = 0.0F;
+    double d3 = this.lastYaw - f;
+
+    if (d3 < -180.0D) {
+      this.lastYaw += 360.0F;
     }
 
-    public boolean equals(Object var1)
-    {
-        return var1 instanceof Entity ? ((Entity)var1).id == this.id : false;
+    if (d3 >= 180.0D) {
+      this.lastYaw -= 360.0F;
     }
 
-    public int hashCode()
-    {
-        return this.id;
+    setPosition(this.locX, this.locY, this.locZ);
+    c(f, f1);
+  }
+
+  public void setPositionRotation(double d0, double d1, double d2, float f, float f1) {
+    this.bL = (this.lastX = this.locX = d0);
+    this.bM = (this.lastY = this.locY = d1 + this.height);
+    this.bN = (this.lastZ = this.locZ = d2);
+    this.yaw = f;
+    this.pitch = f1;
+    setPosition(this.locX, this.locY, this.locZ);
+  }
+
+  public float i(Entity entity) {
+    float f = (float)(this.locX - entity.locX);
+    float f1 = (float)(this.locY - entity.locY);
+    float f2 = (float)(this.locZ - entity.locZ);
+
+    return MathHelper.c(f * f + f1 * f1 + f2 * f2);
+  }
+
+  public double e(double d0, double d1, double d2) {
+    double d3 = this.locX - d0;
+    double d4 = this.locY - d1;
+    double d5 = this.locZ - d2;
+
+    return d3 * d3 + d4 * d4 + d5 * d5;
+  }
+
+  public double f(double d0, double d1, double d2) {
+    double d3 = this.locX - d0;
+    double d4 = this.locY - d1;
+    double d5 = this.locZ - d2;
+
+    return MathHelper.sqrt(d3 * d3 + d4 * d4 + d5 * d5);
+  }
+
+  public double j(Entity entity) {
+    double d0 = this.locX - entity.locX;
+    double d1 = this.locY - entity.locY;
+    double d2 = this.locZ - entity.locZ;
+
+    return d0 * d0 + d1 * d1 + d2 * d2;
+  }
+  public void a_(EntityHuman entityhuman) {
+  }
+
+  public void collide(Entity entity) {
+    if ((entity.passenger != this) && (entity.vehicle != this)) {
+      double d0 = entity.locX - this.locX;
+      double d1 = entity.locZ - this.locZ;
+      double d2 = MathHelper.a(d0, d1);
+
+      if (d2 >= 0.009999999776482582D) {
+        d2 = MathHelper.sqrt(d2);
+        d0 /= d2;
+        d1 /= d2;
+        double d3 = 1.0D / d2;
+
+        if (d3 > 1.0D) {
+          d3 = 1.0D;
+        }
+
+        d0 *= d3;
+        d1 *= d3;
+        d0 *= 0.0500000007450581D;
+        d1 *= 0.0500000007450581D;
+        d0 *= 1.0F - this.bR;
+        d1 *= 1.0F - this.bR;
+        b_(-d0, 0.0D, -d1);
+        entity.b_(d0, 0.0D, d1);
+      }
+    }
+  }
+
+  public void b_(double d0, double d1, double d2) {
+    this.motX += d0;
+    this.motY += d1;
+    this.motZ += d2;
+    this.ce = true;
+  }
+
+  protected void aW() {
+    this.velocityChanged = true;
+  }
+
+  public boolean damageEntity(DamageSource damagesource, int i) {
+    aW();
+    return false;
+  }
+
+  public boolean o_() {
+    return false;
+  }
+
+  public boolean e_() {
+    return false;
+  }
+  public void b(Entity entity, int i) {
+  }
+
+  public boolean c(NBTTagCompound nbttagcompound) {
+    String s = aX();
+
+    if ((!this.dead) && (s != null)) {
+      nbttagcompound.setString("id", s);
+      d(nbttagcompound);
+      return true;
+    }
+    return false;
+  }
+
+  public void d(NBTTagCompound nbttagcompound)
+  {
+    nbttagcompound.set("Pos", a(new double[] { this.locX, this.locY + this.bO, this.locZ }));
+    nbttagcompound.set("Motion", a(new double[] { this.motX, this.motY, this.motZ }));
+
+    if (Float.isNaN(this.yaw)) {
+      this.yaw = 0.0F;
     }
 
-    /**
-     * Will get destroyed next tick.
-     */
-    public void die()
-    {
-        this.dead = true;
+    if (Float.isNaN(this.pitch)) {
+      this.pitch = 0.0F;
     }
 
-    /**
-     * Sets the width and height of the entity. Args: width, height
-     */
-    protected void a(float var1, float var2)
-    {
-        this.width = var1;
-        this.length = var2;
-        float var3 = var1 % 2.0F;
-
-        if ((double)var3 < 0.375D)
-        {
-            this.ar = EnumEntitySize.SIZE_1;
-        }
-        else if ((double)var3 < 0.75D)
-        {
-            this.ar = EnumEntitySize.SIZE_2;
-        }
-        else if ((double)var3 < 1.0D)
-        {
-            this.ar = EnumEntitySize.SIZE_3;
-        }
-        else if ((double)var3 < 1.375D)
-        {
-            this.ar = EnumEntitySize.SIZE_4;
-        }
-        else if ((double)var3 < 1.75D)
-        {
-            this.ar = EnumEntitySize.SIZE_5;
-        }
-        else
-        {
-            this.ar = EnumEntitySize.SIZE_6;
-        }
+    nbttagcompound.set("Rotation", a(new float[] { this.yaw, this.pitch }));
+    nbttagcompound.setFloat("FallDistance", this.fallDistance);
+    nbttagcompound.setShort("Fire", (short)this.fireTicks);
+    nbttagcompound.setShort("Air", (short)getAirTicks());
+    nbttagcompound.setBoolean("OnGround", this.onGround);
+    if (this.customEntityData != null) {
+      nbttagcompound.setCompound("ForgeData", this.customEntityData);
     }
 
-    /**
-     * Sets the rotation of the entity. Args: yaw, pitch (both in degrees)
-     */
-    protected void b(float var1, float var2)
-    {
-        this.yaw = var1 % 360.0F;
-        this.pitch = var2 % 360.0F;
+    nbttagcompound.setLong("WorldUUIDLeast", this.world.getUUID().getLeastSignificantBits());
+    nbttagcompound.setLong("WorldUUIDMost", this.world.getUUID().getMostSignificantBits());
+    nbttagcompound.setLong("UUIDLeast", this.uniqueId.getLeastSignificantBits());
+    nbttagcompound.setLong("UUIDMost", this.uniqueId.getMostSignificantBits());
+
+    b(nbttagcompound);
+  }
+
+  public void e(NBTTagCompound nbttagcompound) {
+    NBTTagList nbttaglist = nbttagcompound.getList("Pos");
+    NBTTagList nbttaglist1 = nbttagcompound.getList("Motion");
+    NBTTagList nbttaglist2 = nbttagcompound.getList("Rotation");
+
+    this.motX = ((NBTTagDouble)nbttaglist1.get(0)).data;
+    this.motY = ((NBTTagDouble)nbttaglist1.get(1)).data;
+    this.motZ = ((NBTTagDouble)nbttaglist1.get(2)).data;
+
+    this.lastX = (this.bL = this.locX = ((NBTTagDouble)nbttaglist.get(0)).data);
+    this.lastY = (this.bM = this.locY = ((NBTTagDouble)nbttaglist.get(1)).data);
+    this.lastZ = (this.bN = this.locZ = ((NBTTagDouble)nbttaglist.get(2)).data);
+    this.lastYaw = (this.yaw = ((NBTTagFloat)nbttaglist2.get(0)).data);
+    this.lastPitch = (this.pitch = ((NBTTagFloat)nbttaglist2.get(1)).data);
+    this.fallDistance = nbttagcompound.getFloat("FallDistance");
+    this.fireTicks = nbttagcompound.getShort("Fire");
+    setAirTicks(nbttagcompound.getShort("Air"));
+    this.onGround = nbttagcompound.getBoolean("OnGround");
+    setPosition(this.locX, this.locY, this.locZ);
+
+    if (nbttagcompound.hasKey("ForgeData")) {
+      this.customEntityData = nbttagcompound.getCompound("ForgeData");
     }
 
-    /**
-     * Sets the x,y,z of the entity from the given parameters. Also seems to set up a bounding box.
-     */
-    public void setPosition(double var1, double var3, double var5)
-    {
-        this.locX = var1;
-        this.locY = var3;
-        this.locZ = var5;
-        float var7 = this.width / 2.0F;
-        float var8 = this.length;
-        this.boundingBox.b(var1 - (double)var7, var3 - (double)this.height + (double)this.W, var5 - (double)var7, var1 + (double)var7, var3 - (double)this.height + (double)this.W + (double)var8, var5 + (double)var7);
+    long least = nbttagcompound.getLong("UUIDLeast");
+    long most = nbttagcompound.getLong("UUIDMost");
+
+    if ((least != 0L) && (most != 0L)) {
+      this.uniqueId = new UUID(most, least);
     }
 
-    /**
-     * Called to update the entity's position/logic.
-     */
-    public void j_()
-    {
-        this.y();
+    c(this.yaw, this.pitch);
+    a(nbttagcompound);
+
+    if (!(getBukkitEntity() instanceof Vehicle)) {
+      if (Math.abs(this.motX) > 10.0D) {
+        this.motX = 0.0D;
+      }
+
+      if (Math.abs(this.motY) > 10.0D) {
+        this.motY = 0.0D;
+      }
+
+      if (Math.abs(this.motZ) > 10.0D) {
+        this.motZ = 0.0D;
+      }
+
     }
 
-    /**
-     * Gets called every tick from main Entity class
-     */
-    public void y()
-    {
-        this.world.methodProfiler.a("entityBaseTick");
+    if ((this instanceof EntityPlayer)) {
+      Server server = Bukkit.getServer();
+      org.bukkit.World bworld = null;
 
-        if (this.vehicle != null && this.vehicle.dead)
-        {
-            this.vehicle = null;
-        }
+      String worldName = nbttagcompound.getString("World");
 
-        ++this.ticksLived;
-        this.P = this.Q;
-        this.lastX = this.locX;
-        this.lastY = this.locY;
-        this.lastZ = this.locZ;
-        this.lastPitch = this.pitch;
-        this.lastYaw = this.yaw;
-        int var2;
+      if ((nbttagcompound.hasKey("WorldUUIDMost")) && (nbttagcompound.hasKey("WorldUUIDLeast"))) {
+        UUID uid = new UUID(nbttagcompound.getLong("WorldUUIDMost"), nbttagcompound.getLong("WorldUUIDLeast"));
+        bworld = server.getWorld(uid);
+      } else {
+        bworld = server.getWorld(worldName);
+      }
+      if (bworld == null) {
+        EntityPlayer entityPlayer = (EntityPlayer)this;
+        bworld = ((CraftServer)server).getServer().getWorldServer(entityPlayer.dimension).getWorld();
+      }
 
-        if (!this.world.isStatic && this.world instanceof WorldServer)
-        {
-            MinecraftServer var1 = ((WorldServer)this.world).getMinecraftServer();
-            var2 = this.z();
+      spawnIn(bworld == null ? null : ((CraftWorld)bworld).getHandle());
+    }
+  }
 
-            if (this.ao)
-            {
-                if (var1.getAllowNether())
-                {
-                    if (this.vehicle == null && this.field_82153_h++ >= var2)
-                    {
-                        this.field_82153_h = var2;
-                        this.an = this.ab();
-                        byte var3;
+  protected final String aX()
+  {
+    return EntityTypes.b(this);
+  }
 
-                        if (this.world.worldProvider.dimension == -1)
-                        {
-                            var3 = 0;
-                        }
-                        else
-                        {
-                            var3 = -1;
-                        }
+  protected abstract void a(NBTTagCompound paramNBTTagCompound);
 
-                        this.b(var3);
-                    }
+  protected abstract void b(NBTTagCompound paramNBTTagCompound);
 
-                    this.ao = false;
-                }
-            }
-            else
-            {
-                if (this.field_82153_h > 0)
-                {
-                    this.field_82153_h -= 4;
-                }
+  protected NBTTagList a(double[] adouble) {
+    NBTTagList nbttaglist = new NBTTagList();
+    double[] adouble1 = adouble;
+    int i = adouble.length;
 
-                if (this.field_82153_h < 0)
-                {
-                    this.field_82153_h = 0;
-                }
-            }
+    for (int j = 0; j < i; j++) {
+      double d0 = adouble1[j];
 
-            if (this.an > 0)
-            {
-                --this.an;
-            }
-        }
-
-        int var9;
-
-        if (this.isSprinting() && !this.H())
-        {
-            int var6 = MathHelper.floor(this.locX);
-            var2 = MathHelper.floor(this.locY - 0.20000000298023224D - (double)this.height);
-            var9 = MathHelper.floor(this.locZ);
-            int var4 = this.world.getTypeId(var6, var2, var9);
-
-            if (var4 > 0)
-            {
-                this.world.addParticle("tilecrack_" + var4, this.locX + ((double)this.random.nextFloat() - 0.5D) * (double)this.width, this.boundingBox.b + 0.1D, this.locZ + ((double)this.random.nextFloat() - 0.5D) * (double)this.width, -this.motX * 4.0D, 1.5D, -this.motZ * 4.0D);
-            }
-        }
-
-        if (this.I())
-        {
-            if (!this.ad && !this.justCreated)
-            {
-                float var7 = MathHelper.sqrt(this.motX * this.motX * 0.20000000298023224D + this.motY * this.motY + this.motZ * this.motZ * 0.20000000298023224D) * 0.2F;
-
-                if (var7 > 1.0F)
-                {
-                    var7 = 1.0F;
-                }
-
-                this.world.makeSound(this, "liquid.splash", var7, 1.0F + (this.random.nextFloat() - this.random.nextFloat()) * 0.4F);
-                float var8 = (float)MathHelper.floor(this.boundingBox.b);
-                float var5;
-                float var10;
-
-                for (var9 = 0; (float)var9 < 1.0F + this.width * 20.0F; ++var9)
-                {
-                    var10 = (this.random.nextFloat() * 2.0F - 1.0F) * this.width;
-                    var5 = (this.random.nextFloat() * 2.0F - 1.0F) * this.width;
-                    this.world.addParticle("bubble", this.locX + (double)var10, (double)(var8 + 1.0F), this.locZ + (double)var5, this.motX, this.motY - (double)(this.random.nextFloat() * 0.2F), this.motZ);
-                }
-
-                for (var9 = 0; (float)var9 < 1.0F + this.width * 20.0F; ++var9)
-                {
-                    var10 = (this.random.nextFloat() * 2.0F - 1.0F) * this.width;
-                    var5 = (this.random.nextFloat() * 2.0F - 1.0F) * this.width;
-                    this.world.addParticle("splash", this.locX + (double)var10, (double)(var8 + 1.0F), this.locZ + (double)var5, this.motX, this.motY, this.motZ);
-                }
-            }
-
-            this.fallDistance = 0.0F;
-            this.ad = true;
-            this.fireTicks = 0;
-        }
-        else
-        {
-            this.ad = false;
-        }
-
-        if (this.world.isStatic)
-        {
-            this.fireTicks = 0;
-        }
-        else if (this.fireTicks > 0)
-        {
-            if (this.fireProof)
-            {
-                this.fireTicks -= 4;
-
-                if (this.fireTicks < 0)
-                {
-                    this.fireTicks = 0;
-                }
-            }
-            else
-            {
-                if (this.fireTicks % 20 == 0)
-                {
-                    this.damageEntity(DamageSource.BURN, 1);
-                }
-
-                --this.fireTicks;
-            }
-        }
-
-        if (this.J())
-        {
-            this.A();
-            this.fallDistance *= 0.5F;
-        }
-
-        if (this.locY < -64.0D)
-        {
-            this.C();
-        }
-
-        if (!this.world.isStatic)
-        {
-            this.a(0, this.fireTicks > 0);
-            this.a(2, this.vehicle != null);
-        }
-
-        this.justCreated = false;
-        this.world.methodProfiler.b();
+      nbttaglist.add(new NBTTagDouble((String)null, d0));
     }
 
-    /**
-     * Return the amount of time this entity should stay in a portal before being transported.
-     */
-    public int z()
-    {
-        return 0;
+    return nbttaglist;
+  }
+
+  protected NBTTagList a(float[] afloat) {
+    NBTTagList nbttaglist = new NBTTagList();
+    float[] afloat1 = afloat;
+    int i = afloat.length;
+
+    for (int j = 0; j < i; j++) {
+      float f = afloat1[j];
+
+      nbttaglist.add(new NBTTagFloat((String)null, f));
     }
 
-    /**
-     * Called whenever the entity is walking inside of lava.
-     */
-    protected void A()
+    return nbttaglist;
+  }
+
+  public EntityItem b(int i, int j) {
+    return a(i, j, 0.0F);
+  }
+
+  public EntityItem a(int i, int j, float f) {
+    return a(new ItemStack(i, j, 0), f);
+  }
+
+  public EntityItem a(ItemStack itemstack, float f) {
+    EntityItem entityitem = new EntityItem(this.world, this.locX, this.locY + f, this.locZ, itemstack);
+
+    entityitem.pickupDelay = 10;
+    if (this.captureDrops)
     {
-        if (!this.fireProof)
-        {
-            this.damageEntity(DamageSource.LAVA, 4);
-            this.setOnFire(15);
-        }
+      this.capturedDrops.add(entityitem);
     }
-
-    /**
-     * Sets entity to burn for x amount of seconds, cannot lower amount of existing fire.
-     */
-    public void setOnFire(int var1)
+    else
     {
-        int var2 = var1 * 20;
-
-        if (this.fireTicks < var2)
-        {
-            this.fireTicks = var2;
-        }
+      this.world.addEntity(entityitem);
     }
-
-    /**
-     * Removes fire from entity.
-     */
-    public void extinguish()
-    {
-        this.fireTicks = 0;
-    }
-
-    /**
-     * sets the dead flag. Used when you fall off the bottom of the world.
-     */
-    protected void C()
-    {
-        this.die();
-    }
-
-    /**
-     * Checks if the offset position from the entity's current position is inside of liquid. Args: x, y, z
-     */
-    public boolean c(double var1, double var3, double var5)
-    {
-        AxisAlignedBB var7 = this.boundingBox.c(var1, var3, var5);
-        List var8 = this.world.getCubes(this, var7);
-        return !var8.isEmpty() ? false : !this.world.containsLiquid(var7);
-    }
-
-    /**
-     * Tries to moves the entity by the passed in displacement. Args: x, y, z
-     */
-    public void move(double var1, double var3, double var5)
-    {
-        if (this.Y)
-        {
-            this.boundingBox.d(var1, var3, var5);
-            this.locX = (this.boundingBox.a + this.boundingBox.d) / 2.0D;
-            this.locY = this.boundingBox.b + (double)this.height - (double)this.W;
-            this.locZ = (this.boundingBox.c + this.boundingBox.f) / 2.0D;
-        }
-        else
-        {
-            this.world.methodProfiler.a("move");
-            this.W *= 0.4F;
-            double var7 = this.locX;
-            double var9 = this.locY;
-            double var11 = this.locZ;
-
-            if (this.J)
-            {
-                this.J = false;
-                var1 *= 0.25D;
-                var3 *= 0.05000000074505806D;
-                var5 *= 0.25D;
-                this.motX = 0.0D;
-                this.motY = 0.0D;
-                this.motZ = 0.0D;
-            }
-
-            double var13 = var1;
-            double var15 = var3;
-            double var17 = var5;
-            AxisAlignedBB var19 = this.boundingBox.clone();
-            boolean var20 = this.onGround && this.isSneaking() && this instanceof EntityHuman;
-
-            if (var20)
-            {
-                double var21;
-
-                for (var21 = 0.05D; var1 != 0.0D && this.world.getCubes(this, this.boundingBox.c(var1, -1.0D, 0.0D)).isEmpty(); var13 = var1)
-                {
-                    if (var1 < var21 && var1 >= -var21)
-                    {
-                        var1 = 0.0D;
-                    }
-                    else if (var1 > 0.0D)
-                    {
-                        var1 -= var21;
-                    }
-                    else
-                    {
-                        var1 += var21;
-                    }
-                }
-
-                for (; var5 != 0.0D && this.world.getCubes(this, this.boundingBox.c(0.0D, -1.0D, var5)).isEmpty(); var17 = var5)
-                {
-                    if (var5 < var21 && var5 >= -var21)
-                    {
-                        var5 = 0.0D;
-                    }
-                    else if (var5 > 0.0D)
-                    {
-                        var5 -= var21;
-                    }
-                    else
-                    {
-                        var5 += var21;
-                    }
-                }
-
-                while (var1 != 0.0D && var5 != 0.0D && this.world.getCubes(this, this.boundingBox.c(var1, -1.0D, var5)).isEmpty())
-                {
-                    if (var1 < var21 && var1 >= -var21)
-                    {
-                        var1 = 0.0D;
-                    }
-                    else if (var1 > 0.0D)
-                    {
-                        var1 -= var21;
-                    }
-                    else
-                    {
-                        var1 += var21;
-                    }
-
-                    if (var5 < var21 && var5 >= -var21)
-                    {
-                        var5 = 0.0D;
-                    }
-                    else if (var5 > 0.0D)
-                    {
-                        var5 -= var21;
-                    }
-                    else
-                    {
-                        var5 += var21;
-                    }
-
-                    var13 = var1;
-                    var17 = var5;
-                }
-            }
-
-            List var36 = this.world.getCubes(this, this.boundingBox.a(var1, var3, var5));
-            AxisAlignedBB var23;
-
-            for (Iterator var22 = var36.iterator(); var22.hasNext(); var3 = var23.b(this.boundingBox, var3))
-            {
-                var23 = (AxisAlignedBB)var22.next();
-            }
-
-            this.boundingBox.d(0.0D, var3, 0.0D);
-
-            if (!this.field_70135_K && var15 != var3)
-            {
-                var5 = 0.0D;
-                var3 = 0.0D;
-                var1 = 0.0D;
-            }
-
-            boolean var34 = this.onGround || var15 != var3 && var15 < 0.0D;
-            AxisAlignedBB var24;
-            Iterator var35;
-
-            for (var35 = var36.iterator(); var35.hasNext(); var1 = var24.a(this.boundingBox, var1))
-            {
-                var24 = (AxisAlignedBB)var35.next();
-            }
-
-            this.boundingBox.d(var1, 0.0D, 0.0D);
-
-            if (!this.field_70135_K && var13 != var1)
-            {
-                var5 = 0.0D;
-                var3 = 0.0D;
-                var1 = 0.0D;
-            }
-
-            for (var35 = var36.iterator(); var35.hasNext(); var5 = var24.c(this.boundingBox, var5))
-            {
-                var24 = (AxisAlignedBB)var35.next();
-            }
-
-            this.boundingBox.d(0.0D, 0.0D, var5);
-
-            if (!this.field_70135_K && var17 != var5)
-            {
-                var5 = 0.0D;
-                var3 = 0.0D;
-                var1 = 0.0D;
-            }
-
-            double var25;
-            double var27;
-            double var37;
-
-            if (this.X > 0.0F && var34 && (var20 || this.W < 0.05F) && (var13 != var1 || var17 != var5))
-            {
-                var37 = var1;
-                var25 = var3;
-                var27 = var5;
-                var1 = var13;
-                var3 = (double)this.X;
-                var5 = var17;
-                AxisAlignedBB var29 = this.boundingBox.clone();
-                this.boundingBox.c(var19);
-                var36 = this.world.getCubes(this, this.boundingBox.a(var13, var3, var17));
-                AxisAlignedBB var31;
-                Iterator var30;
-
-                for (var30 = var36.iterator(); var30.hasNext(); var3 = var31.b(this.boundingBox, var3))
-                {
-                    var31 = (AxisAlignedBB)var30.next();
-                }
-
-                this.boundingBox.d(0.0D, var3, 0.0D);
-
-                if (!this.field_70135_K && var15 != var3)
-                {
-                    var5 = 0.0D;
-                    var3 = 0.0D;
-                    var1 = 0.0D;
-                }
-
-                for (var30 = var36.iterator(); var30.hasNext(); var1 = var31.a(this.boundingBox, var1))
-                {
-                    var31 = (AxisAlignedBB)var30.next();
-                }
-
-                this.boundingBox.d(var1, 0.0D, 0.0D);
-
-                if (!this.field_70135_K && var13 != var1)
-                {
-                    var5 = 0.0D;
-                    var3 = 0.0D;
-                    var1 = 0.0D;
-                }
-
-                for (var30 = var36.iterator(); var30.hasNext(); var5 = var31.c(this.boundingBox, var5))
-                {
-                    var31 = (AxisAlignedBB)var30.next();
-                }
-
-                this.boundingBox.d(0.0D, 0.0D, var5);
-
-                if (!this.field_70135_K && var17 != var5)
-                {
-                    var5 = 0.0D;
-                    var3 = 0.0D;
-                    var1 = 0.0D;
-                }
-
-                if (!this.field_70135_K && var15 != var3)
-                {
-                    var5 = 0.0D;
-                    var3 = 0.0D;
-                    var1 = 0.0D;
-                }
-                else
-                {
-                    var3 = (double)(-this.X);
-
-                    for (var30 = var36.iterator(); var30.hasNext(); var3 = var31.b(this.boundingBox, var3))
-                    {
-                        var31 = (AxisAlignedBB)var30.next();
-                    }
-
-                    this.boundingBox.d(0.0D, var3, 0.0D);
-                }
-
-                if (var37 * var37 + var27 * var27 >= var1 * var1 + var5 * var5)
-                {
-                    var1 = var37;
-                    var3 = var25;
-                    var5 = var27;
-                    this.boundingBox.c(var29);
-                }
-                else
-                {
-                    double var38 = this.boundingBox.b - (double)((int)this.boundingBox.b);
-
-                    if (var38 > 0.0D)
-                    {
-                        this.W = (float)((double)this.W + var38 + 0.01D);
-                    }
-                }
-            }
-
-            this.world.methodProfiler.b();
-            this.world.methodProfiler.a("rest");
-            this.locX = (this.boundingBox.a + this.boundingBox.d) / 2.0D;
-            this.locY = this.boundingBox.b + (double)this.height - (double)this.W;
-            this.locZ = (this.boundingBox.c + this.boundingBox.f) / 2.0D;
-            this.positionChanged = var13 != var1 || var17 != var5;
-            this.G = var15 != var3;
-            this.onGround = var15 != var3 && var15 < 0.0D;
-            this.H = this.positionChanged || this.G;
-            this.a(var3, this.onGround);
-
-            if (var13 != var1)
-            {
-                this.motX = 0.0D;
-            }
-
-            if (var15 != var3)
-            {
-                this.motY = 0.0D;
-            }
-
-            if (var17 != var5)
-            {
-                this.motZ = 0.0D;
-            }
-
-            var37 = this.locX - var7;
-            var25 = this.locY - var9;
-            var27 = this.locZ - var11;
-
-            if (this.f_() && !var20 && this.vehicle == null)
-            {
-                int var39 = MathHelper.floor(this.locX);
-                int var42 = MathHelper.floor(this.locY - 0.20000000298023224D - (double)this.height);
-                int var41 = MathHelper.floor(this.locZ);
-                int var32 = this.world.getTypeId(var39, var42, var41);
-
-                if (var32 == 0 && this.world.getTypeId(var39, var42 - 1, var41) == Block.FENCE.id)
-                {
-                    var32 = this.world.getTypeId(var39, var42 - 1, var41);
-                }
-
-                if (var32 != Block.LADDER.id)
-                {
-                    var25 = 0.0D;
-                }
-
-                this.Q = (float)((double)this.Q + (double)MathHelper.sqrt(var37 * var37 + var27 * var27) * 0.6D);
-                this.field_82151_R = (float)((double)this.field_82151_R + (double)MathHelper.sqrt(var37 * var37 + var25 * var25 + var27 * var27) * 0.6D);
-
-                if (this.field_82151_R > (float)this.c && var32 > 0)
-                {
-                    this.c = (int)this.field_82151_R + 1;
-
-                    if (this.H())
-                    {
-                        float var33 = MathHelper.sqrt(this.motX * this.motX * 0.20000000298023224D + this.motY * this.motY + this.motZ * this.motZ * 0.20000000298023224D) * 0.35F;
-
-                        if (var33 > 1.0F)
-                        {
-                            var33 = 1.0F;
-                        }
-
-                        this.world.makeSound(this, "liquid.swim", var33, 1.0F + (this.random.nextFloat() - this.random.nextFloat()) * 0.4F);
-                    }
-
-                    this.a(var39, var42, var41, var32);
-                    Block.byId[var32].b(this.world, var39, var42, var41, this);
-                }
-            }
-
-            this.D();
-            boolean var40 = this.G();
-
-            if (this.world.e(this.boundingBox.shrink(0.001D, 0.001D, 0.001D)))
-            {
-                this.burn(1);
-
-                if (!var40)
-                {
-                    ++this.fireTicks;
-
-                    if (this.fireTicks == 0)
-                    {
-                        this.setOnFire(8);
-                    }
-                }
-            }
-            else if (this.fireTicks <= 0)
-            {
-                this.fireTicks = -this.maxFireTicks;
-            }
-
-            if (var40 && this.fireTicks > 0)
-            {
-                this.world.makeSound(this, "random.fizz", 0.7F, 1.6F + (this.random.nextFloat() - this.random.nextFloat()) * 0.4F);
-                this.fireTicks = -this.maxFireTicks;
-            }
-
-            this.world.methodProfiler.b();
-        }
-    }
-
-    /**
-     * Checks for block collisions, and calls the associated onBlockCollided method for the collided block.
-     */
-    protected void D()
-    {
-        int var1 = MathHelper.floor(this.boundingBox.a + 0.001D);
-        int var2 = MathHelper.floor(this.boundingBox.b + 0.001D);
-        int var3 = MathHelper.floor(this.boundingBox.c + 0.001D);
-        int var4 = MathHelper.floor(this.boundingBox.d - 0.001D);
-        int var5 = MathHelper.floor(this.boundingBox.e - 0.001D);
-        int var6 = MathHelper.floor(this.boundingBox.f - 0.001D);
-
-        if (this.world.d(var1, var2, var3, var4, var5, var6))
-        {
-            for (int var7 = var1; var7 <= var4; ++var7)
-            {
-                for (int var8 = var2; var8 <= var5; ++var8)
-                {
-                    for (int var9 = var3; var9 <= var6; ++var9)
-                    {
-                        int var10 = this.world.getTypeId(var7, var8, var9);
-
-                        if (var10 > 0)
-                        {
-                            Block.byId[var10].a(this.world, var7, var8, var9, this);
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    /**
-     * Plays step sound at given x, y, z for the entity
-     */
-    protected void a(int var1, int var2, int var3, int var4)
-    {
-        StepSound var5 = Block.byId[var4].stepSound;
-
-        if (this.world.getTypeId(var1, var2 + 1, var3) == Block.SNOW.id)
-        {
-            var5 = Block.SNOW.stepSound;
-            this.world.makeSound(this, var5.getName(), var5.getVolume1() * 0.15F, var5.getVolume2());
-        }
-        else if (!Block.byId[var4].material.isLiquid())
-        {
-            this.world.makeSound(this, var5.getName(), var5.getVolume1() * 0.15F, var5.getVolume2());
-        }
-    }
-
-    /**
-     * returns if this entity triggers Block.onEntityWalking on the blocks they walk on. used for spiders and wolves to
-     * prevent them from trampling crops
-     */
-    protected boolean f_()
-    {
+    return entityitem;
+  }
+
+  public boolean isAlive() {
+    return !this.dead;
+  }
+
+  public boolean inBlock() {
+    for (int i = 0; i < 8; i++) {
+      float f = ((i >> 0) % 2 - 0.5F) * this.width * 0.8F;
+      float f1 = ((i >> 1) % 2 - 0.5F) * 0.1F;
+      float f2 = ((i >> 2) % 2 - 0.5F) * this.width * 0.8F;
+      int j = MathHelper.floor(this.locX + f);
+      int k = MathHelper.floor(this.locY + getHeadHeight() + f1);
+      int l = MathHelper.floor(this.locZ + f2);
+
+      if (this.world.e(j, k, l)) {
         return true;
+      }
     }
 
-    /**
-     * Takes in the distance the entity has fallen this tick and whether its on the ground to update the fall distance
-     * and deal fall damage if landing on the ground.  Args: distanceFallenThisTick, onGround
-     */
-    protected void a(double var1, boolean var3)
-    {
-        if (var3)
-        {
-            if (this.fallDistance > 0.0F)
-            {
-                this.a(this.fallDistance);
-                this.fallDistance = 0.0F;
-            }
-        }
-        else if (var1 < 0.0D)
-        {
-            this.fallDistance = (float)((double)this.fallDistance - var1);
-        }
-    }
+    return false;
+  }
 
-    /**
-     * returns the bounding box for this entity
-     */
-    public AxisAlignedBB E()
-    {
-        return null;
-    }
+  public boolean b(EntityHuman entityhuman) {
+    return false;
+  }
 
-    /**
-     * Will deal the specified amount of damage to the entity if the entity isn't immune to fire damage. Args:
-     * amountDamage
-     */
-    protected void burn(int var1)
-    {
-        if (!this.fireProof)
-        {
-            this.damageEntity(DamageSource.FIRE, var1);
-        }
-    }
+  public AxisAlignedBB b_(Entity entity) {
+    return null;
+  }
 
-    public final boolean isFireproof()
-    {
-        return this.fireProof;
-    }
+  public void R() {
+    if (this.vehicle.dead) {
+      this.vehicle = null;
+    } else {
+      this.motX = 0.0D;
+      this.motY = 0.0D;
+      this.motZ = 0.0D;
+      F_();
+      if (this.vehicle != null) {
+        this.vehicle.i_();
+        this.f += this.vehicle.yaw - this.vehicle.lastYaw;
 
-    /**
-     * Called when the mob is falling. Calculates and applies fall damage.
-     */
-    protected void a(float var1)
-    {
-        if (this.passenger != null)
-        {
-            this.passenger.a(var1);
-        }
-    }
-
-    /**
-     * Checks if this entity is either in water or on an open air block in rain (used in wolves).
-     */
-    public boolean G()
-    {
-        return this.ad || this.world.B(MathHelper.floor(this.locX), MathHelper.floor(this.locY), MathHelper.floor(this.locZ));
-    }
-
-    /**
-     * Checks if this entity is inside water (if inWater field is true as a result of handleWaterMovement() returning
-     * true)
-     */
-    public boolean H()
-    {
-        return this.ad;
-    }
-
-    /**
-     * Returns if this entity is in water and will end up adding the waters velocity to the entity
-     */
-    public boolean I()
-    {
-        return this.world.a(this.boundingBox.grow(0.0D, -0.4000000059604645D, 0.0D).shrink(0.001D, 0.001D, 0.001D), Material.WATER, this);
-    }
-
-    /**
-     * Checks if the current block the entity is within of the specified material type
-     */
-    public boolean a(Material var1)
-    {
-        double var2 = this.locY + (double)this.getHeadHeight();
-        int var4 = MathHelper.floor(this.locX);
-        int var5 = MathHelper.d((float)MathHelper.floor(var2));
-        int var6 = MathHelper.floor(this.locZ);
-        int var7 = this.world.getTypeId(var4, var5, var6);
-
-        if (var7 != 0 && Block.byId[var7].material == var1)
-        {
-            float var8 = BlockFluids.d(this.world.getData(var4, var5, var6)) - 0.11111111F;
-            float var9 = (float)(var5 + 1) - var8;
-            return var2 < (double)var9;
-        }
-        else
-        {
-            return false;
-        }
-    }
-
-    public float getHeadHeight()
-    {
-        return 0.0F;
-    }
-
-    /**
-     * Whether or not the current entity is in lava
-     */
-    public boolean J()
-    {
-        return this.world.a(this.boundingBox.grow(-0.10000000149011612D, -0.4000000059604645D, -0.10000000149011612D), Material.LAVA);
-    }
-
-    /**
-     * Used in both water and by flying objects
-     */
-    public void a(float var1, float var2, float var3)
-    {
-        float var4 = var1 * var1 + var2 * var2;
-
-        if (var4 >= 1.0E-4F)
-        {
-            var4 = MathHelper.c(var4);
-
-            if (var4 < 1.0F)
-            {
-                var4 = 1.0F;
-            }
-
-            var4 = var3 / var4;
-            var1 *= var4;
-            var2 *= var4;
-            float var5 = MathHelper.sin(this.yaw * (float)Math.PI / 180.0F);
-            float var6 = MathHelper.cos(this.yaw * (float)Math.PI / 180.0F);
-            this.motX += (double)(var1 * var6 - var2 * var5);
-            this.motZ += (double)(var2 * var6 + var1 * var5);
-        }
-    }
-
-    /**
-     * Gets how bright this entity is.
-     */
-    public float c(float var1)
-    {
-        int var2 = MathHelper.floor(this.locX);
-        int var3 = MathHelper.floor(this.locZ);
-
-        if (this.world.isLoaded(var2, 0, var3))
-        {
-            double var4 = (this.boundingBox.e - this.boundingBox.b) * 0.66D;
-            int var6 = MathHelper.floor(this.locY - (double)this.height + var4);
-            return this.world.o(var2, var6, var3);
-        }
-        else
-        {
-            return 0.0F;
-        }
-    }
-
-    /**
-     * Sets the reference to the World object.
-     */
-    public void spawnIn(World var1)
-    {
-        this.world = var1;
-    }
-
-    /**
-     * Sets the entity's position and rotation. Args: posX, posY, posZ, yaw, pitch
-     */
-    public void setLocation(double var1, double var3, double var5, float var7, float var8)
-    {
-        this.lastX = this.locX = var1;
-        this.lastY = this.locY = var3;
-        this.lastZ = this.locZ = var5;
-        this.lastYaw = this.yaw = var7;
-        this.lastPitch = this.pitch = var8;
-        this.W = 0.0F;
-        double var9 = (double)(this.lastYaw - var7);
-
-        if (var9 < -180.0D)
-        {
-            this.lastYaw += 360.0F;
+        for (this.e += this.vehicle.pitch - this.vehicle.lastPitch; this.f >= 180.0D; this.f -= 360.0D);
+        while (this.f < -180.0D) {
+          this.f += 360.0D;
         }
 
-        if (var9 >= 180.0D)
-        {
-            this.lastYaw -= 360.0F;
+        while (this.e >= 180.0D) {
+          this.e -= 360.0D;
         }
 
-        this.setPosition(this.locX, this.locY, this.locZ);
-        this.b(var7, var8);
-    }
-
-    /**
-     * Sets the location and Yaw/Pitch of an entity in the world
-     */
-    public void setPositionRotation(double var1, double var3, double var5, float var7, float var8)
-    {
-        this.T = this.lastX = this.locX = var1;
-        this.U = this.lastY = this.locY = var3 + (double)this.height;
-        this.V = this.lastZ = this.locZ = var5;
-        this.yaw = var7;
-        this.pitch = var8;
-        this.setPosition(this.locX, this.locY, this.locZ);
-    }
-
-    /**
-     * Returns the distance to the entity. Args: entity
-     */
-    public float d(Entity var1)
-    {
-        float var2 = (float)(this.locX - var1.locX);
-        float var3 = (float)(this.locY - var1.locY);
-        float var4 = (float)(this.locZ - var1.locZ);
-        return MathHelper.c(var2 * var2 + var3 * var3 + var4 * var4);
-    }
-
-    /**
-     * Gets the squared distance to the position. Args: x, y, z
-     */
-    public double e(double var1, double var3, double var5)
-    {
-        double var7 = this.locX - var1;
-        double var9 = this.locY - var3;
-        double var11 = this.locZ - var5;
-        return var7 * var7 + var9 * var9 + var11 * var11;
-    }
-
-    /**
-     * Gets the distance to the position. Args: x, y, z
-     */
-    public double f(double var1, double var3, double var5)
-    {
-        double var7 = this.locX - var1;
-        double var9 = this.locY - var3;
-        double var11 = this.locZ - var5;
-        return (double)MathHelper.sqrt(var7 * var7 + var9 * var9 + var11 * var11);
-    }
-
-    /**
-     * Returns the squared distance to the entity. Args: entity
-     */
-    public double e(Entity var1)
-    {
-        double var2 = this.locX - var1.locX;
-        double var4 = this.locY - var1.locY;
-        double var6 = this.locZ - var1.locZ;
-        return var2 * var2 + var4 * var4 + var6 * var6;
-    }
-
-    /**
-     * Called by a player entity when they collide with an entity
-     */
-    public void b_(EntityHuman var1) {}
-
-    /**
-     * Applies a velocity to each of the entities pushing them away from each other. Args: entity
-     */
-    public void collide(Entity var1)
-    {
-        if (var1.passenger != this && var1.vehicle != this)
-        {
-            double var2 = var1.locX - this.locX;
-            double var4 = var1.locZ - this.locZ;
-            double var6 = MathHelper.a(var2, var4);
-
-            if (var6 >= 0.009999999776482582D)
-            {
-                var6 = (double)MathHelper.sqrt(var6);
-                var2 /= var6;
-                var4 /= var6;
-                double var8 = 1.0D / var6;
-
-                if (var8 > 1.0D)
-                {
-                    var8 = 1.0D;
-                }
-
-                var2 *= var8;
-                var4 *= var8;
-                var2 *= 0.05000000074505806D;
-                var4 *= 0.05000000074505806D;
-                var2 *= (double)(1.0F - this.Z);
-                var4 *= (double)(1.0F - this.Z);
-                this.g(-var2, 0.0D, -var4);
-                var1.g(var2, 0.0D, var4);
-            }
-        }
-    }
-
-    /**
-     * Adds to the current velocity of the entity. Args: x, y, z
-     */
-    public void g(double var1, double var3, double var5)
-    {
-        this.motX += var1;
-        this.motY += var3;
-        this.motZ += var5;
-        this.am = true;
-    }
-
-    /**
-     * Sets that this entity has been attacked.
-     */
-    protected void K()
-    {
-        this.velocityChanged = true;
-    }
-
-    /**
-     * Called when the entity is attacked.
-     */
-    public boolean damageEntity(DamageSource var1, int var2)
-    {
-        this.K();
-        return false;
-    }
-
-    /**
-     * Returns true if other Entities should be prevented from moving through this Entity.
-     */
-    public boolean L()
-    {
-        return false;
-    }
-
-    /**
-     * Returns true if this entity should push and be pushed by other entities when colliding.
-     */
-    public boolean M()
-    {
-        return false;
-    }
-
-    /**
-     * Adds a value to the player score. Currently not actually used and the entity passed in does nothing. Args:
-     * entity, scoreToAdd
-     */
-    public void c(Entity var1, int var2) {}
-
-    /**
-     * adds the ID of this entity to the NBT given
-     */
-    public boolean c(NBTTagCompound var1)
-    {
-        String var2 = this.Q();
-
-        if (!this.dead && var2 != null)
-        {
-            var1.setString("id", var2);
-            this.d(var1);
-            return true;
-        }
-        else
-        {
-            return false;
-        }
-    }
-
-    /**
-     * Save the entity to NBT (calls an abstract helper method to write extra data)
-     */
-    public void d(NBTTagCompound var1)
-    {
-        var1.set("Pos", this.a(new double[] {this.locX, this.locY + (double)this.W, this.locZ}));
-        var1.set("Motion", this.a(new double[] {this.motX, this.motY, this.motZ}));
-        var1.set("Rotation", this.a(new float[] {this.yaw, this.pitch}));
-        var1.setFloat("FallDistance", this.fallDistance);
-        var1.setShort("Fire", (short)this.fireTicks);
-        var1.setShort("Air", (short)this.getAirTicks());
-        var1.setBoolean("OnGround", this.onGround);
-        var1.setInt("Dimension", this.dimension);
-        this.b(var1);
-    }
-
-    /**
-     * Reads the entity from NBT (calls an abstract helper method to read specialized data)
-     */
-    public void e(NBTTagCompound var1)
-    {
-        NBTTagList var2 = var1.getList("Pos");
-        NBTTagList var3 = var1.getList("Motion");
-        NBTTagList var4 = var1.getList("Rotation");
-        this.motX = ((NBTTagDouble)var3.get(0)).data;
-        this.motY = ((NBTTagDouble)var3.get(1)).data;
-        this.motZ = ((NBTTagDouble)var3.get(2)).data;
-
-        if (Math.abs(this.motX) > 10.0D)
-        {
-            this.motX = 0.0D;
+        while (this.e < -180.0D) {
+          this.e += 360.0D;
         }
 
-        if (Math.abs(this.motY) > 10.0D)
-        {
-            this.motY = 0.0D;
+        double d0 = this.f * 0.5D;
+        double d1 = this.e * 0.5D;
+        float f = 10.0F;
+
+        if (d0 > f) {
+          d0 = f;
         }
 
-        if (Math.abs(this.motZ) > 10.0D)
-        {
-            this.motZ = 0.0D;
+        if (d0 < -f) {
+          d0 = -f;
         }
 
-        this.lastX = this.T = this.locX = ((NBTTagDouble)var2.get(0)).data;
-        this.lastY = this.U = this.locY = ((NBTTagDouble)var2.get(1)).data;
-        this.lastZ = this.V = this.locZ = ((NBTTagDouble)var2.get(2)).data;
-        this.lastYaw = this.yaw = ((NBTTagFloat)var4.get(0)).data;
-        this.lastPitch = this.pitch = ((NBTTagFloat)var4.get(1)).data;
-        this.fallDistance = var1.getFloat("FallDistance");
-        this.fireTicks = var1.getShort("Fire");
-        this.setAirTicks(var1.getShort("Air"));
-        this.onGround = var1.getBoolean("OnGround");
-        this.dimension = var1.getInt("Dimension");
-        this.setPosition(this.locX, this.locY, this.locZ);
-        this.b(this.yaw, this.pitch);
-        this.a(var1);
-    }
-
-    /**
-     * Returns the string that identifies this Entity's class
-     */
-    protected final String Q()
-    {
-        return EntityTypes.b(this);
-    }
-
-    /**
-     * (abstract) Protected helper method to read subclass entity data from NBT.
-     */
-    protected abstract void a(NBTTagCompound var1);
-
-    /**
-     * (abstract) Protected helper method to write subclass entity data to NBT.
-     */
-    protected abstract void b(NBTTagCompound var1);
-
-    /**
-     * creates a NBT list from the array of doubles passed to this function
-     */
-    protected NBTTagList a(double ... var1)
-    {
-        NBTTagList var2 = new NBTTagList();
-        double[] var3 = var1;
-        int var4 = var1.length;
-
-        for (int var5 = 0; var5 < var4; ++var5)
-        {
-            double var6 = var3[var5];
-            var2.add(new NBTTagDouble((String)null, var6));
+        if (d1 > f) {
+          d1 = f;
         }
 
-        return var2;
-    }
-
-    /**
-     * Returns a new NBTTagList filled with the specified floats
-     */
-    protected NBTTagList a(float ... var1)
-    {
-        NBTTagList var2 = new NBTTagList();
-        float[] var3 = var1;
-        int var4 = var1.length;
-
-        for (int var5 = 0; var5 < var4; ++var5)
-        {
-            float var6 = var3[var5];
-            var2.add(new NBTTagFloat((String)null, var6));
+        if (d1 < -f) {
+          d1 = -f;
         }
 
-        return var2;
+        this.f -= d0;
+        this.e -= d1;
+        this.yaw = (float)(this.yaw + d0);
+        this.pitch = (float)(this.pitch + d1);
+      }
     }
+  }
 
-    /**
-     * Drops an item stack at the entity's position. Args: itemID, count
-     */
-    public EntityItem b(int var1, int var2)
-    {
-        return this.a(var1, var2, 0.0F);
+  public void i_() {
+    this.passenger.setPosition(this.locX, this.locY + x_() + this.passenger.W(), this.locZ);
+  }
+
+  public double W() {
+    return this.height;
+  }
+
+  public double x_() {
+    return this.length * 0.75D;
+  }
+
+  public void mount(Entity entity)
+  {
+    setPassengerOf(entity);
+  }
+
+  public org.bukkit.entity.Entity getBukkitEntity()
+  {
+    if (this.bukkitEntity == null) {
+      this.bukkitEntity = CraftEntity.getEntity(this.world.getServer(), this);
     }
+    return this.bukkitEntity;
+  }
 
-    /**
-     * Drops an item stack with a specified y offset. Args: itemID, count, yOffset
-     */
-    public EntityItem a(int var1, int var2, float var3)
-    {
-        return this.a(new ItemStack(var1, var2, 0), var3);
-    }
+  public void setPassengerOf(Entity entity)
+  {
+    PluginManager pluginManager = Bukkit.getPluginManager();
+    getBukkitEntity();
 
-    /**
-     * Drops an item at the position of the entity.
-     */
-    public EntityItem a(ItemStack var1, float var2)
-    {
-        EntityItem var3 = new EntityItem(this.world, this.locX, this.locY + (double)var2, this.locZ, var1);
-        var3.pickupDelay = 10;
-        this.world.addEntity(var3);
-        return var3;
-    }
-
-    /**
-     * Checks whether target entity is alive.
-     */
-    public boolean isAlive()
-    {
-        return !this.dead;
-    }
-
-    /**
-     * Checks if this entity is inside of an opaque block
-     */
-    public boolean inBlock()
-    {
-        for (int var1 = 0; var1 < 8; ++var1)
-        {
-            float var2 = ((float)((var1 >> 0) % 2) - 0.5F) * this.width * 0.8F;
-            float var3 = ((float)((var1 >> 1) % 2) - 0.5F) * 0.1F;
-            float var4 = ((float)((var1 >> 2) % 2) - 0.5F) * this.width * 0.8F;
-            int var5 = MathHelper.floor(this.locX + (double)var2);
-            int var6 = MathHelper.floor(this.locY + (double)this.getHeadHeight() + (double)var3);
-            int var7 = MathHelper.floor(this.locZ + (double)var4);
-
-            if (this.world.s(var5, var6, var7))
-            {
-                return true;
-            }
+    this.e = 0.0D;
+    this.f = 0.0D;
+    if (entity == null) {
+      if (this.vehicle != null)
+      {
+        if (((this.bukkitEntity instanceof LivingEntity)) && ((this.vehicle.getBukkitEntity() instanceof Vehicle))) {
+          VehicleExitEvent event = new VehicleExitEvent((Vehicle)this.vehicle.getBukkitEntity(), (LivingEntity)this.bukkitEntity);
+          pluginManager.callEvent(event);
         }
 
-        return false;
-    }
+        setPositionRotation(this.vehicle.locX, this.vehicle.boundingBox.b + this.vehicle.length, this.vehicle.locZ, this.yaw, this.pitch);
+        this.vehicle.passenger = null;
+      }
 
-    /**
-     * Called when a player interacts with a mob. e.g. gets milk from a cow, gets into the saddle on a pig.
-     */
-    public boolean c(EntityHuman var1)
+      this.vehicle = null;
+    } else if (this.vehicle == entity)
     {
-        return false;
+      if (((this.bukkitEntity instanceof LivingEntity)) && ((this.vehicle.getBukkitEntity() instanceof Vehicle))) {
+        VehicleExitEvent event = new VehicleExitEvent((Vehicle)this.vehicle.getBukkitEntity(), (LivingEntity)this.bukkitEntity);
+        pluginManager.callEvent(event);
+      }
+
+      this.vehicle.passenger = null;
+      this.vehicle = null;
+      setPositionRotation(entity.locX, entity.boundingBox.b + entity.length, entity.locZ, this.yaw, this.pitch);
     }
+    else {
+      if (((this.bukkitEntity instanceof LivingEntity)) && ((entity.getBukkitEntity() instanceof Vehicle))) {
+        VehicleEnterEvent event = new VehicleEnterEvent((Vehicle)entity.getBukkitEntity(), this.bukkitEntity);
+        pluginManager.callEvent(event);
 
-    /**
-     * Returns a boundingBox used to collide the entity with other entities and blocks. This enables the entity to be
-     * pushable on contact, like boats or minecarts.
-     */
-    public AxisAlignedBB g(Entity var1)
-    {
-        return null;
-    }
-
-    /**
-     * Handles updating while being ridden by an entity
-     */
-    public void U()
-    {
-        if (this.vehicle.dead)
-        {
-            this.vehicle = null;
-        }
-        else
-        {
-            this.motX = 0.0D;
-            this.motY = 0.0D;
-            this.motZ = 0.0D;
-            this.j_();
-
-            if (this.vehicle != null)
-            {
-                this.vehicle.V();
-                this.g += (double)(this.vehicle.yaw - this.vehicle.lastYaw);
-
-                for (this.f += (double)(this.vehicle.pitch - this.vehicle.lastPitch); this.g >= 180.0D; this.g -= 360.0D)
-                {
-                    ;
-                }
-
-                while (this.g < -180.0D)
-                {
-                    this.g += 360.0D;
-                }
-
-                while (this.f >= 180.0D)
-                {
-                    this.f -= 360.0D;
-                }
-
-                while (this.f < -180.0D)
-                {
-                    this.f += 360.0D;
-                }
-
-                double var1 = this.g * 0.5D;
-                double var3 = this.f * 0.5D;
-                float var5 = 10.0F;
-
-                if (var1 > (double)var5)
-                {
-                    var1 = (double)var5;
-                }
-
-                if (var1 < (double)(-var5))
-                {
-                    var1 = (double)(-var5);
-                }
-
-                if (var3 > (double)var5)
-                {
-                    var3 = (double)var5;
-                }
-
-                if (var3 < (double)(-var5))
-                {
-                    var3 = (double)(-var5);
-                }
-
-                this.g -= var1;
-                this.f -= var3;
-                this.yaw = (float)((double)this.yaw + var1);
-                this.pitch = (float)((double)this.pitch + var3);
-            }
-        }
-    }
-
-    public void V()
-    {
-        if (!(this.passenger instanceof EntityHuman) || !((EntityHuman)this.passenger).func_71066_bF())
-        {
-            this.passenger.T = this.T;
-            this.passenger.U = this.U + this.X() + this.passenger.W();
-            this.passenger.V = this.V;
+        if (event.isCancelled()) {
+          return;
         }
 
-        this.passenger.setPosition(this.locX, this.locY + this.X() + this.passenger.W(), this.locZ);
+      }
+
+      if (this.vehicle != null) {
+        this.vehicle.passenger = null;
+      }
+
+      if (entity.passenger != null) {
+        entity.passenger.vehicle = null;
+      }
+
+      this.vehicle = entity;
+      entity.passenger = this;
+    }
+  }
+
+  public float j_() {
+    return 0.1F;
+  }
+
+  public Vec3D aJ() {
+    return null;
+  }
+  public void ad() {
+  }
+
+  public ItemStack[] getEquipment() {
+    return null;
+  }
+
+  public boolean isBurning() {
+    return (this.fireTicks > 0) || (j(0));
+  }
+
+  public boolean isSneaking() {
+    return j(1);
+  }
+
+  public void setSneak(boolean flag) {
+    a(1, flag);
+  }
+
+  public boolean isSprinting() {
+    return j(3);
+  }
+
+  public void setSprinting(boolean flag) {
+    a(3, flag);
+  }
+
+  public void i(boolean flag) {
+    a(4, flag);
+  }
+
+  protected boolean j(int i) {
+    return (this.datawatcher.getByte(0) & 1 << i) != 0;
+  }
+
+  protected void a(int i, boolean flag) {
+    byte b0 = this.datawatcher.getByte(0);
+
+    if (flag)
+      this.datawatcher.watch(0, Byte.valueOf((byte)(b0 | 1 << i)));
+    else
+      this.datawatcher.watch(0, Byte.valueOf((byte)(b0 & (1 << i ^ 0xFFFFFFFF))));
+  }
+
+  public int getAirTicks()
+  {
+    return this.datawatcher.b(1);
+  }
+
+  public void setAirTicks(int i) {
+    this.datawatcher.watch(1, Short.valueOf((short)i));
+  }
+
+  public void a(EntityWeatherLighting entityweatherlighting)
+  {
+    org.bukkit.entity.Entity thisBukkitEntity = getBukkitEntity();
+    org.bukkit.entity.Entity stormBukkitEntity = entityweatherlighting.getBukkitEntity();
+    PluginManager pluginManager = Bukkit.getPluginManager();
+
+    if ((thisBukkitEntity instanceof Painting)) {
+      PaintingBreakByEntityEvent event = new PaintingBreakByEntityEvent((Painting)thisBukkitEntity, stormBukkitEntity);
+      pluginManager.callEvent(event);
+
+      if (event.isCancelled()) {
+        return;
+      }
     }
 
-    /**
-     * Returns the Y Offset of this entity.
-     */
-    public double W()
-    {
-        return (double)this.height;
+    EntityDamageByEntityEvent event = new EntityDamageByEntityEvent(stormBukkitEntity, thisBukkitEntity, EntityDamageEvent.DamageCause.LIGHTNING, 5);
+    pluginManager.callEvent(event);
+
+    if (event.isCancelled()) {
+      return;
     }
 
-    /**
-     * Returns the Y offset from the entity's position for any entity riding this one.
-     */
-    public double X()
+    thisBukkitEntity.setLastDamageCause(event);
+    burn(event.getDamage());
+
+    this.fireTicks += 1;
+    if (this.fireTicks == 0)
     {
-        return (double)this.length * 0.75D;
+      EntityCombustByEntityEvent entityCombustEvent = new EntityCombustByEntityEvent(stormBukkitEntity, thisBukkitEntity, 8);
+      pluginManager.callEvent(entityCombustEvent);
+      if (!entityCombustEvent.isCancelled())
+        setOnFire(entityCombustEvent.getDuration());
+    }
+  }
+
+  public void c(EntityLiving entityliving)
+  {
+  }
+
+  protected boolean g(double d0, double d1, double d2) {
+    int i = MathHelper.floor(d0);
+    int j = MathHelper.floor(d1);
+    int k = MathHelper.floor(d2);
+    double d3 = d0 - i;
+    double d4 = d1 - j;
+    double d5 = d2 - k;
+
+    if (this.world.e(i, j, k)) {
+      boolean flag = !this.world.e(i - 1, j, k);
+      boolean flag1 = !this.world.e(i + 1, j, k);
+      boolean flag2 = !this.world.e(i, j - 1, k);
+      boolean flag3 = !this.world.e(i, j + 1, k);
+      boolean flag4 = !this.world.e(i, j, k - 1);
+      boolean flag5 = !this.world.e(i, j, k + 1);
+      byte b0 = -1;
+      double d6 = 9999.0D;
+
+      if ((flag) && (d3 < d6)) {
+        d6 = d3;
+        b0 = 0;
+      }
+
+      if ((flag1) && (1.0D - d3 < d6)) {
+        d6 = 1.0D - d3;
+        b0 = 1;
+      }
+
+      if ((flag2) && (d4 < d6)) {
+        d6 = d4;
+        b0 = 2;
+      }
+
+      if ((flag3) && (1.0D - d4 < d6)) {
+        d6 = 1.0D - d4;
+        b0 = 3;
+      }
+
+      if ((flag4) && (d5 < d6)) {
+        d6 = d5;
+        b0 = 4;
+      }
+
+      if ((flag5) && (1.0D - d5 < d6)) {
+        d6 = 1.0D - d5;
+        b0 = 5;
+      }
+
+      float f = this.random.nextFloat() * 0.2F + 0.1F;
+
+      if (b0 == 0) {
+        this.motX = -f;
+      }
+
+      if (b0 == 1) {
+        this.motX = f;
+      }
+
+      if (b0 == 2) {
+        this.motY = -f;
+      }
+
+      if (b0 == 3) {
+        this.motY = f;
+      }
+
+      if (b0 == 4) {
+        this.motZ = -f;
+      }
+
+      if (b0 == 5) {
+        this.motZ = f;
+      }
+
+      return true;
+    }
+    return false;
+  }
+
+  public void u()
+  {
+    this.bC = true;
+    this.fallDistance = 0.0F;
+  }
+
+  public String getLocalizedName() {
+    String s = EntityTypes.b(this);
+
+    if (s == null) {
+      s = "generic";
     }
 
-    /**
-     * Called when a player mounts an entity. e.g. mounts a pig, mounts a boat.
-     */
-    public void mount(Entity var1)
-    {
-        this.f = 0.0D;
-        this.g = 0.0D;
+    return LocaleI18n.get("entity." + s + ".name");
+  }
 
-        if (var1 == null)
-        {
-            if (this.vehicle != null)
-            {
-                this.setPositionRotation(this.vehicle.locX, this.vehicle.boundingBox.b + (double)this.vehicle.length, this.vehicle.locZ, this.yaw, this.pitch);
-                this.vehicle.passenger = null;
-            }
+  public Entity[] bb() {
+    return null;
+  }
 
-            this.vehicle = null;
-        }
-        else if (this.vehicle == var1)
-        {
-            this.h(var1);
-            this.vehicle.passenger = null;
-            this.vehicle = null;
-        }
-        else
-        {
-            if (this.vehicle != null)
-            {
-                this.vehicle.passenger = null;
-            }
+  public boolean a_(Entity entity) {
+    return this == entity;
+  }
 
-            if (var1.passenger != null)
-            {
-                var1.passenger.vehicle = null;
-            }
+  public float ar() {
+    return 0.0F;
+  }
 
-            this.vehicle = var1;
-            var1.passenger = this;
-        }
-    }
+  public boolean k_() {
+    return true;
+  }
 
-    /**
-     * Called when a player unounts an entity.
-     */
-    public void h(Entity var1)
-    {
-        double var3 = var1.locX;
-        double var5 = var1.boundingBox.b + (double)var1.length;
-        double var7 = var1.locZ;
+  public static int getNextId() {
+    return entityCount++;
+  }
 
-        for (double var9 = -1.5D; var9 < 2.0D; ++var9)
-        {
-            for (double var11 = -1.5D; var11 < 2.0D; ++var11)
-            {
-                if (var9 != 0.0D || var11 != 0.0D)
-                {
-                    int var13 = (int)(this.locX + var9);
-                    int var14 = (int)(this.locZ + var11);
-                    AxisAlignedBB var2 = this.boundingBox.c(var9, 1.0D, var11);
+  public static enum EntitySize
+  {
+    SIZE_1, 
+    SIZE_2, 
+    SIZE_3, 
+    SIZE_4, 
+    SIZE_5, 
+    SIZE_6;
 
-                    if (this.world.a(var2).isEmpty())
-                    {
-                        if (this.world.t(var13, (int)this.locY, var14))
-                        {
-                            this.setPositionRotation(this.locX + var9, this.locY + 1.0D, this.locZ + var11, this.yaw, this.pitch);
-                            return;
-                        }
+    public int getXZCoord(double loc) {
+      double diff = loc - (NumberConversions.floor(loc) + 0.5D);
 
-                        if (this.world.t(var13, (int)this.locY - 1, var14) || this.world.getMaterial(var13, (int)this.locY - 1, var14) == Material.WATER)
-                        {
-                            var3 = this.locX + var9;
-                            var5 = this.locY + 1.0D;
-                            var7 = this.locZ + var11;
-                        }
-                    }
-                }
-            }
-        }
-
-        this.setPositionRotation(var3, var5, var7, this.yaw, this.pitch);
-    }
-
-    public float Y()
-    {
-        return 0.1F;
-    }
-
-    /**
-     * returns a (normalized) vector of where this entity is looking
-     */
-    public Vec3D Z()
-    {
-        return null;
-    }
-
-    /**
-     * Called by portal blocks when an entity is within it.
-     */
-    public void aa()
-    {
-        if (this.an > 0)
-        {
-            this.an = this.ab();
-        }
-        else
-        {
-            double var1 = this.lastX - this.locX;
-            double var3 = this.lastZ - this.locZ;
-
-            if (!this.world.isStatic && !this.ao)
-            {
-                this.field_82152_aq = Direction.func_82372_a(var1, var3);
-            }
-
-            this.ao = true;
-        }
-    }
-
-    /**
-     * Return the amount of cooldown before this entity can use a portal again.
-     */
-    public int ab()
-    {
-        return 500;
-    }
-
-    /**
-     * returns the inventory of this entity (only used in EntityPlayerMP it seems)
-     */
-    public ItemStack[] getEquipment()
-    {
-        return null;
-    }
-
-    public void func_70062_b(int var1, ItemStack var2) {}
-
-    /**
-     * Returns true if the entity is on fire. Used by render to add the fire effect on rendering.
-     */
-    public boolean isBurning()
-    {
-        return this.fireTicks > 0 || this.e(0);
-    }
-
-    public boolean func_70115_ae()
-    {
-        return this.vehicle != null || this.e(2);
-    }
-
-    /**
-     * Returns if this entity is sneaking.
-     */
-    public boolean isSneaking()
-    {
-        return this.e(1);
-    }
-
-    /**
-     * Sets the sneaking flag.
-     */
-    public void setSneaking(boolean var1)
-    {
-        this.a(1, var1);
-    }
-
-    /**
-     * Get if the Entity is sprinting.
-     */
-    public boolean isSprinting()
-    {
-        return this.e(3);
-    }
-
-    /**
-     * Set sprinting switch for Entity.
-     */
-    public void setSprinting(boolean var1)
-    {
-        this.a(3, var1);
-    }
-
-    public boolean func_82150_aj()
-    {
-        return this.e(5);
-    }
-
-    public void func_82142_c(boolean var1)
-    {
-        this.a(5, var1);
-    }
-
-    public void d(boolean var1)
-    {
-        this.a(4, var1);
-    }
-
-    /**
-     * Returns true if the flag is active for the entity. Known flags: 0) is burning; 1) is sneaking; 2) is riding
-     * something; 3) is sprinting; 4) is eating
-     */
-    protected boolean e(int var1)
-    {
-        return (this.datawatcher.getByte(0) & 1 << var1) != 0;
-    }
-
-    /**
-     * Enable or disable a entity flag, see getEntityFlag to read the know flags.
-     */
-    protected void a(int var1, boolean var2)
-    {
-        byte var3 = this.datawatcher.getByte(0);
-
-        if (var2)
-        {
-            this.datawatcher.watch(0, Byte.valueOf((byte)(var3 | 1 << var1)));
-        }
-        else
-        {
-            this.datawatcher.watch(0, Byte.valueOf((byte)(var3 & ~(1 << var1))));
-        }
-    }
-
-    public int getAirTicks()
-    {
-        return this.datawatcher.getShort(1);
-    }
-
-    public void setAirTicks(int var1)
-    {
-        this.datawatcher.watch(1, Short.valueOf((short)var1));
-    }
-
-    /**
-     * Called when a lightning bolt hits the entity.
-     */
-    public void a(EntityLightning var1)
-    {
-        this.burn(5);
-        ++this.fireTicks;
-
-        if (this.fireTicks == 0)
-        {
-            this.setOnFire(8);
-        }
-    }
-
-    /**
-     * This method gets called when the entity kills another one.
-     */
-    public void a(EntityLiving var1) {}
-
-    /**
-     * Adds velocity to push the entity out of blocks at the specified x, y, z position Args: x, y, z
-     */
-    protected boolean i(double var1, double var3, double var5)
-    {
-        int var7 = MathHelper.floor(var1);
-        int var8 = MathHelper.floor(var3);
-        int var9 = MathHelper.floor(var5);
-        double var10 = var1 - (double)var7;
-        double var12 = var3 - (double)var8;
-        double var14 = var5 - (double)var9;
-
-        if (this.world.s(var7, var8, var9))
-        {
-            boolean var16 = !this.world.s(var7 - 1, var8, var9);
-            boolean var17 = !this.world.s(var7 + 1, var8, var9);
-            boolean var18 = !this.world.s(var7, var8 - 1, var9);
-            boolean var19 = !this.world.s(var7, var8 + 1, var9);
-            boolean var20 = !this.world.s(var7, var8, var9 - 1);
-            boolean var21 = !this.world.s(var7, var8, var9 + 1);
-            byte var22 = -1;
-            double var23 = 9999.0D;
-
-            if (var16 && var10 < var23)
-            {
-                var23 = var10;
-                var22 = 0;
-            }
-
-            if (var17 && 1.0D - var10 < var23)
-            {
-                var23 = 1.0D - var10;
-                var22 = 1;
-            }
-
-            if (var18 && var12 < var23)
-            {
-                var23 = var12;
-                var22 = 2;
-            }
-
-            if (var19 && 1.0D - var12 < var23)
-            {
-                var23 = 1.0D - var12;
-                var22 = 3;
-            }
-
-            if (var20 && var14 < var23)
-            {
-                var23 = var14;
-                var22 = 4;
-            }
-
-            if (var21 && 1.0D - var14 < var23)
-            {
-                var23 = 1.0D - var14;
-                var22 = 5;
-            }
-
-            float var25 = this.random.nextFloat() * 0.2F + 0.1F;
-
-            if (var22 == 0)
-            {
-                this.motX = (double)(-var25);
-            }
-
-            if (var22 == 1)
-            {
-                this.motX = (double)var25;
-            }
-
-            if (var22 == 2)
-            {
-                this.motY = (double)(-var25);
-            }
-
-            if (var22 == 3)
-            {
-                this.motY = (double)var25;
-            }
-
-            if (var22 == 4)
-            {
-                this.motZ = (double)(-var25);
-            }
-
-            if (var22 == 5)
-            {
-                this.motZ = (double)var25;
-            }
-
-            return true;
-        }
-        else
-        {
-            return false;
-        }
-    }
-
-    /**
-     * Sets the Entity inside a web block.
-     */
-    public void am()
-    {
-        this.J = true;
-        this.fallDistance = 0.0F;
-    }
-
-    /**
-     * Gets the username of the entity.
-     */
-    public String getLocalizedName()
-    {
-        String var1 = EntityTypes.b(this);
-
-        if (var1 == null)
-        {
-            var1 = "generic";
+      switch (Entity.1.$SwitchMap$net$minecraft$server$Entity$EntitySize[ordinal()]) {
+      case 1:
+        if (diff < 0.0D ? diff < -0.3125D : diff < 0.3125D) {
+          return NumberConversions.ceil(loc * 32.0D);
         }
 
-        return LocaleI18n.get("entity." + var1 + ".name");
-    }
-
-    /**
-     * Return the Entity parts making up this Entity (currently only for dragons)
-     */
-    public Entity[] ao()
-    {
-        return null;
-    }
-
-    /**
-     * Returns true if Entity argument is equal to this Entity
-     */
-    public boolean i(Entity var1)
-    {
-        return this == var1;
-    }
-
-    public float func_70079_am()
-    {
-        return 0.0F;
-    }
-
-    /**
-     * If returns false, the item will not inflict any damage against entities.
-     */
-    public boolean aq()
-    {
-        return true;
-    }
-
-    public String toString()
-    {
-        return String.format("%s[\'%s\'/%d, l=\'%s\', x=%.2f, y=%.2f, z=%.2f]", new Object[] {this.getClass().getSimpleName(), this.getLocalizedName(), Integer.valueOf(this.id), this.world == null ? "~NULL~" : this.world.getWorldData().getName(), Double.valueOf(this.locX), Double.valueOf(this.locY), Double.valueOf(this.locZ)});
-    }
-
-    public void func_82149_j(Entity var1)
-    {
-        this.setPositionRotation(var1.locX, var1.locY, var1.locZ, var1.yaw, var1.pitch);
-    }
-
-    public void func_82141_a(Entity var1, boolean var2)
-    {
-        NBTTagCompound var3 = new NBTTagCompound();
-        var1.d(var3);
-        this.e(var3);
-        this.an = var1.an;
-        this.field_82152_aq = var1.field_82152_aq;
-    }
-
-    public void b(int var1)
-    {
-        if (!this.world.isStatic && !this.dead)
-        {
-            MinecraftServer var2 = MinecraftServer.getServer();
-            int var3 = this.dimension;
-            WorldServer var4 = var2.getWorldServer(var3);
-            WorldServer var5 = var2.getWorldServer(var1);
-            this.dimension = var1;
-            this.world.kill(this);
-            this.dead = false;
-            var2.getServerConfigurationManager().a(this, var3, var4, var5);
-            Entity var6 = EntityTypes.createEntityByName(EntityTypes.b(this), var5);
-
-            if (var6 != null)
-            {
-                var6.func_82141_a(this, true);
-                var5.addEntity(var6);
-            }
-
-            this.dead = true;
-            var4.func_82742_i();
-            var5.func_82742_i();
+        return NumberConversions.floor(loc * 32.0D);
+      case 2:
+        if (diff < 0.0D ? diff < -0.3125D : diff < 0.3125D) {
+          return NumberConversions.floor(loc * 32.0D);
         }
-    }
 
-    public float func_82146_a(Explosion var1, Block var2, int var3, int var4, int var5)
-    {
-        return var2.a(this);
-    }
+        return NumberConversions.ceil(loc * 32.0D);
+      case 3:
+        if (diff > 0.0D) {
+          return NumberConversions.floor(loc * 32.0D);
+        }
 
-    public int func_82143_as()
-    {
-        return 3;
-    }
+        return NumberConversions.ceil(loc * 32.0D);
+      case 4:
+        if (diff < 0.0D ? diff < -0.1875D : diff < 0.1875D) {
+          return NumberConversions.ceil(loc * 32.0D);
+        }
 
-    public int func_82148_at()
-    {
-        return this.field_82152_aq;
-    }
+        return NumberConversions.floor(loc * 32.0D);
+      case 5:
+        if (diff < 0.0D ? diff < -0.1875D : diff < 0.1875D) {
+          return NumberConversions.floor(loc * 32.0D);
+        }
 
-    /**
-     * Return whether this entity should NOT trigger a pressure plate or a tripwire.
-     */
-    public boolean au()
-    {
-        return false;
+        return NumberConversions.ceil(loc * 32.0D);
+      case 6:
+      }
+      if (diff > 0.0D) {
+        return NumberConversions.ceil(loc * 32.0D);
+      }
+
+      return NumberConversions.floor(loc * 32.0D);
     }
+  }
 }
+

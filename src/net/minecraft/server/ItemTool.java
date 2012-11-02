@@ -1,13 +1,17 @@
 package net.minecraft.server;
 
+import cpw.mods.fml.common.Side;
+import cpw.mods.fml.common.asm.SideOnly;
+import net.minecraftforge.common.ForgeHooks;
+
 public class ItemTool extends Item
 {
     /** Array of blocks the tool has extra effect against. */
     private Block[] c;
-    protected float a = 4.0F;
+    public float a = 4.0F;
 
     /** Damage versus entities. */
-    private int ck;
+    public int ck;
 
     /** The material this tool is made from. */
     protected EnumToolMaterial b;
@@ -74,6 +78,12 @@ public class ItemTool extends Item
         return this.ck;
     }
 
+    @SideOnly(Side.CLIENT)
+    public boolean n_()
+    {
+        return true;
+    }
+
     /**
      * Return the enchantability factor of the item, most of the time is based on material.
      */
@@ -96,5 +106,10 @@ public class ItemTool extends Item
     public boolean a(ItemStack var1, ItemStack var2)
     {
         return this.b.f() == var2.id ? true : super.a(var1, var2);
+    }
+
+    public float getStrVsBlock(ItemStack var1, Block var2, int var3)
+    {
+        return ForgeHooks.isToolEffective(var1, var2, var3) ? this.a : this.getDestroySpeed(var1, var2);
     }
 }

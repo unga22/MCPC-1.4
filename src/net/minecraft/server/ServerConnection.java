@@ -1,5 +1,7 @@
 package net.minecraft.server;
 
+import cpw.mods.fml.common.FMLLog;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -18,7 +20,7 @@ public abstract class ServerConnection
     /** Whether the network listener object is listening. */
     public volatile boolean b = false;
 
-    public ServerConnection(MinecraftServer var1)
+    public ServerConnection(MinecraftServer var1) throws IOException
     {
         this.c = var1;
         this.b = true;
@@ -52,6 +54,7 @@ public abstract class ServerConnection
             }
             catch (Exception var4)
             {
+                FMLLog.log(Level.SEVERE, var4, "A critical server error occured handling a packet, kicking %s", new Object[] {var2});
                 a.log(Level.WARNING, "Failed to handle packet: " + var4, var4);
                 var2.disconnect("Internal server error");
             }

@@ -1,139 +1,84 @@
 package net.minecraft.server;
 
-public class ChunkCache implements IBlockAccess
+public class ChunkCache
+  implements IBlockAccess
 {
-    private int a;
-    private int b;
-    private Chunk[][] c;
+  private int a;
+  private int b;
+  private Chunk[][] c;
+  private boolean d;
+  private World e;
 
-    /** set by !chunk.getAreLevelsEmpty */
-    private boolean d;
+  public ChunkCache(World paramWorld, int paramInt1, int paramInt2, int paramInt3, int paramInt4, int paramInt5, int paramInt6)
+  {
+    this.e = paramWorld;
 
-    /** Reference to the World object. */
-    private World e;
+    this.a = (paramInt1 >> 4);
+    this.b = (paramInt3 >> 4);
+    int i = paramInt4 >> 4;
+    int j = paramInt6 >> 4;
 
-    public ChunkCache(World var1, int var2, int var3, int var4, int var5, int var6, int var7)
-    {
-        this.e = var1;
-        this.a = var2 >> 4;
-        this.b = var4 >> 4;
-        int var8 = var5 >> 4;
-        int var9 = var7 >> 4;
-        this.c = new Chunk[var8 - this.a + 1][var9 - this.b + 1];
-        this.d = true;
+    this.c = new Chunk[i - this.a + 1][j - this.b + 1];
 
-        for (int var10 = this.a; var10 <= var8; ++var10)
-        {
-            for (int var11 = this.b; var11 <= var9; ++var11)
-            {
-                Chunk var12 = var1.getChunkAt(var10, var11);
+    this.d = true;
+    for (int k = this.a; k <= i; k++)
+      for (int m = this.b; m <= j; m++) {
+        Chunk localChunk = paramWorld.getChunkAt(k, m);
+        if (localChunk != null) {
+          this.c[(k - this.a)][(m - this.b)] = localChunk;
 
-                if (var12 != null)
-                {
-                    this.c[var10 - this.a][var11 - this.b] = var12;
-
-                    if (!var12.c(var3, var6))
-                    {
-                        this.d = false;
-                    }
-                }
-            }
+          if (!localChunk.c(paramInt2, paramInt5))
+            this.d = false;
         }
+      }
+  }
+
+  public int getTypeId(int paramInt1, int paramInt2, int paramInt3)
+  {
+    if (paramInt2 < 0) return 0;
+    if (paramInt2 >= 256) return 0;
+
+    int i = (paramInt1 >> 4) - this.a;
+    int j = (paramInt3 >> 4) - this.b;
+
+    if ((i < 0) || (i >= this.c.length) || (j < 0) || (j >= this.c[i].length)) {
+      return 0;
     }
 
-    /**
-     * Returns the block ID at coords x,y,z
-     */
-    public int getTypeId(int var1, int var2, int var3)
-    {
-        if (var2 < 0)
-        {
-            return 0;
-        }
-        else if (var2 >= 256)
-        {
-            return 0;
-        }
-        else
-        {
-            int var4 = (var1 >> 4) - this.a;
-            int var5 = (var3 >> 4) - this.b;
+    Chunk localChunk = this.c[i][j];
+    if (localChunk == null) return 0;
 
-            if (var4 >= 0 && var4 < this.c.length && var5 >= 0 && var5 < this.c[var4].length)
-            {
-                Chunk var6 = this.c[var4][var5];
-                return var6 == null ? 0 : var6.getTypeId(var1 & 15, var2, var3 & 15);
-            }
-            else
-            {
-                return 0;
-            }
-        }
-    }
+    return localChunk.getTypeId(paramInt1 & 0xF, paramInt2, paramInt3 & 0xF);
+  }
 
-    /**
-     * Returns the TileEntity associated with a given block in X,Y,Z coordinates, or null if no TileEntity exists
-     */
-    public TileEntity getTileEntity(int var1, int var2, int var3)
-    {
-        int var4 = (var1 >> 4) - this.a;
-        int var5 = (var3 >> 4) - this.b;
-        return this.c[var4][var5].e(var1 & 15, var2, var3 & 15);
-    }
+  public TileEntity getTileEntity(int paramInt1, int paramInt2, int paramInt3) {
+    int i = (paramInt1 >> 4) - this.a;
+    int j = (paramInt3 >> 4) - this.b;
 
-    /**
-     * Returns the block metadata at coords x,y,z
-     */
-    public int getData(int var1, int var2, int var3)
-    {
-        if (var2 < 0)
-        {
-            return 0;
-        }
-        else if (var2 >= 256)
-        {
-            return 0;
-        }
-        else
-        {
-            int var4 = (var1 >> 4) - this.a;
-            int var5 = (var3 >> 4) - this.b;
-            return this.c[var4][var5].getData(var1 & 15, var2, var3 & 15);
-        }
-    }
+    return this.c[i][j].e(paramInt1 & 0xF, paramInt2, paramInt3 & 0xF);
+  }
 
-    /**
-     * Returns the block's material.
-     */
-    public Material getMaterial(int var1, int var2, int var3)
-    {
-        int var4 = this.getTypeId(var1, var2, var3);
-        return var4 == 0 ? Material.AIR : Block.byId[var4].material;
-    }
+  public int getData(int paramInt1, int paramInt2, int paramInt3)
+  {
+    if (paramInt2 < 0) return 0;
+    if (paramInt2 >= 256) return 0;
+    int i = (paramInt1 >> 4) - this.a;
+    int j = (paramInt3 >> 4) - this.b;
 
-    /**
-     * Returns true if the block at the specified coordinates is an opaque cube. Args: x, y, z
-     */
-    public boolean s(int var1, int var2, int var3)
-    {
-        Block var4 = Block.byId[this.getTypeId(var1, var2, var3)];
-        return var4 == null ? false : var4.material.isSolid() && var4.b();
-    }
+    return this.c[i][j].getData(paramInt1 & 0xF, paramInt2, paramInt3 & 0xF);
+  }
 
-    /**
-     * Return the Vec3Pool object for this world.
-     */
-    public Vec3DPool getVec3DPool()
-    {
-        return this.e.getVec3DPool();
-    }
+  public Material getMaterial(int paramInt1, int paramInt2, int paramInt3) {
+    int i = getTypeId(paramInt1, paramInt2, paramInt3);
+    if (i == 0) return Material.AIR;
+    return Block.byId[i].material;
+  }
 
-    /**
-     * Is this block powering in the specified direction Args: x, y, z, direction
-     */
-    public boolean isBlockFacePowered(int var1, int var2, int var3, int var4)
-    {
-        int var5 = this.getTypeId(var1, var2, var3);
-        return var5 == 0 ? false : Block.byId[var5].c(this, var1, var2, var3, var4);
-    }
+  public boolean e(int paramInt1, int paramInt2, int paramInt3)
+  {
+    Block localBlock = Block.byId[getTypeId(paramInt1, paramInt2, paramInt3)];
+    if (localBlock == null) return false;
+    return (localBlock.material.isSolid()) && (localBlock.b());
+  }
 }
+

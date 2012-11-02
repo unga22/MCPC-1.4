@@ -1,133 +1,124 @@
 package net.minecraft.server;
 
+import java.util.ArrayList;
 import java.util.Random;
+import org.bukkit.BlockChangeDelegate;
+import org.bukkit.Location;
+import org.bukkit.TreeType;
+import org.bukkit.block.BlockState;
+import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.entity.Player;
+import org.bukkit.event.block.BlockSpreadEvent;
+import org.bukkit.event.world.StructureGrowEvent;
+import org.bukkit.plugin.PluginManager;
 
 public class BlockMushroom extends BlockFlower
 {
-    protected BlockMushroom(int var1, int var2)
-    {
-        super(var1, var2);
-        float var3 = 0.2F;
-        this.a(0.5F - var3, 0.0F, 0.5F - var3, 0.5F + var3, var3 * 2.0F, 0.5F + var3);
-        this.b(true);
-    }
+  protected BlockMushroom(int i, int j)
+  {
+    super(i, j);
+    float f = 0.2F;
 
-    /**
-     * Ticks the block if it's been scheduled
-     */
-    public void b(World var1, int var2, int var3, int var4, Random var5)
-    {
-        if (var5.nextInt(25) == 0)
-        {
-            byte var6 = 4;
-            int var7 = 5;
-            int var8;
-            int var9;
-            int var10;
+    a(0.5F - f, 0.0F, 0.5F - f, 0.5F + f, f * 2.0F, 0.5F + f);
+    a(true);
+  }
 
-            for (var8 = var2 - var6; var8 <= var2 + var6; ++var8)
-            {
-                for (var9 = var4 - var6; var9 <= var4 + var6; ++var9)
-                {
-                    for (var10 = var3 - 1; var10 <= var3 + 1; ++var10)
-                    {
-                        if (var1.getTypeId(var8, var10, var9) == this.id)
-                        {
-                            --var7;
+  public void a(World world, int i, int j, int k, Random random) {
+    if (random.nextInt(25) == 0) {
+      byte b0 = 4;
+      int l = 5;
 
-                            if (var7 <= 0)
-                            {
-                                return;
-                            }
-                        }
-                    }
-                }
+      for (int i1 = i - b0; i1 <= i + b0; i1++) {
+        for (int j1 = k - b0; j1 <= k + b0; j1++) {
+          for (int k1 = j - 1; k1 <= j + 1; k1++) {
+            if (world.getTypeId(i1, k1, j1) == this.id) {
+              l--;
+              if (l <= 0) {
+                return;
+              }
             }
-
-            var8 = var2 + var5.nextInt(3) - 1;
-            var9 = var3 + var5.nextInt(2) - var5.nextInt(2);
-            var10 = var4 + var5.nextInt(3) - 1;
-
-            for (int var11 = 0; var11 < 4; ++var11)
-            {
-                if (var1.isEmpty(var8, var9, var10) && this.d(var1, var8, var9, var10))
-                {
-                    var2 = var8;
-                    var3 = var9;
-                    var4 = var10;
-                }
-
-                var8 = var2 + var5.nextInt(3) - 1;
-                var9 = var3 + var5.nextInt(2) - var5.nextInt(2);
-                var10 = var4 + var5.nextInt(3) - 1;
-            }
-
-            if (var1.isEmpty(var8, var9, var10) && this.d(var1, var8, var9, var10))
-            {
-                var1.setTypeId(var8, var9, var10, this.id);
-            }
+          }
         }
+      }
+
+      i1 = i + random.nextInt(3) - 1;
+      int j1 = j + random.nextInt(2) - random.nextInt(2);
+      int k1 = k + random.nextInt(3) - 1;
+
+      for (int l1 = 0; l1 < 4; l1++) {
+        if ((world.isEmpty(i1, j1, k1)) && (f(world, i1, j1, k1))) {
+          i = i1;
+          j = j1;
+          k = k1;
+        }
+
+        i1 = i + random.nextInt(3) - 1;
+        j1 = j + random.nextInt(2) - random.nextInt(2);
+        k1 = k + random.nextInt(3) - 1;
+      }
+
+      if ((world.isEmpty(i1, j1, k1)) && (f(world, i1, j1, k1)))
+      {
+        org.bukkit.World bworld = world.getWorld();
+        BlockState blockState = bworld.getBlockAt(i1, j1, k1).getState();
+        blockState.setTypeId(this.id);
+
+        BlockSpreadEvent event = new BlockSpreadEvent(blockState.getBlock(), bworld.getBlockAt(i, j, k), blockState);
+        world.getServer().getPluginManager().callEvent(event);
+
+        if (!event.isCancelled())
+          blockState.update(true);
+      }
     }
+  }
 
-    /**
-     * Checks to see if its valid to put this block at the specified coordinates. Args: world, x, y, z
-     */
-    public boolean canPlace(World var1, int var2, int var3, int var4)
-    {
-        return super.canPlace(var1, var2, var3, var4) && this.d(var1, var2, var3, var4);
+  public boolean canPlace(World world, int i, int j, int k)
+  {
+    return (super.canPlace(world, i, j, k)) && (f(world, i, j, k));
+  }
+
+  protected boolean d(int i) {
+    return Block.n[i];
+  }
+
+  public boolean f(World world, int i, int j, int k) {
+    if ((j >= 0) && (j < 256)) {
+      int l = world.getTypeId(i, j - 1, k);
+
+      return (l == Block.MYCEL.id) || ((world.m(i, j, k) < 13) && (d(l)));
     }
+    return false;
+  }
 
-    /**
-     * Gets passed in the blockID of the block below and supposed to return true if its allowed to grow on the type of
-     * blockID passed in. Args: blockID
-     */
-    protected boolean d_(int var1)
-    {
-        return Block.q[var1];
+  public boolean grow(World world, int i, int j, int k, Random random, boolean bonemeal, Player player, ItemStack itemstack)
+  {
+    int l = world.getData(i, j, k);
+
+    world.setRawTypeId(i, j, k, 0);
+
+    boolean grown = false;
+    StructureGrowEvent event = null;
+    Location location = new Location(world.getWorld(), i, j, k);
+    WorldGenHugeMushroom worldgenhugemushroom = null;
+
+    if (this.id == Block.BROWN_MUSHROOM.id) {
+      event = new StructureGrowEvent(location, TreeType.BROWN_MUSHROOM, bonemeal, player, new ArrayList());
+      worldgenhugemushroom = new WorldGenHugeMushroom(0);
+    } else if (this.id == Block.RED_MUSHROOM.id) {
+      event = new StructureGrowEvent(location, TreeType.RED_MUSHROOM, bonemeal, player, new ArrayList());
+      worldgenhugemushroom = new WorldGenHugeMushroom(1);
     }
-
-    /**
-     * Can this block stay at this position.  Similar to canPlaceBlockAt except gets checked often with plants.
-     */
-    public boolean d(World var1, int var2, int var3, int var4)
-    {
-        if (var3 >= 0 && var3 < 256)
-        {
-            int var5 = var1.getTypeId(var2, var3 - 1, var4);
-            return var5 == Block.MYCEL.id || var1.k(var2, var3, var4) < 13 && this.d_(var5);
-        }
-        else
-        {
-            return false;
-        }
+    if ((worldgenhugemushroom != null) && (event != null)) {
+      grown = worldgenhugemushroom.grow((BlockChangeDelegate)world, random, i, j, k, event, itemstack, world.getWorld());
+      if ((event.isFromBonemeal()) && (itemstack != null)) {
+        itemstack.count -= 1;
+      }
     }
-
-    /**
-     * Fertilize the mushroom.
-     */
-    public boolean grow(World var1, int var2, int var3, int var4, Random var5)
-    {
-        int var6 = var1.getData(var2, var3, var4);
-        var1.setRawTypeId(var2, var3, var4, 0);
-        WorldGenHugeMushroom var7 = null;
-
-        if (this.id == Block.BROWN_MUSHROOM.id)
-        {
-            var7 = new WorldGenHugeMushroom(0);
-        }
-        else if (this.id == Block.RED_MUSHROOM.id)
-        {
-            var7 = new WorldGenHugeMushroom(1);
-        }
-
-        if (var7 != null && var7.a(var1, var5, var2, var3, var4))
-        {
-            return true;
-        }
-        else
-        {
-            var1.setRawTypeIdAndData(var2, var3, var4, this.id, var6);
-            return false;
-        }
+    if ((!grown) || (event.isCancelled())) {
+      world.setRawTypeIdAndData(i, j, k, this.id, l);
+      return false;
     }
+    return true;
+  }
 }
+

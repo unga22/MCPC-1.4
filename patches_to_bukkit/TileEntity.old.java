@@ -1,233 +1,171 @@
 package net.minecraft.server;
 
+import java.io.PrintStream;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import org.bukkit.block.BlockState;
+import org.bukkit.craftbukkit.CraftWorld;
+import org.bukkit.craftbukkit.entity.CraftHumanEntity;
+import org.bukkit.entity.HumanEntity;
+import org.bukkit.inventory.InventoryHolder;
 
 public class TileEntity
+  implements net.minecraft.src.TileEntity
 {
-    /**
-     * A HashMap storing string names of classes mapping to the actual java.lang.Class type.
-     */
-    private static Map a = new HashMap();
+  private static Map a = new HashMap();
+  private static Map b = new HashMap();
+  public World world;
+  public int x;
+  public int y;
+  public int z;
+  protected boolean o;
+  public int p = -1;
+  public Block q;
+  private List<HumanEntity> transaction = new ArrayList(2);
 
-    /**
-     * A HashMap storing the classes and mapping to the string names (reverse of nameToClassMap).
-     */
-    private static Map b = new HashMap();
+  private static void a(Class oclass, String s)
+  {
+    if (b.containsKey(s)) {
+      throw new IllegalArgumentException("Duplicate id: " + s);
+    }
+    a.put(s, oclass);
+    b.put(oclass, s);
+  }
 
-    /** The reference to the world. */
-    protected World world;
+  public void a(NBTTagCompound nbttagcompound)
+  {
+    this.x = nbttagcompound.getInt("x");
+    this.y = nbttagcompound.getInt("y");
+    this.z = nbttagcompound.getInt("z");
+  }
 
-    /** The x coordinate of the tile entity. */
-    public int x;
+  public void b(NBTTagCompound nbttagcompound) {
+    String s = (String)b.get(getClass());
 
-    /** The y coordinate of the tile entity. */
-    public int y;
+    if (s == null) {
+      throw new RuntimeException(getClass() + " is missing a mapping! This is a bug!");
+    }
+    nbttagcompound.setString("id", s);
+    nbttagcompound.setInt("x", this.x);
+    nbttagcompound.setInt("y", this.y);
+    nbttagcompound.setInt("z", this.z);
+  }
 
-    /** The z coordinate of the tile entity. */
-    public int z;
-    protected boolean o;
-    public int p = -1;
+  public void q_() {
+  }
 
-    /** the Block type that this TileEntity is contained within */
-    public Block q;
-
-    /**
-     * Adds a new two-way mapping between the class and its string name in both hashmaps.
-     */
-    private static void a(Class var0, String var1)
+  public static TileEntity c(NBTTagCompound nbttagcompound) {
+    TileEntity tileentity = null;
+    try
     {
-        if (a.containsKey(var1))
-        {
-            throw new IllegalArgumentException("Duplicate id: " + var1);
-        }
-        else
-        {
-            a.put(var1, var0);
-            b.put(var0, var1);
-        }
+      Class oclass = (Class)a.get(nbttagcompound.getString("id"));
+
+      if (oclass != null)
+        tileentity = (TileEntity)oclass.newInstance();
+    }
+    catch (Exception exception) {
+      exception.printStackTrace();
     }
 
-    /**
-     * Sets the worldObj for this tileEntity.
-     */
-    public void b(World var1)
-    {
-        this.world = var1;
+    if (tileentity != null)
+      tileentity.a(nbttagcompound);
+    else {
+      System.out.println("Skipping TileEntity with id " + nbttagcompound.getString("id"));
     }
 
-    public boolean func_70309_m()
-    {
-        return this.world != null;
+    return tileentity;
+  }
+
+  public int k() {
+    if (this.p == -1) {
+      this.p = this.world.getData(this.x, this.y, this.z);
     }
 
-    /**
-     * Reads a tile entity from NBT.
-     */
-    public void a(NBTTagCompound var1)
-    {
-        this.x = var1.getInt("x");
-        this.y = var1.getInt("y");
-        this.z = var1.getInt("z");
+    return this.p;
+  }
+
+  public void update() {
+    if (this.world != null) {
+      this.p = this.world.getData(this.x, this.y, this.z);
+      this.world.b(this.x, this.y, this.z, this);
     }
+  }
 
-    /**
-     * Writes a tile entity to NBT.
-     */
-    public void b(NBTTagCompound var1)
-    {
-        String var2 = (String)b.get(this.getClass());
+  public Packet d() {
+    return null;
+  }
 
-        if (var2 == null)
-        {
-            throw new RuntimeException(this.getClass() + " is missing a mapping! This is a bug!");
-        }
-        else
-        {
-            var1.setString("id", var2);
-            var1.setInt("x", this.x);
-            var1.setInt("y", this.y);
-            var1.setInt("z", this.z);
-        }
-    }
+  public boolean l() {
+    return this.o;
+  }
 
-    /**
-     * Allows the entity to update its state. Overridden in most subclasses, e.g. the mob spawner uses this to count
-     * ticks and creates a new spawn inside its implementation.
-     */
-    public void g() {}
+  public void j() {
+    this.o = true;
+  }
 
-    /**
-     * Creates a new entity and loads its data from the specified NBT.
-     */
-    public static TileEntity c(NBTTagCompound var0)
-    {
-        TileEntity var1 = null;
+  public void m() {
+    this.o = false;
+  }
+  public void b(int i, int j) {
+  }
 
-        try
-        {
-            Class var2 = (Class)a.get(var0.getString("id"));
+  public void h() {
+    this.q = null;
+    this.p = -1;
+  }
 
-            if (var2 != null)
-            {
-                var1 = (TileEntity)var2.newInstance();
-            }
-        }
-        catch (Exception var3)
-        {
-            var3.printStackTrace();
-        }
+  public InventoryHolder getOwner()
+  {
+    BlockState state = this.world.getWorld().getBlockAt(this.x, this.y, this.z).getState();
+    if ((state instanceof InventoryHolder)) return (InventoryHolder)state;
+    return null;
+  }
 
-        if (var1 != null)
-        {
-            var1.a(var0);
-        }
-        else
-        {
-            System.out.println("Skipping TileEntity with id " + var0.getString("id"));
-        }
+  public void onOpen(CraftHumanEntity who)
+  {
+    this.transaction.add(who);
+  }
 
-        return var1;
-    }
+  public void onClose(CraftHumanEntity who) {
+    this.transaction.remove(who);
+  }
 
-    /**
-     * Returns block data at the location of this entity (client-only).
-     */
-    public int p()
-    {
-        if (this.p == -1)
-        {
-            this.p = this.world.getData(this.x, this.y, this.z);
-        }
+  public List<HumanEntity> getViewers() {
+    return this.transaction;
+  }
 
-        return this.p;
-    }
+  public static void addNewTileEntityMapping(Class<? extends TileEntity> tileEntityClass, String id) {
+    a(tileEntityClass, id);
+  }
 
-    /**
-     * Called when an the contents of an Inventory change, usually
-     */
-    public void update()
-    {
-        if (this.world != null)
-        {
-            this.p = this.world.getData(this.x, this.y, this.z);
-            this.world.b(this.x, this.y, this.z, this);
-        }
-    }
+  public boolean canUpdate()
+  {
+    return true;
+  }
 
-    public Block func_70311_o()
-    {
-        if (this.q == null)
-        {
-            this.q = Block.byId[this.world.getTypeId(this.x, this.y, this.z)];
-        }
+  public void onDataPacket(NetworkManager net, Packet132TileEntityData pkt)
+  {
+  }
 
-        return this.q;
-    }
+  public void onChunkUnload()
+  {
+  }
 
-    /**
-     * Overriden in a sign to provide the text.
-     */
-    public Packet l()
-    {
-        return null;
-    }
-
-    /**
-     * returns true if tile entity is invalid, false otherwise
-     */
-    public boolean r()
-    {
-        return this.o;
-    }
-
-    /**
-     * invalidates a tile entity
-     */
-    public void w_()
-    {
-        this.o = true;
-    }
-
-    /**
-     * validates a tile entity
-     */
-    public void s()
-    {
-        this.o = false;
-    }
-
-    /**
-     * Called when a client event is received with the event number and argument, see World.sendClientEvent
-     */
-    public void b(int var1, int var2) {}
-
-    /**
-     * Causes the TileEntity to reset all it's cached values for it's container block, blockID, metaData and in the case
-     * of chests, the adjcacent chest check
-     */
-    public void h()
-    {
-        this.q = null;
-        this.p = -1;
-    }
-
-    static
-    {
-        a(TileEntityFurnace.class, "Furnace");
-        a(TileEntityChest.class, "Chest");
-        a(TileEntityEnderChest.class, "EnderChest");
-        a(TileEntityRecordPlayer.class, "RecordPlayer");
-        a(TileEntityDispenser.class, "Trap");
-        a(TileEntitySign.class, "Sign");
-        a(TileEntityMobSpawner.class, "MobSpawner");
-        a(TileEntityNote.class, "Music");
-        a(TileEntityPiston.class, "Piston");
-        a(TileEntityBrewingStand.class, "Cauldron");
-        a(TileEntityEnchantTable.class, "EnchantTable");
-        a(TileEntityEnderPortal.class, "Airportal");
-        a(TileEntityCommand.class, "Control");
-        a(TileEntityBeacon.class, "Beacon");
-        a(TileEntitySkull.class, "Skull");
-    }
+  static
+  {
+    a(TileEntityFurnace.class, "Furnace");
+    a(TileEntityChest.class, "Chest");
+    a(TileEntityRecordPlayer.class, "RecordPlayer");
+    a(TileEntityDispenser.class, "Trap");
+    a(TileEntitySign.class, "Sign");
+    a(TileEntityMobSpawner.class, "MobSpawner");
+    a(TileEntityNote.class, "Music");
+    a(TileEntityPiston.class, "Piston");
+    a(TileEntityBrewingStand.class, "Cauldron");
+    a(TileEntityEnchantTable.class, "EnchantTable");
+    a(TileEntityEnderPortal.class, "Airportal");
+  }
 }
+

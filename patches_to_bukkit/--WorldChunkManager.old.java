@@ -6,244 +6,167 @@ import java.util.Random;
 
 public class WorldChunkManager
 {
-    private GenLayer d;
+  private GenLayer a;
+  private GenLayer b;
+  private BiomeCache c = new BiomeCache(this);
+  private List d;
 
-    /** A GenLayer containing the indices into BiomeGenBase.biomeList[] */
-    private GenLayer e;
+  protected WorldChunkManager()
+  {
+    this.d = new ArrayList();
+    this.d.add(BiomeBase.FOREST);
+    this.d.add(BiomeBase.PLAINS);
+    this.d.add(BiomeBase.TAIGA);
+    this.d.add(BiomeBase.TAIGA_HILLS);
+    this.d.add(BiomeBase.FOREST_HILLS);
+    this.d.add(BiomeBase.JUNGLE);
+    this.d.add(BiomeBase.JUNGLE_HILLS);
+  }
 
-    /** The biome list. */
-    private BiomeCache f;
+  public WorldChunkManager(long paramLong, WorldType paramWorldType) {
+    this();
 
-    /** A list of biomes that the player can spawn in. */
-    private List g;
+    GenLayer[] arrayOfGenLayer = GenLayer.a(paramLong, paramWorldType);
+    this.a = arrayOfGenLayer[0];
+    this.b = arrayOfGenLayer[1];
+  }
 
-    protected WorldChunkManager()
-    {
-        this.f = new BiomeCache(this);
-        this.g = new ArrayList();
-        this.g.add(BiomeBase.FOREST);
-        this.g.add(BiomeBase.PLAINS);
-        this.g.add(BiomeBase.TAIGA);
-        this.g.add(BiomeBase.TAIGA_HILLS);
-        this.g.add(BiomeBase.FOREST_HILLS);
-        this.g.add(BiomeBase.JUNGLE);
-        this.g.add(BiomeBase.JUNGLE_HILLS);
+  public WorldChunkManager(World paramWorld) {
+    this(paramWorld.getSeed(), paramWorld.getWorldData().getType());
+  }
+
+  public List a()
+  {
+    return this.d;
+  }
+
+  public BiomeBase getBiome(int paramInt1, int paramInt2)
+  {
+    return this.c.b(paramInt1, paramInt2);
+  }
+
+  public float[] getWetness(float[] paramArrayOfFloat, int paramInt1, int paramInt2, int paramInt3, int paramInt4)
+  {
+    IntCache.a();
+    if ((paramArrayOfFloat == null) || (paramArrayOfFloat.length < paramInt3 * paramInt4)) {
+      paramArrayOfFloat = new float[paramInt3 * paramInt4];
     }
 
-    public WorldChunkManager(long var1, WorldType var3)
-    {
-        this();
-        GenLayer[] var4 = GenLayer.a(var1, var3);
-        this.d = var4[0];
-        this.e = var4[1];
+    int[] arrayOfInt = this.b.a(paramInt1, paramInt2, paramInt3, paramInt4);
+    for (int i = 0; i < paramInt3 * paramInt4; i++) {
+      float f = BiomeBase.biomes[arrayOfInt[i]].g() / 65536.0F;
+      if (f > 1.0F) f = 1.0F;
+      paramArrayOfFloat[i] = f;
     }
 
-    public WorldChunkManager(World var1)
-    {
-        this(var1.getSeed(), var1.getWorldData().getType());
+    return paramArrayOfFloat;
+  }
+
+  public float[] getTemperatures(float[] paramArrayOfFloat, int paramInt1, int paramInt2, int paramInt3, int paramInt4)
+  {
+    IntCache.a();
+    if ((paramArrayOfFloat == null) || (paramArrayOfFloat.length < paramInt3 * paramInt4)) {
+      paramArrayOfFloat = new float[paramInt3 * paramInt4];
     }
 
-    /**
-     * Gets the list of valid biomes for the player to spawn in.
-     */
-    public List a()
-    {
-        return this.g;
+    int[] arrayOfInt = this.b.a(paramInt1, paramInt2, paramInt3, paramInt4);
+    for (int i = 0; i < paramInt3 * paramInt4; i++) {
+      float f = BiomeBase.biomes[arrayOfInt[i]].h() / 65536.0F;
+      if (f > 1.0F) f = 1.0F;
+      paramArrayOfFloat[i] = f;
     }
 
-    /**
-     * Returns the BiomeGenBase related to the x, z position on the world.
-     */
-    public BiomeBase a(int var1, int var2)
-    {
-        return this.f.b(var1, var2);
+    return paramArrayOfFloat;
+  }
+
+  public BiomeBase[] getBiomes(BiomeBase[] paramArrayOfBiomeBase, int paramInt1, int paramInt2, int paramInt3, int paramInt4)
+  {
+    IntCache.a();
+    if ((paramArrayOfBiomeBase == null) || (paramArrayOfBiomeBase.length < paramInt3 * paramInt4)) {
+      paramArrayOfBiomeBase = new BiomeBase[paramInt3 * paramInt4];
     }
 
-    /**
-     * Returns a list of rainfall values for the specified blocks. Args: listToReuse, x, z, width, length.
-     */
-    public float[] getWetness(float[] var1, int var2, int var3, int var4, int var5)
-    {
-        IntCache.a();
-
-        if (var1 == null || var1.length < var4 * var5)
-        {
-            var1 = new float[var4 * var5];
-        }
-
-        int[] var6 = this.e.a(var2, var3, var4, var5);
-
-        for (int var7 = 0; var7 < var4 * var5; ++var7)
-        {
-            float var8 = (float)BiomeBase.biomes[var6[var7]].g() / 65536.0F;
-
-            if (var8 > 1.0F)
-            {
-                var8 = 1.0F;
-            }
-
-            var1[var7] = var8;
-        }
-
-        return var1;
+    int[] arrayOfInt = this.a.a(paramInt1, paramInt2, paramInt3, paramInt4);
+    for (int i = 0; i < paramInt3 * paramInt4; i++) {
+      paramArrayOfBiomeBase[i] = BiomeBase.biomes[arrayOfInt[i]];
     }
 
-    /**
-     * Returns a list of temperatures to use for the specified blocks.  Args: listToReuse, x, y, width, length
-     */
-    public float[] getTemperatures(float[] var1, int var2, int var3, int var4, int var5)
-    {
-        IntCache.a();
+    return paramArrayOfBiomeBase;
+  }
 
-        if (var1 == null || var1.length < var4 * var5)
-        {
-            var1 = new float[var4 * var5];
-        }
+  public BiomeBase[] getBiomeBlock(BiomeBase[] paramArrayOfBiomeBase, int paramInt1, int paramInt2, int paramInt3, int paramInt4)
+  {
+    return a(paramArrayOfBiomeBase, paramInt1, paramInt2, paramInt3, paramInt4, true);
+  }
 
-        int[] var6 = this.e.a(var2, var3, var4, var5);
-
-        for (int var7 = 0; var7 < var4 * var5; ++var7)
-        {
-            float var8 = (float)BiomeBase.biomes[var6[var7]].h() / 65536.0F;
-
-            if (var8 > 1.0F)
-            {
-                var8 = 1.0F;
-            }
-
-            var1[var7] = var8;
-        }
-
-        return var1;
+  public BiomeBase[] a(BiomeBase[] paramArrayOfBiomeBase, int paramInt1, int paramInt2, int paramInt3, int paramInt4, boolean paramBoolean) {
+    IntCache.a();
+    if ((paramArrayOfBiomeBase == null) || (paramArrayOfBiomeBase.length < paramInt3 * paramInt4)) {
+      paramArrayOfBiomeBase = new BiomeBase[paramInt3 * paramInt4];
     }
 
-    /**
-     * Returns an array of biomes for the location input.
-     */
-    public BiomeBase[] getBiomes(BiomeBase[] var1, int var2, int var3, int var4, int var5)
-    {
-        IntCache.a();
-
-        if (var1 == null || var1.length < var4 * var5)
-        {
-            var1 = new BiomeBase[var4 * var5];
-        }
-
-        int[] var6 = this.d.a(var2, var3, var4, var5);
-
-        for (int var7 = 0; var7 < var4 * var5; ++var7)
-        {
-            var1[var7] = BiomeBase.biomes[var6[var7]];
-        }
-
-        return var1;
+    if ((paramBoolean) && (paramInt3 == 16) && (paramInt4 == 16) && ((paramInt1 & 0xF) == 0) && ((paramInt2 & 0xF) == 0)) {
+      localObject = this.c.c(paramInt1, paramInt2);
+      System.arraycopy(localObject, 0, paramArrayOfBiomeBase, 0, paramInt3 * paramInt4);
+      return paramArrayOfBiomeBase;
     }
 
-    /**
-     * Returns biomes to use for the blocks and loads the other data like temperature and humidity onto the
-     * WorldChunkManager Args: oldBiomeList, x, z, width, depth
-     */
-    public BiomeBase[] getBiomeBlock(BiomeBase[] var1, int var2, int var3, int var4, int var5)
-    {
-        return this.a(var1, var2, var3, var4, var5, true);
+    Object localObject = this.b.a(paramInt1, paramInt2, paramInt3, paramInt4);
+    for (int i = 0; i < paramInt3 * paramInt4; i++) {
+      paramArrayOfBiomeBase[i] = BiomeBase.biomes[localObject[i]];
     }
 
-    /**
-     * Return a list of biomes for the specified blocks. Args: listToReuse, x, y, width, length, cacheFlag (if false,
-     * don't check biomeCache to avoid infinite loop in BiomeCacheBlock)
-     */
-    public BiomeBase[] a(BiomeBase[] var1, int var2, int var3, int var4, int var5, boolean var6)
-    {
-        IntCache.a();
+    return paramArrayOfBiomeBase;
+  }
 
-        if (var1 == null || var1.length < var4 * var5)
-        {
-            var1 = new BiomeBase[var4 * var5];
-        }
+  public boolean a(int paramInt1, int paramInt2, int paramInt3, List paramList)
+  {
+    int i = paramInt1 - paramInt3 >> 2;
+    int j = paramInt2 - paramInt3 >> 2;
+    int k = paramInt1 + paramInt3 >> 2;
+    int m = paramInt2 + paramInt3 >> 2;
 
-        if (var6 && var4 == 16 && var5 == 16 && (var2 & 15) == 0 && (var3 & 15) == 0)
-        {
-            BiomeBase[] var9 = this.f.e(var2, var3);
-            System.arraycopy(var9, 0, var1, 0, var4 * var5);
-            return var1;
-        }
-        else
-        {
-            int[] var7 = this.e.a(var2, var3, var4, var5);
+    int n = k - i + 1;
+    int i1 = m - j + 1;
 
-            for (int var8 = 0; var8 < var4 * var5; ++var8)
-            {
-                var1[var8] = BiomeBase.biomes[var7[var8]];
-            }
-
-            return var1;
-        }
+    int[] arrayOfInt = this.a.a(i, j, n, i1);
+    for (int i2 = 0; i2 < n * i1; i2++) {
+      BiomeBase localBiomeBase = BiomeBase.biomes[arrayOfInt[i2]];
+      if (!paramList.contains(localBiomeBase)) return false;
     }
 
-    /**
-     * checks given Chunk's Biomes against List of allowed ones
-     */
-    public boolean a(int var1, int var2, int var3, List var4)
-    {
-        IntCache.a();
-        int var5 = var1 - var3 >> 2;
-        int var6 = var2 - var3 >> 2;
-        int var7 = var1 + var3 >> 2;
-        int var8 = var2 + var3 >> 2;
-        int var9 = var7 - var5 + 1;
-        int var10 = var8 - var6 + 1;
-        int[] var11 = this.d.a(var5, var6, var9, var10);
+    return true;
+  }
 
-        for (int var12 = 0; var12 < var9 * var10; ++var12)
-        {
-            BiomeBase var13 = BiomeBase.biomes[var11[var12]];
+  public ChunkPosition a(int paramInt1, int paramInt2, int paramInt3, List paramList, Random paramRandom)
+  {
+    int i = paramInt1 - paramInt3 >> 2;
+    int j = paramInt2 - paramInt3 >> 2;
+    int k = paramInt1 + paramInt3 >> 2;
+    int m = paramInt2 + paramInt3 >> 2;
 
-            if (!var4.contains(var13))
-            {
-                return false;
-            }
-        }
+    int n = k - i + 1;
+    int i1 = m - j + 1;
+    int[] arrayOfInt = this.a.a(i, j, n, i1);
+    ChunkPosition localChunkPosition = null;
+    int i2 = 0;
+    for (int i3 = 0; i3 < arrayOfInt.length; i3++) {
+      int i4 = i + i3 % n << 2;
+      int i5 = j + i3 / n << 2;
+      BiomeBase localBiomeBase = BiomeBase.biomes[arrayOfInt[i3]];
+      if ((paramList.contains(localBiomeBase)) && (
+        (localChunkPosition == null) || (paramRandom.nextInt(i2 + 1) == 0))) {
+        localChunkPosition = new ChunkPosition(i4, 0, i5);
+        i2++;
+      }
 
-        return true;
     }
 
-    /**
-     * Finds a valid position within a range, that is once of the listed biomes.
-     */
-    public ChunkPosition a(int var1, int var2, int var3, List var4, Random var5)
-    {
-        IntCache.a();
-        int var6 = var1 - var3 >> 2;
-        int var7 = var2 - var3 >> 2;
-        int var8 = var1 + var3 >> 2;
-        int var9 = var2 + var3 >> 2;
-        int var10 = var8 - var6 + 1;
-        int var11 = var9 - var7 + 1;
-        int[] var12 = this.d.a(var6, var7, var10, var11);
-        ChunkPosition var13 = null;
-        int var14 = 0;
+    return localChunkPosition;
+  }
 
-        for (int var15 = 0; var15 < var12.length; ++var15)
-        {
-            int var16 = var6 + var15 % var10 << 2;
-            int var17 = var7 + var15 / var10 << 2;
-            BiomeBase var18 = BiomeBase.biomes[var12[var15]];
-
-            if (var4.contains(var18) && (var13 == null || var5.nextInt(var14 + 1) == 0))
-            {
-                var13 = new ChunkPosition(var16, 0, var17);
-                ++var14;
-            }
-        }
-
-        return var13;
-    }
-
-    /**
-     * Calls the WorldChunkManager's biomeCache.cleanupCache()
-     */
-    public void b()
-    {
-        this.f.a();
-    }
+  public void b() {
+    this.c.a();
+  }
 }
+

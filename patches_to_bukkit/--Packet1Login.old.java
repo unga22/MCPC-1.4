@@ -5,103 +5,71 @@ import java.io.DataOutputStream;
 
 public class Packet1Login extends Packet
 {
-    /** The player's entity ID */
-    public int a = 0;
-    public WorldType b;
-    public boolean field_73560_c;
-    public EnumGamemode d;
+  public int a;
+  public String name;
+  public WorldType c;
+  public int d;
+  public int e;
+  public byte f;
+  public byte g;
+  public byte h;
 
-    /** -1: The Nether, 0: The Overworld, 1: The End */
-    public int e;
+  public Packet1Login()
+  {
+  }
 
-    /** The difficulty setting byte. */
-    public byte f;
+  public Packet1Login(String paramString, int paramInt1, WorldType paramWorldType, int paramInt2, int paramInt3, byte paramByte1, byte paramByte2, byte paramByte3)
+  {
+    this.name = paramString;
+    this.a = paramInt1;
+    this.c = paramWorldType;
+    this.e = paramInt3;
+    this.f = paramByte1;
+    this.d = paramInt2;
+    this.g = paramByte2;
+    this.h = paramByte3;
+  }
 
-    /** Defaults to 128 */
-    public byte g;
-
-    /** The maximum players. */
-    public byte h;
-
-    public Packet1Login() {}
-
-    public Packet1Login(int var1, WorldType var2, EnumGamemode var3, boolean var4, int var5, int var6, int var7, int var8)
-    {
-        this.a = var1;
-        this.b = var2;
-        this.e = var5;
-        this.f = (byte)var6;
-        this.d = var3;
-        this.g = (byte)var7;
-        this.h = (byte)var8;
-        this.field_73560_c = var4;
+  public void a(DataInputStream paramDataInputStream) {
+    this.a = paramDataInputStream.readInt();
+    this.name = a(paramDataInputStream, 16);
+    String str = a(paramDataInputStream, 16);
+    this.c = WorldType.getType(str);
+    if (this.c == null) {
+      this.c = WorldType.NORMAL;
     }
+    this.d = paramDataInputStream.readInt();
+    this.e = paramDataInputStream.readInt();
+    this.f = paramDataInputStream.readByte();
+    this.g = paramDataInputStream.readByte();
+    this.h = paramDataInputStream.readByte();
+  }
 
-    /**
-     * Abstract. Reads the raw packet data from the data stream.
-     */
-    public void a(DataInputStream var1)
-    {
-        this.a = var1.readInt();
-        String var2 = a(var1, 16);
-        this.b = WorldType.getType(var2);
-
-        if (this.b == null)
-        {
-            this.b = WorldType.NORMAL;
-        }
-
-        byte var3 = var1.readByte();
-        this.field_73560_c = (var3 & 8) == 8;
-        int var4 = var3 & -9;
-        this.d = EnumGamemode.a(var4);
-        this.e = var1.readByte();
-        this.f = var1.readByte();
-        this.g = var1.readByte();
-        this.h = var1.readByte();
+  public void a(DataOutputStream paramDataOutputStream) {
+    paramDataOutputStream.writeInt(this.a);
+    a(this.name, paramDataOutputStream);
+    if (this.c == null)
+      a("", paramDataOutputStream);
+    else {
+      a(this.c.name(), paramDataOutputStream);
     }
+    paramDataOutputStream.writeInt(this.d);
+    paramDataOutputStream.writeInt(this.e);
+    paramDataOutputStream.writeByte(this.f);
+    paramDataOutputStream.writeByte(this.g);
+    paramDataOutputStream.writeByte(this.h);
+  }
 
-    /**
-     * Abstract. Writes the raw packet data to the data stream.
-     */
-    public void a(DataOutputStream var1)
-    {
-        var1.writeInt(this.a);
-        a(this.b == null ? "" : this.b.name(), var1);
-        int var2 = this.d.a();
+  public void handle(NetHandler paramNetHandler) {
+    paramNetHandler.a(this);
+  }
 
-        if (this.field_73560_c)
-        {
-            var2 |= 8;
-        }
-
-        var1.writeByte(var2);
-        var1.writeByte(this.e);
-        var1.writeByte(this.f);
-        var1.writeByte(this.g);
-        var1.writeByte(this.h);
+  public int a() {
+    int i = 0;
+    if (this.c != null) {
+      i = this.c.name().length();
     }
-
-    /**
-     * Passes this Packet on to the NetHandler for processing.
-     */
-    public void handle(NetHandler var1)
-    {
-        var1.a(this);
-    }
-
-    /**
-     * Abstract. Return the size of the packet (not counting the header).
-     */
-    public int a()
-    {
-        int var1 = 0;
-
-        if (this.b != null)
-        {
-            var1 = this.b.name().length();
-        }
-
-        return 6 + 2 * var1 + 4 + 4 + 1 + 1 + 1;
-    }
+    return 4 + this.name.length() + 4 + 7 + 7 + i;
+  }
 }
+

@@ -9,107 +9,71 @@ import javax.swing.Timer;
 
 public class GuiStatsComponent extends JComponent
 {
-    private static final DecimalFormat field_79020_a = new DecimalFormat("########0.000");
+  private static final DecimalFormat a = new DecimalFormat("########0.000");
 
-    /** An array containing the columns that make up the memory use graph. */
-    private int[] b = new int[256];
+  private int[] b = new int[256];
+  private int c = 0;
+  private String[] d = new String[10];
+  private final MinecraftServer e;
 
-    /**
-     * Counts the number of updates. Used as the index into the memoryUse array to display the latest value.
-     */
-    private int c = 0;
+  public GuiStatsComponent(MinecraftServer paramMinecraftServer)
+  {
+    this.e = paramMinecraftServer;
+    setPreferredSize(new Dimension(356, 246));
+    setMinimumSize(new Dimension(356, 246));
+    setMaximumSize(new Dimension(356, 246));
+    new Timer(500, new GuiStatsListener(this)).start();
 
-    /** An array containing the strings displayed in this stats component. */
-    private String[] d = new String[11];
-    private final MinecraftServer field_79017_e;
+    setBackground(Color.BLACK);
+  }
 
-    public GuiStatsComponent(MinecraftServer var1)
-    {
-        this.field_79017_e = var1;
-        this.setPreferredSize(new Dimension(456, 246));
-        this.setMinimumSize(new Dimension(456, 246));
-        this.setMaximumSize(new Dimension(456, 246));
-        (new Timer(500, new GuiStatsListener(this))).start();
-        this.setBackground(Color.BLACK);
-    }
-
-    /**
-     * Updates the stat values and calls paint to redraw the component.
-     */
-    private void a()
-    {
-        long var1 = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
-        System.gc();
-        this.d[0] = "Memory use: " + var1 / 1024L / 1024L + " mb (" + Runtime.getRuntime().freeMemory() * 100L / Runtime.getRuntime().maxMemory() + "% free)";
-        this.d[1] = "Threads: " + NetworkManager.field_74471_a.get() + " + " + NetworkManager.field_74469_b.get();
-        this.d[2] = "Avg tick: " + field_79020_a.format(this.func_79015_a(this.field_79017_e.j) * 1.0E-6D) + " ms";
-        this.d[3] = "Avg sent: " + (int)this.func_79015_a(this.field_79017_e.f) + ", Avg size: " + (int)this.func_79015_a(this.field_79017_e.g);
-        this.d[4] = "Avg rec: " + (int)this.func_79015_a(this.field_79017_e.h) + ", Avg size: " + (int)this.func_79015_a(this.field_79017_e.i);
-
-        if (this.field_79017_e.worldServer != null)
+  private void a() {
+    long l = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
+    System.gc();
+    this.d[0] = ("Memory use: " + l / 1024L / 1024L + " mb (" + Runtime.getRuntime().freeMemory() * 100L / Runtime.getRuntime().maxMemory() + "% free)");
+    this.d[1] = ("Threads: " + NetworkManager.b + " + " + NetworkManager.c);
+    this.d[2] = ("Avg tick: " + a.format(a(this.e.f) * 1.0E-006D) + " ms");
+    this.d[3] = ("Avg sent: " + (int)a(this.e.u) + ", Avg size: " + (int)a(this.e.v));
+    this.d[4] = ("Avg rec: " + (int)a(this.e.w) + ", Avg size: " + (int)a(this.e.x));
+    if (this.e.worldServer != null) {
+      for (int i = 0; i < this.e.worldServer.length; tmp408_407++) {
+        this.d[(5 + i)] = ("Lvl " + i + " tick: " + a.format(a(this.e.g[i]) * 1.0E-006D) + " ms");
+        if ((this.e.worldServer[i] != null) && (this.e.worldServer[i].chunkProviderServer != null))
         {
-            for (int var3 = 0; var3 < this.field_79017_e.worldServer.length; ++var3)
-            {
-                this.d[5 + var3] = "Lvl " + var3 + " tick: " + field_79020_a.format(this.func_79015_a(this.field_79017_e.k[var3]) * 1.0E-6D) + " ms";
-
-                if (this.field_79017_e.worldServer[var3] != null && this.field_79017_e.worldServer[var3].chunkProviderServer != null)
-                {
-                    this.d[5 + var3] = this.d[5 + var3] + ", " + this.field_79017_e.worldServer[var3].chunkProviderServer.getName();
-                    this.d[5 + var3] = this.d[5 + var3] + ", Vec3: " + this.field_79017_e.worldServer[var3].getVec3DPool().func_82590_d() + " / " + this.field_79017_e.worldServer[var3].getVec3DPool().func_82591_c();
-                }
-            }
+          int tmp408_407 = (5 + i);
+          String[] tmp408_402 = this.d; tmp408_402[tmp408_407] = (tmp408_402[tmp408_407] + ", " + this.e.worldServer[tmp408_407].chunkProviderServer.d());
         }
 
-        this.b[this.c++ & 255] = (int)(this.func_79015_a(this.field_79017_e.g) * 100.0D / 12500.0D);
-        this.repaint();
+      }
+
     }
 
-    private double func_79015_a(long[] var1)
-    {
-        long var2 = 0L;
-        long[] var4 = var1;
-        int var5 = var1.length;
+    this.b[(this.c++ & 0xFF)] = (int)(a(this.e.v) * 100.0D / 12500.0D);
+    repaint();
+  }
 
-        for (int var6 = 0; var6 < var5; ++var6)
-        {
-            long var7 = var4[var6];
-            var2 += var7;
-        }
-
-        return (double)var2 / (double)var1.length;
+  private double a(long[] paramArrayOfLong) {
+    long l = 0L;
+    for (int i = 0; i < paramArrayOfLong.length; i++) {
+      l += paramArrayOfLong[i];
     }
+    return l / paramArrayOfLong.length;
+  }
 
-    public void paint(Graphics var1)
-    {
-        var1.setColor(new Color(16777215));
-        var1.fillRect(0, 0, 456, 246);
-        int var2;
+  public void paint(Graphics paramGraphics) {
+    paramGraphics.setColor(new Color(16777215));
+    paramGraphics.fillRect(0, 0, 356, 246);
 
-        for (var2 = 0; var2 < 256; ++var2)
-        {
-            int var3 = this.b[var2 + this.c & 255];
-            var1.setColor(new Color(var3 + 28 << 16));
-            var1.fillRect(var2, 100 - var3, 1, var3);
-        }
-
-        var1.setColor(Color.BLACK);
-
-        for (var2 = 0; var2 < this.d.length; ++var2)
-        {
-            String var4 = this.d[var2];
-
-            if (var4 != null)
-            {
-                var1.drawString(var4, 32, 116 + var2 * 16);
-            }
-        }
+    for (int i = 0; i < 256; i++) {
+      int j = this.b[(i + this.c & 0xFF)];
+      paramGraphics.setColor(new Color(j + 28 << 16));
+      paramGraphics.fillRect(i, 100 - j, 1, j);
     }
-
-    /**
-     * Public static accessor to call updateStats.
-     */
-    static void a(GuiStatsComponent var0)
-    {
-        var0.a();
+    paramGraphics.setColor(Color.BLACK);
+    for (i = 0; i < this.d.length; i++) {
+      String str = this.d[i];
+      if (str != null) paramGraphics.drawString(str, 32, 116 + i * 16);
     }
+  }
 }
+

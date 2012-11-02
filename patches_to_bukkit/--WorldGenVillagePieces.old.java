@@ -7,241 +7,164 @@ import java.util.Random;
 
 public class WorldGenVillagePieces
 {
-    public static ArrayList a(Random var0, int var1)
-    {
-        ArrayList var2 = new ArrayList();
-        var2.add(new WorldGenVillagePieceWeight(WorldGenVillageHouse.class, 4, MathHelper.nextInt(var0, 2 + var1, 4 + var1 * 2)));
-        var2.add(new WorldGenVillagePieceWeight(WorldGenVillageTemple.class, 20, MathHelper.nextInt(var0, 0 + var1, 1 + var1)));
-        var2.add(new WorldGenVillagePieceWeight(WorldGenVillageLibrary.class, 20, MathHelper.nextInt(var0, 0 + var1, 2 + var1)));
-        var2.add(new WorldGenVillagePieceWeight(WorldGenVillageHut.class, 3, MathHelper.nextInt(var0, 2 + var1, 5 + var1 * 3)));
-        var2.add(new WorldGenVillagePieceWeight(WorldGenVillageButcher.class, 15, MathHelper.nextInt(var0, 0 + var1, 2 + var1)));
-        var2.add(new WorldGenVillagePieceWeight(WorldGenVillageFarm2.class, 3, MathHelper.nextInt(var0, 1 + var1, 4 + var1)));
-        var2.add(new WorldGenVillagePieceWeight(WorldGenVillageFarm.class, 3, MathHelper.nextInt(var0, 2 + var1, 4 + var1 * 2)));
-        var2.add(new WorldGenVillagePieceWeight(WorldGenVillageBlacksmith.class, 15, MathHelper.nextInt(var0, 0, 1 + var1)));
-        var2.add(new WorldGenVillagePieceWeight(WorldGenVillageHouse2.class, 8, MathHelper.nextInt(var0, 0 + var1, 3 + var1 * 2)));
-        Iterator var3 = var2.iterator();
+  public static ArrayList a(Random paramRandom, int paramInt)
+  {
+    ArrayList localArrayList = new ArrayList();
 
-        while (var3.hasNext())
+    localArrayList.add(new WorldGenVillagePieceWeight(WorldGenVillageHouse.class, 4, MathHelper.a(paramRandom, 2 + paramInt, 4 + paramInt * 2)));
+    localArrayList.add(new WorldGenVillagePieceWeight(WorldGenVillageTemple.class, 20, MathHelper.a(paramRandom, 0 + paramInt, 1 + paramInt)));
+    localArrayList.add(new WorldGenVillagePieceWeight(WorldGenVillageLibrary.class, 20, MathHelper.a(paramRandom, 0 + paramInt, 2 + paramInt)));
+    localArrayList.add(new WorldGenVillagePieceWeight(WorldGenVillageHut.class, 3, MathHelper.a(paramRandom, 2 + paramInt, 5 + paramInt * 3)));
+    localArrayList.add(new WorldGenVillagePieceWeight(WorldGenVillageButcher.class, 15, MathHelper.a(paramRandom, 0 + paramInt, 2 + paramInt)));
+    localArrayList.add(new WorldGenVillagePieceWeight(WorldGenVillageBigFarm.class, 3, MathHelper.a(paramRandom, 1 + paramInt, 4 + paramInt)));
+    localArrayList.add(new WorldGenVillagePieceWeight(WorldGenVillageFarm.class, 3, MathHelper.a(paramRandom, 2 + paramInt, 4 + paramInt * 2)));
+    localArrayList.add(new WorldGenVillagePieceWeight(WorldGenVillageBlacksmith.class, 15, MathHelper.a(paramRandom, 0, 1 + paramInt)));
+    localArrayList.add(new WorldGenVillagePieceWeight(WorldGenVillageHouse2.class, 8, MathHelper.a(paramRandom, 0 + paramInt, 3 + paramInt * 2)));
+
+    Iterator localIterator = localArrayList.iterator();
+    while (localIterator.hasNext()) {
+      if (((WorldGenVillagePieceWeight)localIterator.next()).d == 0) {
+        localIterator.remove();
+      }
+    }
+
+    return localArrayList;
+  }
+
+  private static int a(ArrayList paramArrayList) {
+    int i = 0;
+    int j = 0;
+    for (WorldGenVillagePieceWeight localWorldGenVillagePieceWeight : paramArrayList) {
+      if ((localWorldGenVillagePieceWeight.d > 0) && (localWorldGenVillagePieceWeight.c < localWorldGenVillagePieceWeight.d)) {
+        i = 1;
+      }
+      j += localWorldGenVillagePieceWeight.b;
+    }
+    return i != 0 ? j : -1;
+  }
+
+  private static WorldGenVillagePiece a(WorldGenVillagePieceWeight paramWorldGenVillagePieceWeight, List paramList, Random paramRandom, int paramInt1, int paramInt2, int paramInt3, int paramInt4, int paramInt5)
+  {
+    Class localClass = paramWorldGenVillagePieceWeight.a;
+    Object localObject = null;
+
+    if (localClass == WorldGenVillageHouse.class)
+      localObject = WorldGenVillageHouse.a(paramList, paramRandom, paramInt1, paramInt2, paramInt3, paramInt4, paramInt5);
+    else if (localClass == WorldGenVillageTemple.class)
+      localObject = WorldGenVillageTemple.a(paramList, paramRandom, paramInt1, paramInt2, paramInt3, paramInt4, paramInt5);
+    else if (localClass == WorldGenVillageLibrary.class)
+      localObject = WorldGenVillageLibrary.a(paramList, paramRandom, paramInt1, paramInt2, paramInt3, paramInt4, paramInt5);
+    else if (localClass == WorldGenVillageHut.class)
+      localObject = WorldGenVillageHut.a(paramList, paramRandom, paramInt1, paramInt2, paramInt3, paramInt4, paramInt5);
+    else if (localClass == WorldGenVillageButcher.class)
+      localObject = WorldGenVillageButcher.a(paramList, paramRandom, paramInt1, paramInt2, paramInt3, paramInt4, paramInt5);
+    else if (localClass == WorldGenVillageBigFarm.class)
+      localObject = WorldGenVillageBigFarm.a(paramList, paramRandom, paramInt1, paramInt2, paramInt3, paramInt4, paramInt5);
+    else if (localClass == WorldGenVillageFarm.class)
+      localObject = WorldGenVillageFarm.a(paramList, paramRandom, paramInt1, paramInt2, paramInt3, paramInt4, paramInt5);
+    else if (localClass == WorldGenVillageBlacksmith.class)
+      localObject = WorldGenVillageBlacksmith.a(paramList, paramRandom, paramInt1, paramInt2, paramInt3, paramInt4, paramInt5);
+    else if (localClass == WorldGenVillageHouse2.class) {
+      localObject = WorldGenVillageHouse2.a(paramList, paramRandom, paramInt1, paramInt2, paramInt3, paramInt4, paramInt5);
+    }
+
+    return localObject;
+  }
+
+  private static WorldGenVillagePiece c(WorldGenVillageStartPiece paramWorldGenVillageStartPiece, List paramList, Random paramRandom, int paramInt1, int paramInt2, int paramInt3, int paramInt4, int paramInt5)
+  {
+    int i = a(paramWorldGenVillageStartPiece.d);
+    if (i <= 0) {
+      return null;
+    }
+
+    int j = 0;
+    int k;
+    while (j < 5) {
+      j++;
+
+      k = paramRandom.nextInt(i);
+      for (WorldGenVillagePieceWeight localWorldGenVillagePieceWeight : paramWorldGenVillageStartPiece.d) {
+        k -= localWorldGenVillagePieceWeight.b;
+        if (k < 0)
         {
-            if (((WorldGenVillagePieceWeight)var3.next()).d == 0)
-            {
-                var3.remove();
+          if ((!localWorldGenVillagePieceWeight.a(paramInt5)) || ((localWorldGenVillagePieceWeight == paramWorldGenVillageStartPiece.c) && (paramWorldGenVillageStartPiece.d.size() > 1)))
+          {
+            break;
+          }
+          WorldGenVillagePiece localWorldGenVillagePiece = a(localWorldGenVillagePieceWeight, paramList, paramRandom, paramInt1, paramInt2, paramInt3, paramInt4, paramInt5);
+          if (localWorldGenVillagePiece != null) {
+            localWorldGenVillagePieceWeight.c += 1;
+            paramWorldGenVillageStartPiece.c = localWorldGenVillagePieceWeight;
+
+            if (!localWorldGenVillagePieceWeight.a()) {
+              paramWorldGenVillageStartPiece.d.remove(localWorldGenVillagePieceWeight);
             }
+            return localWorldGenVillagePiece;
+          }
+
         }
 
-        return var2;
+      }
+
     }
 
-    private static int func_75079_a(List var0)
-    {
-        boolean var1 = false;
-        int var2 = 0;
-        WorldGenVillagePieceWeight var4;
-
-        for (Iterator var3 = var0.iterator(); var3.hasNext(); var2 += var4.b)
-        {
-            var4 = (WorldGenVillagePieceWeight)var3.next();
-
-            if (var4.d > 0 && var4.c < var4.d)
-            {
-                var1 = true;
-            }
-        }
-
-        return var1 ? var2 : -1;
+    StructureBoundingBox localStructureBoundingBox = WorldGenVillageLight.a(paramList, paramRandom, paramInt1, paramInt2, paramInt3, paramInt4);
+    if (localStructureBoundingBox != null) {
+      return new WorldGenVillageLight(paramInt5, paramRandom, localStructureBoundingBox, paramInt4);
     }
 
-    private static WorldGenVillagePiece func_75083_a(WorldGenVillageStartPiece var0, WorldGenVillagePieceWeight var1, List var2, Random var3, int var4, int var5, int var6, int var7, int var8)
-    {
-        Class var9 = var1.a;
-        Object var10 = null;
+    return null;
+  }
 
-        if (var9 == WorldGenVillageHouse.class)
-        {
-            var10 = WorldGenVillageHouse.func_74912_a(var0, var2, var3, var4, var5, var6, var7, var8);
-        }
-        else if (var9 == WorldGenVillageTemple.class)
-        {
-            var10 = WorldGenVillageTemple.func_74919_a(var0, var2, var3, var4, var5, var6, var7, var8);
-        }
-        else if (var9 == WorldGenVillageLibrary.class)
-        {
-            var10 = WorldGenVillageLibrary.func_74898_a(var0, var2, var3, var4, var5, var6, var7, var8);
-        }
-        else if (var9 == WorldGenVillageHut.class)
-        {
-            var10 = WorldGenVillageHut.func_74908_a(var0, var2, var3, var4, var5, var6, var7, var8);
-        }
-        else if (var9 == WorldGenVillageButcher.class)
-        {
-            var10 = WorldGenVillageButcher.func_74906_a(var0, var2, var3, var4, var5, var6, var7, var8);
-        }
-        else if (var9 == WorldGenVillageFarm2.class)
-        {
-            var10 = WorldGenVillageFarm2.func_74900_a(var0, var2, var3, var4, var5, var6, var7, var8);
-        }
-        else if (var9 == WorldGenVillageFarm.class)
-        {
-            var10 = WorldGenVillageFarm.func_74902_a(var0, var2, var3, var4, var5, var6, var7, var8);
-        }
-        else if (var9 == WorldGenVillageBlacksmith.class)
-        {
-            var10 = WorldGenVillageBlacksmith.func_74915_a(var0, var2, var3, var4, var5, var6, var7, var8);
-        }
-        else if (var9 == WorldGenVillageHouse2.class)
-        {
-            var10 = WorldGenVillageHouse2.func_74921_a(var0, var2, var3, var4, var5, var6, var7, var8);
-        }
-
-        return (WorldGenVillagePiece)var10;
+  private static StructurePiece d(WorldGenVillageStartPiece paramWorldGenVillageStartPiece, List paramList, Random paramRandom, int paramInt1, int paramInt2, int paramInt3, int paramInt4, int paramInt5) {
+    if (paramInt5 > 50) {
+      return null;
+    }
+    if ((Math.abs(paramInt1 - paramWorldGenVillageStartPiece.b().a) > 112) || (Math.abs(paramInt3 - paramWorldGenVillageStartPiece.b().c) > 112)) {
+      return null;
     }
 
-    /**
-     * attempts to find a next Village Component to be spawned
-     */
-    private static WorldGenVillagePiece c(WorldGenVillageStartPiece var0, List var1, Random var2, int var3, int var4, int var5, int var6, int var7)
-    {
-        int var8 = func_75079_a(var0.h);
+    WorldGenVillagePiece localWorldGenVillagePiece = c(paramWorldGenVillageStartPiece, paramList, paramRandom, paramInt1, paramInt2, paramInt3, paramInt4, paramInt5 + 1);
+    if (localWorldGenVillagePiece != null) {
+      int i = (localWorldGenVillagePiece.g.a + localWorldGenVillagePiece.g.d) / 2;
+      int j = (localWorldGenVillagePiece.g.c + localWorldGenVillagePiece.g.f) / 2;
+      int k = localWorldGenVillagePiece.g.d - localWorldGenVillagePiece.g.a;
+      int m = localWorldGenVillagePiece.g.f - localWorldGenVillagePiece.g.c;
+      int n = k > m ? k : m;
+      if (paramWorldGenVillageStartPiece.a().a(i, j, n / 2 + 4, WorldGenVillage.a)) {
+        paramList.add(localWorldGenVillagePiece);
+        paramWorldGenVillageStartPiece.e.add(localWorldGenVillagePiece);
+        return localWorldGenVillagePiece;
+      }
+    }
+    return null;
+  }
 
-        if (var8 <= 0)
-        {
-            return null;
-        }
-        else
-        {
-            int var9 = 0;
-
-            while (var9 < 5)
-            {
-                ++var9;
-                int var10 = var2.nextInt(var8);
-                Iterator var11 = var0.h.iterator();
-
-                while (var11.hasNext())
-                {
-                    WorldGenVillagePieceWeight var12 = (WorldGenVillagePieceWeight)var11.next();
-                    var10 -= var12.b;
-
-                    if (var10 < 0)
-                    {
-                        if (!var12.a(var7) || var12 == var0.d && var0.h.size() > 1)
-                        {
-                            break;
-                        }
-
-                        WorldGenVillagePiece var13 = func_75083_a(var0, var12, var1, var2, var3, var4, var5, var6, var7);
-
-                        if (var13 != null)
-                        {
-                            ++var12.c;
-                            var0.d = var12;
-
-                            if (!var12.a())
-                            {
-                                var0.h.remove(var12);
-                            }
-
-                            return var13;
-                        }
-                    }
-                }
-            }
-
-            StructureBoundingBox var14 = WorldGenVillageLight.func_74904_a(var0, var1, var2, var3, var4, var5, var6);
-
-            if (var14 != null)
-            {
-                return new WorldGenVillageLight(var0, var7, var2, var14, var6);
-            }
-            else
-            {
-                return null;
-            }
-        }
+  private static StructurePiece e(WorldGenVillageStartPiece paramWorldGenVillageStartPiece, List paramList, Random paramRandom, int paramInt1, int paramInt2, int paramInt3, int paramInt4, int paramInt5) {
+    if (paramInt5 > 3 + paramWorldGenVillageStartPiece.b) {
+      return null;
+    }
+    if ((Math.abs(paramInt1 - paramWorldGenVillageStartPiece.b().a) > 112) || (Math.abs(paramInt3 - paramWorldGenVillageStartPiece.b().c) > 112)) {
+      return null;
     }
 
-    /**
-     * attempts to find a next Structure Component to be spawned, private Village function
-     */
-    private static StructurePiece d(WorldGenVillageStartPiece var0, List var1, Random var2, int var3, int var4, int var5, int var6, int var7)
-    {
-        if (var7 > 50)
-        {
-            return null;
-        }
-        else if (Math.abs(var3 - var0.b().a) <= 112 && Math.abs(var5 - var0.b().c) <= 112)
-        {
-            WorldGenVillagePiece var8 = c(var0, var1, var2, var3, var4, var5, var6, var7 + 1);
-
-            if (var8 != null)
-            {
-                int var9 = (var8.e.a + var8.e.d) / 2;
-                int var10 = (var8.e.c + var8.e.f) / 2;
-                int var11 = var8.e.d - var8.e.a;
-                int var12 = var8.e.f - var8.e.c;
-                int var13 = var11 > var12 ? var11 : var12;
-
-                if (var0.d().a(var9, var10, var13 / 2 + 4, WorldGenVillage.e))
-                {
-                    var1.add(var8);
-                    var0.field_74932_i.add(var8);
-                    return var8;
-                }
-            }
-
-            return null;
-        }
-        else
-        {
-            return null;
-        }
+    StructureBoundingBox localStructureBoundingBox = WorldGenVillageRoad.a(paramWorldGenVillageStartPiece, paramList, paramRandom, paramInt1, paramInt2, paramInt3, paramInt4);
+    if ((localStructureBoundingBox != null) && (localStructureBoundingBox.b > 10)) {
+      WorldGenVillageRoad localWorldGenVillageRoad = new WorldGenVillageRoad(paramInt5, paramRandom, localStructureBoundingBox, paramInt4);
+      int i = (localWorldGenVillageRoad.g.a + localWorldGenVillageRoad.g.d) / 2;
+      int j = (localWorldGenVillageRoad.g.c + localWorldGenVillageRoad.g.f) / 2;
+      int k = localWorldGenVillageRoad.g.d - localWorldGenVillageRoad.g.a;
+      int m = localWorldGenVillageRoad.g.f - localWorldGenVillageRoad.g.c;
+      int n = k > m ? k : m;
+      if (paramWorldGenVillageStartPiece.a().a(i, j, n / 2 + 4, WorldGenVillage.a)) {
+        paramList.add(localWorldGenVillageRoad);
+        paramWorldGenVillageStartPiece.f.add(localWorldGenVillageRoad);
+        return localWorldGenVillageRoad;
+      }
     }
 
-    private static StructurePiece e(WorldGenVillageStartPiece var0, List var1, Random var2, int var3, int var4, int var5, int var6, int var7)
-    {
-        if (var7 > 3 + var0.c)
-        {
-            return null;
-        }
-        else if (Math.abs(var3 - var0.b().a) <= 112 && Math.abs(var5 - var0.b().c) <= 112)
-        {
-            StructureBoundingBox var8 = WorldGenVillageRoad.func_74933_a(var0, var1, var2, var3, var4, var5, var6);
-
-            if (var8 != null && var8.b > 10)
-            {
-                WorldGenVillageRoad var9 = new WorldGenVillageRoad(var0, var7, var2, var8, var6);
-                int var10 = (var9.e.a + var9.e.d) / 2;
-                int var11 = (var9.e.c + var9.e.f) / 2;
-                int var12 = var9.e.d - var9.e.a;
-                int var13 = var9.e.f - var9.e.c;
-                int var14 = var12 > var13 ? var12 : var13;
-
-                if (var0.d().a(var10, var11, var14 / 2 + 4, WorldGenVillage.e))
-                {
-                    var1.add(var9);
-                    var0.field_74930_j.add(var9);
-                    return var9;
-                }
-            }
-
-            return null;
-        }
-        else
-        {
-            return null;
-        }
-    }
-
-    /**
-     * attempts to find a next Structure Component to be spawned
-     */
-    static StructurePiece a(WorldGenVillageStartPiece var0, List var1, Random var2, int var3, int var4, int var5, int var6, int var7)
-    {
-        return d(var0, var1, var2, var3, var4, var5, var6, var7);
-    }
-
-    static StructurePiece b(WorldGenVillageStartPiece var0, List var1, Random var2, int var3, int var4, int var5, int var6, int var7)
-    {
-        return e(var0, var1, var2, var3, var4, var5, var6, var7);
-    }
+    return null;
+  }
 }
+

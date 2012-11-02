@@ -15,17 +15,10 @@ public class ServerNBTManager extends WorldNBTStorage
     public IChunkLoader createChunkLoader(WorldProvider var1)
     {
         File var2 = this.getDirectory();
-        File var3;
 
-        if (var1 instanceof WorldProviderHell)
+        if (var1.getSaveFolder() != null)
         {
-            var3 = new File(var2, "DIM-1");
-            var3.mkdirs();
-            return new ChunkRegionLoader(var3);
-        }
-        else if (var1 instanceof WorldProviderTheEnd)
-        {
-            var3 = new File(var2, "DIM1");
+            File var3 = new File(var2, var1.getSaveFolder());
             var3.mkdirs();
             return new ChunkRegionLoader(var3);
         }

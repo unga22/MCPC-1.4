@@ -421,4 +421,8 @@ public abstract class NetHandler
     {
         return false;
     }
+
+    public abstract void handleVanilla250Packet(Packet250CustomPayload var1);
+
+    public abstract EntityHuman getPlayer();
 }

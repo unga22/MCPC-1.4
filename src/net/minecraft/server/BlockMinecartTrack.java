@@ -1,11 +1,18 @@
 package net.minecraft.server;
 
 import java.util.Random;
+import net.minecraftforge.common.ForgeDirection;
 
 public class BlockMinecartTrack extends Block
 {
     /** Power related rails have this field at true. */
     private final boolean a;
+    private int renderType = 9;
+
+    public void setRenderType(int var1)
+    {
+        this.renderType = var1;
+    }
 
     /**
      * Returns true if the block at the coordinates of world passed is a valid rail block (current is rail, powered or
@@ -14,7 +21,7 @@ public class BlockMinecartTrack extends Block
     public static final boolean e_(World var0, int var1, int var2, int var3)
     {
         int var4 = var0.getTypeId(var1, var2, var3);
-        return var4 == Block.RAILS.id || var4 == Block.GOLDEN_RAIL.id || var4 == Block.DETECTOR_RAIL.id;
+        return d(var4);
     }
 
     /**
@@ -22,7 +29,7 @@ public class BlockMinecartTrack extends Block
      */
     public static final boolean d(int var0)
     {
-        return var0 == Block.RAILS.id || var0 == Block.GOLDEN_RAIL.id || var0 == Block.DETECTOR_RAIL.id;
+        return Block.byId[var0] instanceof BlockMinecartTrack;
     }
 
     protected BlockMinecartTrack(int var1, int var2, boolean var3)
@@ -119,7 +126,7 @@ public class BlockMinecartTrack extends Block
      */
     public int d()
     {
-        return 9;
+        return this.renderType;
     }
 
     /**
@@ -135,7 +142,7 @@ public class BlockMinecartTrack extends Block
      */
     public boolean canPlace(World var1, int var2, int var3, int var4)
     {
-        return var1.t(var2, var3 - 1, var4);
+        return var1.isBlockSolidOnSide(var2, var3 - 1, var4, ForgeDirection.UP);
     }
 
     /**
@@ -172,27 +179,27 @@ public class BlockMinecartTrack extends Block
 
             boolean var8 = false;
 
-            if (!var1.t(var2, var3 - 1, var4))
+            if (!var1.isBlockSolidOnSide(var2, var3 - 1, var4, ForgeDirection.UP))
             {
                 var8 = true;
             }
 
-            if (var7 == 2 && !var1.t(var2 + 1, var3, var4))
+            if (var7 == 2 && !var1.isBlockSolidOnSide(var2 + 1, var3, var4, ForgeDirection.UP))
             {
                 var8 = true;
             }
 
-            if (var7 == 3 && !var1.t(var2 - 1, var3, var4))
+            if (var7 == 3 && !var1.isBlockSolidOnSide(var2 - 1, var3, var4, ForgeDirection.UP))
             {
                 var8 = true;
             }
 
-            if (var7 == 4 && !var1.t(var2, var3, var4 - 1))
+            if (var7 == 4 && !var1.isBlockSolidOnSide(var2, var3, var4 - 1, ForgeDirection.UP))
             {
                 var8 = true;
             }
 
-            if (var7 == 5 && !var1.t(var2, var3, var4 + 1))
+            if (var7 == 5 && !var1.isBlockSolidOnSide(var2, var3, var4 + 1, ForgeDirection.UP))
             {
                 var8 = true;
             }
@@ -396,11 +403,47 @@ public class BlockMinecartTrack extends Block
         return 0;
     }
 
+    @Deprecated
+
     /**
      * Return true if the blocks passed is a power related rail.
      */
     static boolean a(BlockMinecartTrack var0)
     {
         return var0.a;
+    }
+
+    public boolean isFlexibleRail(World var1, int var2, int var3, int var4)
+    {
+        return !this.a;
+    }
+
+    public boolean canMakeSlopes(World var1, int var2, int var3, int var4)
+    {
+        return true;
+    }
+
+    public int getBasicRailMetadata(IBlockAccess var1, EntityMinecart var2, int var3, int var4, int var5)
+    {
+        int var6 = var1.getData(var3, var4, var5);
+
+        if (this.a)
+        {
+            var6 &= 7;
+        }
+
+        return var6;
+    }
+
+    public float getRailMaxSpeed(World var1, EntityMinecart var2, int var3, int var4, int var5)
+    {
+        return 0.4F;
+    }
+
+    public void onMinecartPass(World var1, EntityMinecart var2, int var3, int var4, int var5) {}
+
+    public boolean hasPowerBit(World var1, int var2, int var3, int var4)
+    {
+        return this.a;
     }
 }

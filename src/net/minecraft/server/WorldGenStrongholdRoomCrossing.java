@@ -2,13 +2,14 @@ package net.minecraft.server;
 
 import java.util.List;
 import java.util.Random;
+import net.minecraftforge.common.ChestGenHooks;
 
 public class WorldGenStrongholdRoomCrossing extends WorldGenStrongholdPiece
 {
     /**
      * Items that could generate in the chest that is located in Stronghold Room Crossing.
      */
-    private static final StructurePieceTreasure[] c = new StructurePieceTreasure[] {new StructurePieceTreasure(Item.IRON_INGOT.id, 0, 1, 5, 10), new StructurePieceTreasure(Item.GOLD_INGOT.id, 0, 1, 3, 5), new StructurePieceTreasure(Item.REDSTONE.id, 0, 4, 9, 5), new StructurePieceTreasure(Item.COAL.id, 0, 3, 8, 10), new StructurePieceTreasure(Item.BREAD.id, 0, 1, 3, 15), new StructurePieceTreasure(Item.APPLE.id, 0, 1, 3, 15), new StructurePieceTreasure(Item.IRON_PICKAXE.id, 0, 1, 1, 1)};
+    public static final StructurePieceTreasure[] c = new StructurePieceTreasure[] {new StructurePieceTreasure(Item.IRON_INGOT.id, 0, 1, 5, 10), new StructurePieceTreasure(Item.GOLD_INGOT.id, 0, 1, 3, 5), new StructurePieceTreasure(Item.REDSTONE.id, 0, 4, 9, 5), new StructurePieceTreasure(Item.COAL.id, 0, 3, 8, 10), new StructurePieceTreasure(Item.BREAD.id, 0, 1, 3, 15), new StructurePieceTreasure(Item.APPLE.id, 0, 1, 3, 15), new StructurePieceTreasure(Item.IRON_PICKAXE.id, 0, 1, 1, 1)};
     protected final WorldGenStrongholdDoorType a;
     protected final int b;
 
@@ -142,7 +143,7 @@ public class WorldGenStrongholdRoomCrossing extends WorldGenStrongholdPiece
                     this.a(var1, Block.LADDER.id, this.c(Block.LADDER.id, 4), 9, 1, 3, var3);
                     this.a(var1, Block.LADDER.id, this.c(Block.LADDER.id, 4), 9, 2, 3, var3);
                     this.a(var1, Block.LADDER.id, this.c(Block.LADDER.id, 4), 9, 3, 3, var3);
-                    this.a(var1, var3, var2, 3, 4, 8, c, 1 + var2.nextInt(4));
+                    this.a(var1, var3, var2, 3, 4, 8, ChestGenHooks.getItems("strongholdCrossing"), ChestGenHooks.getCount("strongholdCrossing", var2));
             }
 
             return true;

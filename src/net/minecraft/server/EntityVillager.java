@@ -1,5 +1,8 @@
 package net.minecraft.server;
 
+import cpw.mods.fml.common.Side;
+import cpw.mods.fml.common.asm.SideOnly;
+import cpw.mods.fml.common.registry.VillagerRegistry;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -30,10 +33,10 @@ public class EntityVillager extends EntityAgeable implements NPC, IMerchant
     private float field_82191_bN;
 
     /** Selling list of Villagers items. */
-    private static final Map bP = new HashMap();
+    public static final Map bP = new HashMap();
 
     /** Selling list of Blacksmith items. */
-    private static final Map bQ = new HashMap();
+    public static final Map bQ = new HashMap();
 
     public EntityVillager(World var1)
     {
@@ -205,6 +208,31 @@ public class EntityVillager extends EntityAgeable implements NPC, IMerchant
         {
             NBTTagCompound var2 = var1.getCompound("Offers");
             this.i = new MerchantRecipeList(var2);
+        }
+    }
+
+    @SideOnly(Side.CLIENT)
+    public String O()
+    {
+        switch (this.getProfession())
+        {
+            case 0:
+                return "/mob/villager/farmer.png";
+
+            case 1:
+                return "/mob/villager/librarian.png";
+
+            case 2:
+                return "/mob/villager/priest.png";
+
+            case 3:
+                return "/mob/villager/smith.png";
+
+            case 4:
+                return "/mob/villager/butcher.png";
+
+            default:
+                return VillagerRegistry.getVillagerSkin(this.getProfession(), super.O());
         }
     }
 
@@ -404,7 +432,8 @@ public class EntityVillager extends EntityAgeable implements NPC, IMerchant
 
         MerchantRecipeList var2;
         var2 = new MerchantRecipeList();
-        label48:
+        VillagerRegistry.manageVillagerTrades(var2, this, this.getProfession(), this.random);
+        label49:
 
         switch (this.getProfession())
         {
@@ -453,7 +482,7 @@ public class EntityVillager extends EntityAgeable implements NPC, IMerchant
                 {
                     if (var6 >= var5)
                     {
-                        break label48;
+                        break label49;
                     }
 
                     int var7 = var4[var6];
@@ -526,10 +555,13 @@ public class EntityVillager extends EntityAgeable implements NPC, IMerchant
         }
     }
 
+    @SideOnly(Side.CLIENT)
+    public void a(MerchantRecipeList var1) {}
+
     /**
      * each recipie takes a random stack from villagerStockList and offers it for 1 emerald
      */
-    private static void a(MerchantRecipeList var0, int var1, Random var2, float var3)
+    public static void a(MerchantRecipeList var0, int var1, Random var2, float var3)
     {
         if (var2.nextFloat() < var3)
         {
@@ -551,7 +583,7 @@ public class EntityVillager extends EntityAgeable implements NPC, IMerchant
         return var2 == null ? 1 : (((Integer)var2.a()).intValue() >= ((Integer)var2.b()).intValue() ? ((Integer)var2.a()).intValue() : ((Integer)var2.a()).intValue() + var1.nextInt(((Integer)var2.b()).intValue() - ((Integer)var2.a()).intValue()));
     }
 
-    private static void b(MerchantRecipeList var0, int var1, Random var2, float var3)
+    public static void b(MerchantRecipeList var0, int var1, Random var2, float var3)
     {
         if (var2.nextFloat() < var3)
         {
@@ -580,12 +612,45 @@ public class EntityVillager extends EntityAgeable implements NPC, IMerchant
         return var2 == null ? 1 : (((Integer)var2.a()).intValue() >= ((Integer)var2.b()).intValue() ? ((Integer)var2.a()).intValue() : ((Integer)var2.a()).intValue() + var1.nextInt(((Integer)var2.b()).intValue() - ((Integer)var2.a()).intValue()));
     }
 
+    @SideOnly(Side.CLIENT)
+    public void a(byte var1)
+    {
+        if (var1 == 12)
+        {
+            this.a("heart");
+        }
+        else if (var1 == 13)
+        {
+            this.a("angryVillager");
+        }
+        else if (var1 == 14)
+        {
+            this.a("happyVillager");
+        }
+        else
+        {
+            super.a(var1);
+        }
+    }
+
+    @SideOnly(Side.CLIENT)
+    private void a(String var1)
+    {
+        for (int var2 = 0; var2 < 5; ++var2)
+        {
+            double var3 = this.random.nextGaussian() * 0.02D;
+            double var5 = this.random.nextGaussian() * 0.02D;
+            double var7 = this.random.nextGaussian() * 0.02D;
+            this.world.addParticle(var1, this.locX + (double)(this.random.nextFloat() * this.width * 2.0F) - (double)this.width, this.locY + 1.0D + (double)(this.random.nextFloat() * this.length), this.locZ + (double)(this.random.nextFloat() * this.width * 2.0F) - (double)this.width, var3, var5, var7);
+        }
+    }
+
     /**
      * Initialize this creature.
      */
     public void bD()
     {
-        this.setProfession(this.world.random.nextInt(5));
+        VillagerRegistry.applyRandomTrade(this, this.world.random);
     }
 
     public void func_82187_q()

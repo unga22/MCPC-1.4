@@ -1,68 +1,63 @@
 package net.minecraft.server;
 
+import forge.IShearable;
+import java.util.ArrayList;
+
 public class EntityMushroomCow extends EntityCow
+  implements IShearable
 {
-    public EntityMushroomCow(World var1)
+  public EntityMushroomCow(World world)
+  {
+    super(world);
+    this.texture = "/mob/redcow.png";
+    b(0.9F, 1.3F);
+  }
+
+  public boolean b(EntityHuman entityhuman) {
+    ItemStack itemstack = entityhuman.inventory.getItemInHand();
+
+    if ((itemstack != null) && (itemstack.id == Item.BOWL.id) && (getAge() >= 0))
     {
-        super(var1);
-        this.texture = "/mob/redcow.png";
-        this.a(0.9F, 1.3F);
+      if (itemstack.count == 1) {
+        entityhuman.inventory.setItem(entityhuman.inventory.itemInHandIndex, new ItemStack(Item.MUSHROOM_SOUP));
+
+        return true;
+      }
+
+      if ((entityhuman.inventory.pickup(new ItemStack(Item.MUSHROOM_SOUP))) && (!entityhuman.abilities.canInstantlyBuild))
+      {
+        entityhuman.inventory.splitStack(entityhuman.inventory.itemInHandIndex, 1);
+
+        return true;
+      }
     }
+    return super.b(entityhuman);
+  }
 
-    /**
-     * Called when a player interacts with a mob. e.g. gets milk from a cow, gets into the saddle on a pig.
-     */
-    public boolean c(EntityHuman var1)
-    {
-        ItemStack var2 = var1.inventory.getItemInHand();
+  public EntityAnimal createChild(EntityAnimal entityanimal) {
+    return new EntityMushroomCow(this.world);
+  }
 
-        if (var2 != null && var2.id == Item.BOWL.id && this.getAge() >= 0)
-        {
-            if (var2.count == 1)
-            {
-                var1.inventory.setItem(var1.inventory.itemInHandIndex, new ItemStack(Item.MUSHROOM_SOUP));
-                return true;
-            }
+  public boolean isShearable(ItemStack item, World world, int x, int y, int z)
+  {
+    return getAge() >= 0;
+  }
 
-            if (var1.inventory.pickup(new ItemStack(Item.MUSHROOM_SOUP)) && !var1.abilities.canInstantlyBuild)
-            {
-                var1.inventory.splitStack(var1.inventory.itemInHandIndex, 1);
-                return true;
-            }
-        }
-
-        if (var2 != null && var2.id == Item.SHEARS.id && this.getAge() >= 0)
-        {
-            this.die();
-            this.world.addParticle("largeexplode", this.locX, this.locY + (double)(this.length / 2.0F), this.locZ, 0.0D, 0.0D, 0.0D);
-
-            if (!this.world.isStatic)
-            {
-                EntityCow var3 = new EntityCow(this.world);
-                var3.setPositionRotation(this.locX, this.locY, this.locZ, this.yaw, this.pitch);
-                var3.setHealth(this.getHealth());
-                var3.aw = this.aw;
-                this.world.addEntity(var3);
-
-                for (int var4 = 0; var4 < 5; ++var4)
-                {
-                    this.world.addEntity(new EntityItem(this.world, this.locX, this.locY + (double)this.length, this.locZ, new ItemStack(Block.RED_MUSHROOM)));
-                }
-            }
-
-            return true;
-        }
-        else
-        {
-            return super.c(var1);
-        }
+  public ArrayList<ItemStack> onSheared(ItemStack item, World world, int x, int y, int z, int fortune)
+  {
+    die();
+    die();
+    this.world.a("largeexplode", this.locX, this.locY + this.length / 2.0F, this.locZ, 0.0D, 0.0D, 0.0D);
+    EntityCow entitycow = new EntityCow(this.world);
+    entitycow.setPositionRotation(this.locX, this.locY, this.locZ, this.yaw, this.pitch);
+    entitycow.setHealth(getHealth());
+    entitycow.V = this.V;
+    this.world.addEntity(entitycow);
+    ArrayList ret = new ArrayList();
+    for (int i = 0; i < 5; i++) {
+      ret.add(new ItemStack(Block.RED_MUSHROOM));
     }
-
-    /**
-     * This function is used when two same-species animals in 'love mode' breed to generate the new baby animal.
-     */
-    public EntityAnimal createChild(EntityAnimal var1)
-    {
-        return new EntityMushroomCow(this.world);
-    }
+    return ret;
+  }
 }
+

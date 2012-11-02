@@ -2,423 +2,262 @@ package net.minecraft.server;
 
 public abstract class NetHandler
 {
-    /**
-     * determine if it is a server handler
-     */
-    public abstract boolean a();
-
-    /**
-     * Handle Packet51MapChunk (full chunk update of blocks, metadata, light levels, and optionally biome data)
-     */
-    public void a(Packet51MapChunk var1) {}
-
-    /**
-     * Default handler called for packets that don't have their own handlers in NetServerHandler; kicks player from the
-     * server.
-     */
-    public void onUnhandledPacket(Packet var1) {}
-
-    public void a(String var1, Object[] var2) {}
-
-    public void a(Packet255KickDisconnect var1)
-    {
-        this.onUnhandledPacket(var1);
-    }
-
-    public void a(Packet1Login var1)
-    {
-        this.onUnhandledPacket(var1);
-    }
-
-    public void a(Packet10Flying var1)
-    {
-        this.onUnhandledPacket(var1);
-    }
-
-    public void a(Packet52MultiBlockChange var1)
-    {
-        this.onUnhandledPacket(var1);
-    }
-
-    public void a(Packet14BlockDig var1)
-    {
-        this.onUnhandledPacket(var1);
-    }
-
-    public void a(Packet53BlockChange var1)
-    {
-        this.onUnhandledPacket(var1);
-    }
-
-    public void a(Packet20NamedEntitySpawn var1)
-    {
-        this.onUnhandledPacket(var1);
-    }
-
-    public void a(Packet30Entity var1)
-    {
-        this.onUnhandledPacket(var1);
-    }
-
-    public void a(Packet34EntityTeleport var1)
-    {
-        this.onUnhandledPacket(var1);
-    }
-
-    public void a(Packet15Place var1)
-    {
-        this.onUnhandledPacket(var1);
-    }
-
-    public void a(Packet16BlockItemSwitch var1)
-    {
-        this.onUnhandledPacket(var1);
-    }
-
-    public void a(Packet29DestroyEntity var1)
-    {
-        this.onUnhandledPacket(var1);
-    }
-
-    public void a(Packet21PickupSpawn var1)
-    {
-        this.onUnhandledPacket(var1);
-    }
-
-    public void a(Packet22Collect var1)
-    {
-        this.onUnhandledPacket(var1);
-    }
-
-    public void a(Packet3Chat var1)
-    {
-        this.onUnhandledPacket(var1);
-    }
-
-    public void a(Packet23VehicleSpawn var1)
-    {
-        this.onUnhandledPacket(var1);
-    }
-
-    public void a(Packet18ArmAnimation var1)
-    {
-        this.onUnhandledPacket(var1);
-    }
-
-    /**
-     * runs registerPacket on the given Packet19EntityAction
-     */
-    public void a(Packet19EntityAction var1)
-    {
-        this.onUnhandledPacket(var1);
-    }
-
-    public void a(Packet2Handshake var1)
-    {
-        this.onUnhandledPacket(var1);
-    }
-
-    public void a(Packet253KeyRequest var1)
-    {
-        this.onUnhandledPacket(var1);
-    }
-
-    public void a(Packet252KeyResponse var1)
-    {
-        this.onUnhandledPacket(var1);
-    }
-
-    public void a(Packet24MobSpawn var1)
-    {
-        this.onUnhandledPacket(var1);
-    }
-
-    public void a(Packet4UpdateTime var1)
-    {
-        this.onUnhandledPacket(var1);
-    }
-
-    public void a(Packet6SpawnPosition var1)
-    {
-        this.onUnhandledPacket(var1);
-    }
-
-    /**
-     * Packet handler
-     */
-    public void a(Packet28EntityVelocity var1)
-    {
-        this.onUnhandledPacket(var1);
-    }
-
-    /**
-     * Packet handler
-     */
-    public void a(Packet40EntityMetadata var1)
-    {
-        this.onUnhandledPacket(var1);
-    }
-
-    /**
-     * Packet handler
-     */
-    public void a(Packet39AttachEntity var1)
-    {
-        this.onUnhandledPacket(var1);
-    }
-
-    public void a(Packet7UseEntity var1)
-    {
-        this.onUnhandledPacket(var1);
-    }
-
-    /**
-     * Packet handler
-     */
-    public void a(Packet38EntityStatus var1)
-    {
-        this.onUnhandledPacket(var1);
-    }
-
-    /**
-     * Recieves player health from the server and then proceeds to set it locally on the client.
-     */
-    public void a(Packet8UpdateHealth var1)
-    {
-        this.onUnhandledPacket(var1);
-    }
-
-    /**
-     * respawns the player
-     */
-    public void a(Packet9Respawn var1)
-    {
-        this.onUnhandledPacket(var1);
-    }
-
-    public void a(Packet60Explosion var1)
-    {
-        this.onUnhandledPacket(var1);
-    }
-
-    public void a(Packet100OpenWindow var1)
-    {
-        this.onUnhandledPacket(var1);
-    }
-
-    public void handleContainerClose(Packet101CloseWindow var1)
-    {
-        this.onUnhandledPacket(var1);
-    }
-
-    public void a(Packet102WindowClick var1)
-    {
-        this.onUnhandledPacket(var1);
-    }
-
-    public void a(Packet103SetSlot var1)
-    {
-        this.onUnhandledPacket(var1);
-    }
-
-    public void a(Packet104WindowItems var1)
-    {
-        this.onUnhandledPacket(var1);
-    }
-
-    /**
-     * Updates Client side signs
-     */
-    public void a(Packet130UpdateSign var1)
-    {
-        this.onUnhandledPacket(var1);
-    }
-
-    public void a(Packet105CraftProgressBar var1)
-    {
-        this.onUnhandledPacket(var1);
-    }
-
-    public void a(Packet5EntityEquipment var1)
-    {
-        this.onUnhandledPacket(var1);
-    }
-
-    public void a(Packet106Transaction var1)
-    {
-        this.onUnhandledPacket(var1);
-    }
-
-    /**
-     * Packet handler
-     */
-    public void a(Packet25EntityPainting var1)
-    {
-        this.onUnhandledPacket(var1);
-    }
-
-    public void a(Packet54PlayNoteBlock var1)
-    {
-        this.onUnhandledPacket(var1);
-    }
-
-    /**
-     * runs registerPacket on the given Packet200Statistic
-     */
-    public void a(Packet200Statistic var1)
-    {
-        this.onUnhandledPacket(var1);
-    }
-
-    public void a(Packet17EntityLocationAction var1)
-    {
-        this.onUnhandledPacket(var1);
-    }
-
-    public void a(Packet70Bed var1)
-    {
-        this.onUnhandledPacket(var1);
-    }
-
-    /**
-     * Handles weather packet
-     */
-    public void a(Packet71Weather var1)
-    {
-        this.onUnhandledPacket(var1);
-    }
-
-    /**
-     * Contains logic for handling packets containing arbitrary unique item data. Currently this is only for maps.
-     */
-    public void a(Packet131ItemData var1)
-    {
-        this.onUnhandledPacket(var1);
-    }
-
-    public void a(Packet61WorldEvent var1)
-    {
-        this.onUnhandledPacket(var1);
-    }
-
-    /**
-     * Handle a server ping packet.
-     */
-    public void a(Packet254GetInfo var1)
-    {
-        this.onUnhandledPacket(var1);
-    }
-
-    /**
-     * Handle an entity effect packet.
-     */
-    public void a(Packet41MobEffect var1)
-    {
-        this.onUnhandledPacket(var1);
-    }
-
-    /**
-     * Handle a remove entity effect packet.
-     */
-    public void a(Packet42RemoveMobEffect var1)
-    {
-        this.onUnhandledPacket(var1);
-    }
-
-    /**
-     * Handle a player information packet.
-     */
-    public void a(Packet201PlayerInfo var1)
-    {
-        this.onUnhandledPacket(var1);
-    }
-
-    /**
-     * Handle a keep alive packet.
-     */
-    public void a(Packet0KeepAlive var1)
-    {
-        this.onUnhandledPacket(var1);
-    }
-
-    /**
-     * Handle an experience packet.
-     */
-    public void a(Packet43SetExperience var1)
-    {
-        this.onUnhandledPacket(var1);
-    }
-
-    /**
-     * Handle a creative slot packet.
-     */
-    public void a(Packet107SetCreativeSlot var1)
-    {
-        this.onUnhandledPacket(var1);
-    }
-
-    /**
-     * Handle a entity experience orb packet.
-     */
-    public void a(Packet26AddExpOrb var1)
-    {
-        this.onUnhandledPacket(var1);
-    }
-
-    public void a(Packet108ButtonClick var1) {}
-
-    public void a(Packet250CustomPayload var1) {}
-
-    public void a(Packet35EntityHeadRotation var1)
-    {
-        this.onUnhandledPacket(var1);
-    }
-
-    public void a(Packet132TileEntityData var1)
-    {
-        this.onUnhandledPacket(var1);
-    }
-
-    /**
-     * Handle a player abilities packet.
-     */
-    public void a(Packet202Abilities var1)
-    {
-        this.onUnhandledPacket(var1);
-    }
-
-    public void a(Packet203TabComplete var1)
-    {
-        this.onUnhandledPacket(var1);
-    }
-
-    public void a(Packet204LocaleAndViewDistance var1)
-    {
-        this.onUnhandledPacket(var1);
-    }
-
-    public void a(Packet62NamedSoundEffect var1)
-    {
-        this.onUnhandledPacket(var1);
-    }
-
-    public void a(Packet55BlockBreakAnimation var1)
-    {
-        this.onUnhandledPacket(var1);
-    }
-
-    public void a(Packet205ClientCommand var1) {}
-
-    public void a(Packet56MapChunkBulk var1)
-    {
-        this.onUnhandledPacket(var1);
-    }
-
-    /**
-     * packet.processPacket is only called if this returns true
-     */
-    public boolean b()
-    {
-        return false;
-    }
+  public abstract boolean c();
+
+  public void a(Packet51MapChunk paramPacket51MapChunk)
+  {
+  }
+
+  public void onUnhandledPacket(Packet paramPacket)
+  {
+  }
+
+  public void a(String paramString, Object[] paramArrayOfObject)
+  {
+  }
+
+  public void a(Packet255KickDisconnect paramPacket255KickDisconnect)
+  {
+    onUnhandledPacket(paramPacket255KickDisconnect);
+  }
+
+  public void a(Packet1Login paramPacket1Login) {
+    onUnhandledPacket(paramPacket1Login);
+  }
+
+  public void a(Packet10Flying paramPacket10Flying) {
+    onUnhandledPacket(paramPacket10Flying);
+  }
+
+  public void a(Packet52MultiBlockChange paramPacket52MultiBlockChange) {
+    onUnhandledPacket(paramPacket52MultiBlockChange);
+  }
+
+  public void a(Packet14BlockDig paramPacket14BlockDig) {
+    onUnhandledPacket(paramPacket14BlockDig);
+  }
+
+  public void a(Packet53BlockChange paramPacket53BlockChange) {
+    onUnhandledPacket(paramPacket53BlockChange);
+  }
+
+  public void a(Packet50PreChunk paramPacket50PreChunk) {
+    onUnhandledPacket(paramPacket50PreChunk);
+  }
+
+  public void a(Packet20NamedEntitySpawn paramPacket20NamedEntitySpawn) {
+    onUnhandledPacket(paramPacket20NamedEntitySpawn);
+  }
+
+  public void a(Packet30Entity paramPacket30Entity) {
+    onUnhandledPacket(paramPacket30Entity);
+  }
+
+  public void a(Packet34EntityTeleport paramPacket34EntityTeleport) {
+    onUnhandledPacket(paramPacket34EntityTeleport);
+  }
+
+  public void a(Packet15Place paramPacket15Place) {
+    onUnhandledPacket(paramPacket15Place);
+  }
+
+  public void a(Packet16BlockItemSwitch paramPacket16BlockItemSwitch) {
+    onUnhandledPacket(paramPacket16BlockItemSwitch);
+  }
+
+  public void a(Packet29DestroyEntity paramPacket29DestroyEntity) {
+    onUnhandledPacket(paramPacket29DestroyEntity);
+  }
+
+  public void a(Packet21PickupSpawn paramPacket21PickupSpawn) {
+    onUnhandledPacket(paramPacket21PickupSpawn);
+  }
+
+  public void a(Packet22Collect paramPacket22Collect) {
+    onUnhandledPacket(paramPacket22Collect);
+  }
+
+  public void a(Packet3Chat paramPacket3Chat) {
+    onUnhandledPacket(paramPacket3Chat);
+  }
+
+  public void a(Packet23VehicleSpawn paramPacket23VehicleSpawn) {
+    onUnhandledPacket(paramPacket23VehicleSpawn);
+  }
+
+  public void a(Packet18ArmAnimation paramPacket18ArmAnimation) {
+    onUnhandledPacket(paramPacket18ArmAnimation);
+  }
+
+  public void a(Packet19EntityAction paramPacket19EntityAction) {
+    onUnhandledPacket(paramPacket19EntityAction);
+  }
+
+  public void a(Packet2Handshake paramPacket2Handshake) {
+    onUnhandledPacket(paramPacket2Handshake);
+  }
+
+  public void a(Packet24MobSpawn paramPacket24MobSpawn) {
+    onUnhandledPacket(paramPacket24MobSpawn);
+  }
+
+  public void a(Packet4UpdateTime paramPacket4UpdateTime) {
+    onUnhandledPacket(paramPacket4UpdateTime);
+  }
+
+  public void a(Packet6SpawnPosition paramPacket6SpawnPosition) {
+    onUnhandledPacket(paramPacket6SpawnPosition);
+  }
+
+  public void a(Packet28EntityVelocity paramPacket28EntityVelocity) {
+    onUnhandledPacket(paramPacket28EntityVelocity);
+  }
+
+  public void a(Packet40EntityMetadata paramPacket40EntityMetadata) {
+    onUnhandledPacket(paramPacket40EntityMetadata);
+  }
+
+  public void a(Packet39AttachEntity paramPacket39AttachEntity) {
+    onUnhandledPacket(paramPacket39AttachEntity);
+  }
+
+  public void a(Packet7UseEntity paramPacket7UseEntity) {
+    onUnhandledPacket(paramPacket7UseEntity);
+  }
+
+  public void a(Packet38EntityStatus paramPacket38EntityStatus) {
+    onUnhandledPacket(paramPacket38EntityStatus);
+  }
+
+  public void a(Packet8UpdateHealth paramPacket8UpdateHealth) {
+    onUnhandledPacket(paramPacket8UpdateHealth);
+  }
+
+  public void a(Packet9Respawn paramPacket9Respawn) {
+    onUnhandledPacket(paramPacket9Respawn);
+  }
+
+  public void a(Packet60Explosion paramPacket60Explosion) {
+    onUnhandledPacket(paramPacket60Explosion);
+  }
+
+  public void a(Packet100OpenWindow paramPacket100OpenWindow) {
+    onUnhandledPacket(paramPacket100OpenWindow);
+  }
+
+  public void handleContainerClose(Packet101CloseWindow paramPacket101CloseWindow) {
+    onUnhandledPacket(paramPacket101CloseWindow);
+  }
+
+  public void a(Packet102WindowClick paramPacket102WindowClick) {
+    onUnhandledPacket(paramPacket102WindowClick);
+  }
+
+  public void a(Packet103SetSlot paramPacket103SetSlot) {
+    onUnhandledPacket(paramPacket103SetSlot);
+  }
+
+  public void a(Packet104WindowItems paramPacket104WindowItems) {
+    onUnhandledPacket(paramPacket104WindowItems);
+  }
+
+  public void a(Packet130UpdateSign paramPacket130UpdateSign) {
+    onUnhandledPacket(paramPacket130UpdateSign);
+  }
+
+  public void a(Packet105CraftProgressBar paramPacket105CraftProgressBar) {
+    onUnhandledPacket(paramPacket105CraftProgressBar);
+  }
+
+  public void a(Packet5EntityEquipment paramPacket5EntityEquipment) {
+    onUnhandledPacket(paramPacket5EntityEquipment);
+  }
+
+  public void a(Packet106Transaction paramPacket106Transaction) {
+    onUnhandledPacket(paramPacket106Transaction);
+  }
+
+  public void a(Packet25EntityPainting paramPacket25EntityPainting) {
+    onUnhandledPacket(paramPacket25EntityPainting);
+  }
+
+  public void a(Packet54PlayNoteBlock paramPacket54PlayNoteBlock) {
+    onUnhandledPacket(paramPacket54PlayNoteBlock);
+  }
+
+  public void a(Packet200Statistic paramPacket200Statistic) {
+    onUnhandledPacket(paramPacket200Statistic);
+  }
+
+  public void a(Packet17EntityLocationAction paramPacket17EntityLocationAction) {
+    onUnhandledPacket(paramPacket17EntityLocationAction);
+  }
+
+  public void a(Packet70Bed paramPacket70Bed)
+  {
+    onUnhandledPacket(paramPacket70Bed);
+  }
+
+  public void a(Packet71Weather paramPacket71Weather) {
+    onUnhandledPacket(paramPacket71Weather);
+  }
+
+  public void a(Packet131ItemData paramPacket131ItemData) {
+    onUnhandledPacket(paramPacket131ItemData);
+  }
+
+  public void a(Packet61WorldEvent paramPacket61WorldEvent) {
+    onUnhandledPacket(paramPacket61WorldEvent);
+  }
+
+  public void a(Packet254GetInfo paramPacket254GetInfo) {
+    onUnhandledPacket(paramPacket254GetInfo);
+  }
+
+  public void a(Packet41MobEffect paramPacket41MobEffect) {
+    onUnhandledPacket(paramPacket41MobEffect);
+  }
+
+  public void a(Packet42RemoveMobEffect paramPacket42RemoveMobEffect) {
+    onUnhandledPacket(paramPacket42RemoveMobEffect);
+  }
+
+  public void a(Packet201PlayerInfo paramPacket201PlayerInfo) {
+    onUnhandledPacket(paramPacket201PlayerInfo);
+  }
+
+  public void a(Packet0KeepAlive paramPacket0KeepAlive) {
+    onUnhandledPacket(paramPacket0KeepAlive);
+  }
+
+  public void a(Packet43SetExperience paramPacket43SetExperience) {
+    onUnhandledPacket(paramPacket43SetExperience);
+  }
+
+  public void a(Packet107SetCreativeSlot paramPacket107SetCreativeSlot) {
+    onUnhandledPacket(paramPacket107SetCreativeSlot);
+  }
+
+  public void a(Packet26AddExpOrb paramPacket26AddExpOrb) {
+    onUnhandledPacket(paramPacket26AddExpOrb);
+  }
+
+  public void a(Packet108ButtonClick paramPacket108ButtonClick) {
+  }
+
+  public void a(Packet250CustomPayload paramPacket250CustomPayload) {
+  }
+
+  public void a(Packet35EntityHeadRotation paramPacket35EntityHeadRotation) {
+    onUnhandledPacket(paramPacket35EntityHeadRotation);
+  }
+
+  public void a(Packet132TileEntityData paramPacket132TileEntityData) {
+    onUnhandledPacket(paramPacket132TileEntityData);
+  }
+
+  public void a(Packet202Abilities paramPacket202Abilities) {
+    onUnhandledPacket(paramPacket202Abilities);
+  }
 }
+

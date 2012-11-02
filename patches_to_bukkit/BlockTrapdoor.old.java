@@ -1,304 +1,220 @@
 package net.minecraft.server;
 
+import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.event.block.BlockRedstoneEvent;
+import org.bukkit.plugin.PluginManager;
+
 public class BlockTrapdoor extends Block
 {
-    protected BlockTrapdoor(int var1, Material var2)
-    {
-        super(var1, var2);
-        this.textureId = 84;
+  public static boolean disableValidation = false;
 
-        if (var2 == Material.ORE)
-        {
-            ++this.textureId;
-        }
-
-        float var3 = 0.5F;
-        float var4 = 1.0F;
-        this.a(0.5F - var3, 0.0F, 0.5F - var3, 0.5F + var3, var4, 0.5F + var3);
-        this.a(CreativeModeTab.d);
+  protected BlockTrapdoor(int i, Material material) {
+    super(i, material);
+    this.textureId = 84;
+    if (material == Material.ORE) {
+      this.textureId += 1;
     }
 
-    /**
-     * Is this block (a) opaque and (b) a full 1m cube?  This determines whether or not to render the shared face of two
-     * adjacent blocks and also whether the player can attach torches, redstone wire, etc to this block.
-     */
-    public boolean c()
-    {
-        return false;
+    float f = 0.5F;
+    float f1 = 1.0F;
+
+    a(0.5F - f, 0.0F, 0.5F - f, 0.5F + f, f1, 0.5F + f);
+  }
+
+  public boolean a() {
+    return false;
+  }
+
+  public boolean b() {
+    return false;
+  }
+
+  public boolean b(IBlockAccess iblockaccess, int i, int j, int k) {
+    return !e(iblockaccess.getData(i, j, k));
+  }
+
+  public int c() {
+    return 0;
+  }
+
+  public AxisAlignedBB e(World world, int i, int j, int k) {
+    updateShape(world, i, j, k);
+    return super.e(world, i, j, k);
+  }
+
+  public void updateShape(IBlockAccess iblockaccess, int i, int j, int k) {
+    d(iblockaccess.getData(i, j, k));
+  }
+
+  public void f() {
+    float f = 0.1875F;
+
+    a(0.0F, 0.5F - f / 2.0F, 0.0F, 1.0F, 0.5F + f / 2.0F, 1.0F);
+  }
+
+  public void d(int i) {
+    float f = 0.1875F;
+
+    a(0.0F, 0.0F, 0.0F, 1.0F, f, 1.0F);
+    if (e(i)) {
+      if ((i & 0x3) == 0) {
+        a(0.0F, 0.0F, 1.0F - f, 1.0F, 1.0F, 1.0F);
+      }
+
+      if ((i & 0x3) == 1) {
+        a(0.0F, 0.0F, 0.0F, 1.0F, 1.0F, f);
+      }
+
+      if ((i & 0x3) == 2) {
+        a(1.0F - f, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F);
+      }
+
+      if ((i & 0x3) == 3)
+        a(0.0F, 0.0F, 0.0F, f, 1.0F, 1.0F);
+    }
+  }
+
+  public void attack(World world, int i, int j, int k, EntityHuman entityhuman)
+  {
+    interact(world, i, j, k, entityhuman);
+  }
+
+  public boolean interact(World world, int i, int j, int k, EntityHuman entityhuman) {
+    if (this.material == Material.ORE) {
+      return true;
+    }
+    int l = world.getData(i, j, k);
+
+    world.setData(i, j, k, l ^ 0x4);
+    world.a(entityhuman, 1003, i, j, k, 0);
+    return true;
+  }
+
+  public void setOpen(World world, int i, int j, int k, boolean flag)
+  {
+    int l = world.getData(i, j, k);
+    boolean flag1 = (l & 0x4) > 0;
+
+    if (flag1 != flag) {
+      world.setData(i, j, k, l ^ 0x4);
+      world.a((EntityHuman)null, 1003, i, j, k, 0);
+    }
+  }
+
+  public void doPhysics(World world, int i, int j, int k, int l) {
+    if (!world.isStatic) {
+      int i1 = world.getData(i, j, k);
+      int j1 = i;
+      int k1 = k;
+
+      if ((i1 & 0x3) == 0) {
+        k1 = k + 1;
+      }
+
+      if ((i1 & 0x3) == 1) {
+        k1--;
+      }
+
+      if ((i1 & 0x3) == 2) {
+        j1 = i + 1;
+      }
+
+      if ((i1 & 0x3) == 3) {
+        j1--;
+      }
+
+      if ((!h(world.getTypeId(j1, j, k1))) && (!world.isBlockSolidOnSide(j1, j, k1, (i1 & 0x3) + 2))) {
+        world.setTypeId(i, j, k, 0);
+        b(world, i, j, k, i1, 0);
+      }
+
+      if ((l == 0) || ((l > 0) && (Block.byId[l] != null) && (Block.byId[l].isPowerSource()))) {
+        org.bukkit.World bworld = world.getWorld();
+        org.bukkit.block.Block block = bworld.getBlockAt(i, j, k);
+
+        int power = block.getBlockPower();
+        int oldPower = (world.getData(i, j, k) & 0x4) > 0 ? 15 : 0;
+
+        if ((((oldPower == 0 ? 1 : 0) ^ (power == 0 ? 1 : 0)) != 0) || ((Block.byId[l] != null) && (Block.byId[l].isPowerSource()))) {
+          BlockRedstoneEvent eventRedstone = new BlockRedstoneEvent(block, oldPower, power);
+          world.getServer().getPluginManager().callEvent(eventRedstone);
+
+          setOpen(world, i, j, k, eventRedstone.getNewCurrent() > 0);
+        }
+      }
+    }
+  }
+
+  public MovingObjectPosition a(World world, int i, int j, int k, Vec3D vec3d, Vec3D vec3d1)
+  {
+    updateShape(world, i, j, k);
+    return super.a(world, i, j, k, vec3d, vec3d1);
+  }
+
+  public void postPlace(World world, int i, int j, int k, int l) {
+    byte b0 = 0;
+
+    if (l == 2) {
+      b0 = 0;
     }
 
-    /**
-     * If this block doesn't render as an ordinary block it will return False (examples: signs, buttons, stairs, etc)
-     */
-    public boolean b()
-    {
-        return false;
+    if (l == 3) {
+      b0 = 1;
     }
 
-    public boolean c(IBlockAccess var1, int var2, int var3, int var4)
-    {
-        return !g(var1.getData(var2, var3, var4));
+    if (l == 4) {
+      b0 = 2;
     }
 
-    /**
-     * The type of render function that is called for this block
-     */
-    public int d()
-    {
-        return 0;
+    if (l == 5) {
+      b0 = 3;
     }
 
-    /**
-     * Returns a bounding box from the pool of bounding boxes (this means this box can change after the pool has been
-     * cleared to be reused)
-     */
-    public AxisAlignedBB e(World var1, int var2, int var3, int var4)
-    {
-        this.updateShape(var1, var2, var3, var4);
-        return super.e(var1, var2, var3, var4);
+    world.setData(i, j, k, b0);
+    doPhysics(world, i, j, k, Block.REDSTONE_WIRE.id);
+  }
+
+  public boolean canPlace(World world, int i, int j, int k, int l) {
+    if (disableValidation) {
+      return true;
     }
 
-    /**
-     * Updates the blocks bounds based on its current state. Args: world, x, y, z
-     */
-    public void updateShape(IBlockAccess var1, int var2, int var3, int var4)
-    {
-        this.e(var1.getData(var2, var3, var4));
+    if (l == 0)
+      return false;
+    if (l == 1) {
+      return false;
+    }
+    if (l == 2) {
+      k++;
     }
 
-    /**
-     * Sets the block's bounds for rendering it as an item
-     */
-    public void f()
-    {
-        float var1 = 0.1875F;
-        this.a(0.0F, 0.5F - var1 / 2.0F, 0.0F, 1.0F, 0.5F + var1 / 2.0F, 1.0F);
+    if (l == 3) {
+      k--;
     }
 
-    public void e(int var1)
-    {
-        float var2 = 0.1875F;
-
-        if ((var1 & 8) != 0)
-        {
-            this.a(0.0F, 1.0F - var2, 0.0F, 1.0F, 1.0F, 1.0F);
-        }
-        else
-        {
-            this.a(0.0F, 0.0F, 0.0F, 1.0F, var2, 1.0F);
-        }
-
-        if (g(var1))
-        {
-            if ((var1 & 3) == 0)
-            {
-                this.a(0.0F, 0.0F, 1.0F - var2, 1.0F, 1.0F, 1.0F);
-            }
-
-            if ((var1 & 3) == 1)
-            {
-                this.a(0.0F, 0.0F, 0.0F, 1.0F, 1.0F, var2);
-            }
-
-            if ((var1 & 3) == 2)
-            {
-                this.a(1.0F - var2, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F);
-            }
-
-            if ((var1 & 3) == 3)
-            {
-                this.a(0.0F, 0.0F, 0.0F, var2, 1.0F, 1.0F);
-            }
-        }
+    if (l == 4) {
+      i++;
     }
 
-    /**
-     * Called when the block is clicked by a player. Args: x, y, z, entityPlayer
-     */
-    public void attack(World var1, int var2, int var3, int var4, EntityHuman var5) {}
-
-    /**
-     * Called upon block activation (right click on the block.)
-     */
-    public boolean interact(World var1, int var2, int var3, int var4, EntityHuman var5, int var6, float var7, float var8, float var9)
-    {
-        if (this.material == Material.ORE)
-        {
-            return true;
-        }
-        else
-        {
-            int var10 = var1.getData(var2, var3, var4);
-            var1.setData(var2, var3, var4, var10 ^ 4);
-            var1.a(var5, 1003, var2, var3, var4, 0);
-            return true;
-        }
+    if (l == 5) {
+      i--;
     }
 
-    public void setOpen(World var1, int var2, int var3, int var4, boolean var5)
-    {
-        int var6 = var1.getData(var2, var3, var4);
-        boolean var7 = (var6 & 4) > 0;
+    return (h(world.getTypeId(i, j, k))) || (world.isBlockSolidOnSide(i, j, k, l));
+  }
 
-        if (var7 != var5)
-        {
-            var1.setData(var2, var3, var4, var6 ^ 4);
-            var1.a((EntityHuman)null, 1003, var2, var3, var4, 0);
-        }
+  public static boolean e(int i)
+  {
+    return (i & 0x4) != 0;
+  }
+
+  private static boolean h(int i) {
+    if (i <= 0) {
+      return false;
     }
+    Block block = Block.byId[i];
 
-    /**
-     * Lets the block know when one of its neighbor changes. Doesn't know which neighbor changed (coordinates passed are
-     * their own) Args: x, y, z, neighbor blockID
-     */
-    public void doPhysics(World var1, int var2, int var3, int var4, int var5)
-    {
-        if (!var1.isStatic)
-        {
-            int var6 = var1.getData(var2, var3, var4);
-            int var7 = var2;
-            int var8 = var4;
-
-            if ((var6 & 3) == 0)
-            {
-                var8 = var4 + 1;
-            }
-
-            if ((var6 & 3) == 1)
-            {
-                --var8;
-            }
-
-            if ((var6 & 3) == 2)
-            {
-                var7 = var2 + 1;
-            }
-
-            if ((var6 & 3) == 3)
-            {
-                --var7;
-            }
-
-            if (!j(var1.getTypeId(var7, var3, var8)))
-            {
-                var1.setTypeId(var2, var3, var4, 0);
-                this.c(var1, var2, var3, var4, var6, 0);
-            }
-
-            boolean var9 = var1.isBlockIndirectlyPowered(var2, var3, var4);
-
-            if (var9 || var5 > 0 && Block.byId[var5].isPowerSource() || var5 == 0)
-            {
-                this.setOpen(var1, var2, var3, var4, var9);
-            }
-        }
-    }
-
-    /**
-     * Ray traces through the blocks collision from start vector to end vector returning a ray trace hit. Args: world,
-     * x, y, z, startVec, endVec
-     */
-    public MovingObjectPosition a(World var1, int var2, int var3, int var4, Vec3D var5, Vec3D var6)
-    {
-        this.updateShape(var1, var2, var3, var4);
-        return super.a(var1, var2, var3, var4, var5, var6);
-    }
-
-    /**
-     * called before onBlockPlacedBy by ItemBlock and ItemReed
-     */
-    public void postPlace(World var1, int var2, int var3, int var4, int var5, float var6, float var7, float var8)
-    {
-        int var9 = 0;
-
-        if (var5 == 2)
-        {
-            var9 = 0;
-        }
-
-        if (var5 == 3)
-        {
-            var9 = 1;
-        }
-
-        if (var5 == 4)
-        {
-            var9 = 2;
-        }
-
-        if (var5 == 5)
-        {
-            var9 = 3;
-        }
-
-        int var10 = Block.TRAP_DOOR.id;
-
-        if (var5 != 1 && var5 != 0 && var7 > 0.5F)
-        {
-            var9 |= 8;
-        }
-
-        var1.setTypeIdAndData(var2, var3, var4, var10, var9);
-    }
-
-    /**
-     * checks to see if you can place this block can be placed on that side of a block: BlockLever overrides
-     */
-    public boolean canPlace(World var1, int var2, int var3, int var4, int var5)
-    {
-        if (var5 == 0)
-        {
-            return false;
-        }
-        else if (var5 == 1)
-        {
-            return false;
-        }
-        else
-        {
-            if (var5 == 2)
-            {
-                ++var4;
-            }
-
-            if (var5 == 3)
-            {
-                --var4;
-            }
-
-            if (var5 == 4)
-            {
-                ++var2;
-            }
-
-            if (var5 == 5)
-            {
-                --var2;
-            }
-
-            return j(var1.getTypeId(var2, var3, var4));
-        }
-    }
-
-    public static boolean g(int var0)
-    {
-        return (var0 & 4) != 0;
-    }
-
-    /**
-     * Checks if the block ID is a valid support block for the trap door to connect with. If it is not the trapdoor is
-     * dropped into the world.
-     */
-    private static boolean j(int var0)
-    {
-        if (var0 <= 0)
-        {
-            return false;
-        }
-        else
-        {
-            Block var1 = Block.byId[var0];
-            return var1 != null && var1.material.k() && var1.b() || var1 == Block.GLOWSTONE;
-        }
-    }
+    return ((block != null) && (block.material.j()) && (block.b())) || (block == Block.GLOWSTONE);
+  }
 }
+

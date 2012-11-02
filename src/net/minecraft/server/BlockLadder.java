@@ -1,6 +1,9 @@
 package net.minecraft.server;
 
+import cpw.mods.fml.common.Side;
+import cpw.mods.fml.common.asm.SideOnly;
 import java.util.Random;
+import net.minecraftforge.common.ForgeDirection;
 
 public class BlockLadder extends Block
 {
@@ -42,6 +45,35 @@ public class BlockLadder extends Block
         return super.e(var1, var2, var3, var4);
     }
 
+    @SideOnly(Side.CLIENT)
+    public AxisAlignedBB b_(World var1, int var2, int var3, int var4)
+    {
+        int var5 = var1.getData(var2, var3, var4);
+        float var6 = 0.125F;
+
+        if (var5 == 2)
+        {
+            this.a(0.0F, 0.0F, 1.0F - var6, 1.0F, 1.0F, 1.0F);
+        }
+
+        if (var5 == 3)
+        {
+            this.a(0.0F, 0.0F, 0.0F, 1.0F, 1.0F, var6);
+        }
+
+        if (var5 == 4)
+        {
+            this.a(1.0F - var6, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F);
+        }
+
+        if (var5 == 5)
+        {
+            this.a(0.0F, 0.0F, 0.0F, var6, 1.0F, 1.0F);
+        }
+
+        return super.b_(var1, var2, var3, var4);
+    }
+
     /**
      * Is this block (a) opaque and (b) a full 1m cube?  This determines whether or not to render the shared face of two
      * adjacent blocks and also whether the player can attach torches, redstone wire, etc to this block.
@@ -72,7 +104,7 @@ public class BlockLadder extends Block
      */
     public boolean canPlace(World var1, int var2, int var3, int var4)
     {
-        return var1.s(var2 - 1, var3, var4) ? true : (var1.s(var2 + 1, var3, var4) ? true : (var1.s(var2, var3, var4 - 1) ? true : var1.s(var2, var3, var4 + 1)));
+        return var1.isBlockSolidOnSide(var2 - 1, var3, var4, ForgeDirection.EAST) || var1.isBlockSolidOnSide(var2 + 1, var3, var4, ForgeDirection.WEST) || var1.isBlockSolidOnSide(var2, var3, var4 - 1, ForgeDirection.SOUTH) || var1.isBlockSolidOnSide(var2, var3, var4 + 1, ForgeDirection.NORTH);
     }
 
     /**
@@ -82,22 +114,22 @@ public class BlockLadder extends Block
     {
         int var9 = var1.getData(var2, var3, var4);
 
-        if ((var9 == 0 || var5 == 2) && var1.s(var2, var3, var4 + 1))
+        if ((var9 == 0 || var5 == 2) && var1.isBlockSolidOnSide(var2, var3, var4 + 1, ForgeDirection.NORTH))
         {
             var9 = 2;
         }
 
-        if ((var9 == 0 || var5 == 3) && var1.s(var2, var3, var4 - 1))
+        if ((var9 == 0 || var5 == 3) && var1.isBlockSolidOnSide(var2, var3, var4 - 1, ForgeDirection.SOUTH))
         {
             var9 = 3;
         }
 
-        if ((var9 == 0 || var5 == 4) && var1.s(var2 + 1, var3, var4))
+        if ((var9 == 0 || var5 == 4) && var1.isBlockSolidOnSide(var2 + 1, var3, var4, ForgeDirection.WEST))
         {
             var9 = 4;
         }
 
-        if ((var9 == 0 || var5 == 5) && var1.s(var2 - 1, var3, var4))
+        if ((var9 == 0 || var5 == 5) && var1.isBlockSolidOnSide(var2 - 1, var3, var4, ForgeDirection.EAST))
         {
             var9 = 5;
         }
@@ -114,22 +146,22 @@ public class BlockLadder extends Block
         int var6 = var1.getData(var2, var3, var4);
         boolean var7 = false;
 
-        if (var6 == 2 && var1.s(var2, var3, var4 + 1))
+        if (var6 == 2 && var1.isBlockSolidOnSide(var2, var3, var4 + 1, ForgeDirection.NORTH))
         {
             var7 = true;
         }
 
-        if (var6 == 3 && var1.s(var2, var3, var4 - 1))
+        if (var6 == 3 && var1.isBlockSolidOnSide(var2, var3, var4 - 1, ForgeDirection.SOUTH))
         {
             var7 = true;
         }
 
-        if (var6 == 4 && var1.s(var2 + 1, var3, var4))
+        if (var6 == 4 && var1.isBlockSolidOnSide(var2 + 1, var3, var4, ForgeDirection.WEST))
         {
             var7 = true;
         }
 
-        if (var6 == 5 && var1.s(var2 - 1, var3, var4))
+        if (var6 == 5 && var1.isBlockSolidOnSide(var2 - 1, var3, var4, ForgeDirection.EAST))
         {
             var7 = true;
         }
@@ -149,5 +181,10 @@ public class BlockLadder extends Block
     public int a(Random var1)
     {
         return 1;
+    }
+
+    public boolean isLadder(World var1, int var2, int var3, int var4)
+    {
+        return true;
     }
 }

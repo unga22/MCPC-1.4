@@ -1,6 +1,7 @@
 package net.minecraft.server;
 
 import java.util.Random;
+import net.minecraftforge.common.ChestGenHooks;
 
 public class WorldGenJungleTemple extends WorldGenScatteredPiece
 {
@@ -10,12 +11,12 @@ public class WorldGenJungleTemple extends WorldGenScatteredPiece
     private boolean field_74946_k;
 
     /** List of Chest contents to be generated in the Jungle Pyramid chests. */
-    private static final StructurePieceTreasure[] l = new StructurePieceTreasure[] {new StructurePieceTreasure(Item.DIAMOND.id, 0, 1, 3, 3), new StructurePieceTreasure(Item.IRON_INGOT.id, 0, 1, 5, 10), new StructurePieceTreasure(Item.GOLD_INGOT.id, 0, 2, 7, 15), new StructurePieceTreasure(Item.EMERALD.id, 0, 1, 3, 2), new StructurePieceTreasure(Item.BONE.id, 0, 4, 6, 20), new StructurePieceTreasure(Item.ROTTEN_FLESH.id, 0, 3, 7, 16)};
+    public static final StructurePieceTreasure[] l = new StructurePieceTreasure[] {new StructurePieceTreasure(Item.DIAMOND.id, 0, 1, 3, 3), new StructurePieceTreasure(Item.IRON_INGOT.id, 0, 1, 5, 10), new StructurePieceTreasure(Item.GOLD_INGOT.id, 0, 2, 7, 15), new StructurePieceTreasure(Item.EMERALD.id, 0, 1, 3, 2), new StructurePieceTreasure(Item.BONE.id, 0, 4, 6, 20), new StructurePieceTreasure(Item.ROTTEN_FLESH.id, 0, 3, 7, 16)};
 
     /**
      * List of Dispenser contents to be generated in the Jungle Pyramid dispensers.
      */
-    private static final StructurePieceTreasure[] m = new StructurePieceTreasure[] {new StructurePieceTreasure(Item.ARROW.id, 0, 2, 7, 30)};
+    public static final StructurePieceTreasure[] m = new StructurePieceTreasure[] {new StructurePieceTreasure(Item.ARROW.id, 0, 2, 7, 30)};
 
     /** List of random stones to be generated in the Jungle Pyramid. */
     private static WorldGenJungleTemplePiece n = new WorldGenJungleTemplePiece((WorldGenJungleTempleUnknown)null);
@@ -158,10 +159,12 @@ public class WorldGenJungleTemple extends WorldGenScatteredPiece
             this.a(var1, Block.REDSTONE_WIRE.id, 0, 5, -3, 1, var3);
             this.a(var1, Block.REDSTONE_WIRE.id, 0, 4, -3, 1, var3);
             this.a(var1, Block.MOSSY_COBBLESTONE.id, 0, 3, -3, 1, var3);
+            ChestGenHooks var11 = ChestGenHooks.getInfo("pyramidJungleDispenser");
+            ChestGenHooks var10 = ChestGenHooks.getInfo("pyramidJungleChest");
 
             if (!this.field_74945_j)
             {
-                this.field_74945_j = this.a(var1, var3, var2, 3, -2, 1, 2, m, 2);
+                this.field_74945_j = this.a(var1, var3, var2, 3, -2, 1, 2, var11.getItems(), var11.getCount(var2));
             }
 
             this.a(var1, Block.VINE.id, 15, 3, -2, 2, var3);
@@ -178,7 +181,7 @@ public class WorldGenJungleTemple extends WorldGenScatteredPiece
 
             if (!this.field_74946_k)
             {
-                this.field_74946_k = this.a(var1, var3, var2, 9, -2, 3, 4, m, 2);
+                this.field_74946_k = this.a(var1, var3, var2, 9, -2, 3, 4, var11.getItems(), var11.getCount(var2));
             }
 
             this.a(var1, Block.VINE.id, 15, 8, -1, 3, var3);
@@ -186,7 +189,7 @@ public class WorldGenJungleTemple extends WorldGenScatteredPiece
 
             if (!this.field_74947_h)
             {
-                this.field_74947_h = this.a(var1, var3, var2, 8, -3, 3, l, 2 + var2.nextInt(5));
+                this.field_74947_h = this.a(var1, var3, var2, 8, -3, 3, var10.getItems(), var10.getCount(var2));
             }
 
             this.a(var1, Block.MOSSY_COBBLESTONE.id, 0, 9, -3, 2, var3);
@@ -219,7 +222,7 @@ public class WorldGenJungleTemple extends WorldGenScatteredPiece
 
             if (!this.field_74948_i)
             {
-                this.field_74948_i = this.a(var1, var3, var2, 9, -3, 10, l, 2 + var2.nextInt(5));
+                this.field_74948_i = this.a(var1, var3, var2, 9, -3, 10, var10.getItems(), var10.getCount(var2));
             }
 
             return true;

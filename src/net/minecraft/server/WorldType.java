@@ -1,7 +1,18 @@
 package net.minecraft.server;
 
+import com.google.common.collect.ObjectArrays;
+import com.google.common.collect.Sets;
+import cpw.mods.fml.common.Side;
+import cpw.mods.fml.common.asm.SideOnly;
+import java.util.Arrays;
+import java.util.LinkedHashSet;
+import java.util.Random;
+
 public class WorldType
 {
+    public static final BiomeBase[] base11Biomes = new BiomeBase[] {BiomeBase.DESERT, BiomeBase.FOREST, BiomeBase.EXTREME_HILLS, BiomeBase.SWAMPLAND, BiomeBase.PLAINS, BiomeBase.TAIGA};
+    public static final BiomeBase[] base12Biomes = (BiomeBase[])ObjectArrays.concat(base11Biomes, BiomeBase.JUNGLE);
+
     /** List of world types. */
     public static final WorldType[] types = new WorldType[16];
 
@@ -31,24 +42,41 @@ public class WorldType
 
     /** Whether this WorldType has a version or not. */
     private boolean j;
+    protected BiomeBase[] biomesForWorldType;
 
-    private WorldType(int var1, String var2)
+    public WorldType(int var1, String var2)
     {
         this(var1, var2, 0);
     }
 
-    private WorldType(int var1, String var2, int var3)
+    public WorldType(int var1, String var2, int var3)
     {
         this.name = var2;
         this.version = var3;
         this.i = true;
         this.f = var1;
         types[var1] = this;
+
+        switch (var1)
+        {
+            case 8:
+                this.biomesForWorldType = base11Biomes;
+                break;
+
+            default:
+                this.biomesForWorldType = base12Biomes;
+        }
     }
 
     public String name()
     {
         return this.name;
+    }
+
+    @SideOnly(Side.CLIENT)
+    public String b()
+    {
+        return "generator." + this.name;
     }
 
     /**
@@ -71,6 +99,12 @@ public class WorldType
     {
         this.i = var1;
         return this;
+    }
+
+    @SideOnly(Side.CLIENT)
+    public boolean d()
+    {
+        return this.i;
     }
 
     /**
@@ -106,5 +140,80 @@ public class WorldType
         }
 
         return null;
+    }
+
+    @SideOnly(Side.CLIENT)
+    public int f()
+    {
+        return this.f;
+    }
+
+    public WorldChunkManager getChunkManager(World var1)
+    {
+        if (this == FLAT)
+        {
+            WorldGenFlatInfo var2 = WorldGenFlatInfo.func_82651_a(var1.getWorldData().func_82571_y());
+            return new WorldChunkManagerHell(BiomeBase.biomes[var2.func_82648_a()], 0.5F, 0.5F);
+        }
+        else
+        {
+            return new WorldChunkManager(var1);
+        }
+    }
+
+    public IChunkProvider getChunkGenerator(World var1, String var2)
+    {
+        return (IChunkProvider)(this == FLAT ? new ChunkProviderFlat(var1, var1.getSeed(), var1.getWorldData().shouldGenerateMapFeatures(), var2) : new ChunkProviderGenerate(var1, var1.getSeed(), var1.getWorldData().shouldGenerateMapFeatures()));
+    }
+
+    public int getMinimumSpawnHeight(World var1)
+    {
+        return this == FLAT ? 4 : 64;
+    }
+
+    public double getHorizon(World var1)
+    {
+        return this == FLAT ? 0.0D : 63.0D;
+    }
+
+    public boolean hasVoidParticles(boolean var1)
+    {
+        return this != FLAT && !var1;
+    }
+
+    public double voidFadeMagnitude()
+    {
+        return this == FLAT ? 1.0D : 0.03125D;
+    }
+
+    public BiomeBase[] getBiomesForWorldType()
+    {
+        return this.biomesForWorldType;
+    }
+
+    public void addNewBiome(BiomeBase var1)
+    {
+        LinkedHashSet var2 = Sets.newLinkedHashSet(Arrays.asList(this.biomesForWorldType));
+        var2.add(var1);
+        this.biomesForWorldType = (BiomeBase[])var2.toArray(new BiomeBase[0]);
+    }
+
+    public void removeBiome(BiomeBase var1)
+    {
+        LinkedHashSet var2 = Sets.newLinkedHashSet(Arrays.asList(this.biomesForWorldType));
+        var2.remove(var1);
+        this.biomesForWorldType = (BiomeBase[])var2.toArray(new BiomeBase[0]);
+    }
+
+    public boolean handleSlimeSpawnReduction(Random var1, World var2)
+    {
+        return this == FLAT ? var1.nextInt(4) != 1 : false;
+    }
+
+    public void onGUICreateWorldPress() {}
+
+    public int getSpawnFuzz()
+    {
+        return 20;
     }
 }

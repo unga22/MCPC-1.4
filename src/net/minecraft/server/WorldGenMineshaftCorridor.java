@@ -2,6 +2,7 @@ package net.minecraft.server;
 
 import java.util.List;
 import java.util.Random;
+import net.minecraftforge.common.ChestGenHooks;
 
 public class WorldGenMineshaftCorridor extends StructurePiece
 {
@@ -197,99 +198,100 @@ public class WorldGenMineshaftCorridor extends StructurePiece
         }
         else
         {
-            int var8 = this.d * 5 - 1;
-            this.a(var1, var3, 0, 0, 0, 2, 1, var8, 0, 0, false);
-            this.a(var1, var3, var2, 0.8F, 0, 2, 0, 2, 2, var8, 0, 0, false);
+            int var4 = this.d * 5 - 1;
+            this.a(var1, var3, 0, 0, 0, 2, 1, var4, 0, 0, false);
+            this.a(var1, var3, var2, 0.8F, 0, 2, 0, 2, 2, var4, 0, 0, false);
 
             if (this.b)
             {
-                this.a(var1, var3, var2, 0.6F, 0, 0, 0, 2, 1, var8, Block.WEB.id, 0, false);
+                this.a(var1, var3, var2, 0.6F, 0, 0, 0, 2, 1, var4, Block.WEB.id, 0, false);
             }
 
-            int var9;
-            int var10;
-            int var11;
+            int var5;
+            int var6;
+            int var7;
 
-            for (var9 = 0; var9 < this.d; ++var9)
+            for (var5 = 0; var5 < this.d; ++var5)
             {
-                var10 = 2 + var9 * 5;
-                this.a(var1, var3, 0, 0, var10, 0, 1, var10, Block.FENCE.id, 0, false);
-                this.a(var1, var3, 2, 0, var10, 2, 1, var10, Block.FENCE.id, 0, false);
+                var6 = 2 + var5 * 5;
+                this.a(var1, var3, 0, 0, var6, 0, 1, var6, Block.FENCE.id, 0, false);
+                this.a(var1, var3, 2, 0, var6, 2, 1, var6, Block.FENCE.id, 0, false);
 
                 if (var2.nextInt(4) == 0)
                 {
-                    this.a(var1, var3, 0, 2, var10, 0, 2, var10, Block.WOOD.id, 0, false);
-                    this.a(var1, var3, 2, 2, var10, 2, 2, var10, Block.WOOD.id, 0, false);
+                    this.a(var1, var3, 0, 2, var6, 0, 2, var6, Block.WOOD.id, 0, false);
+                    this.a(var1, var3, 2, 2, var6, 2, 2, var6, Block.WOOD.id, 0, false);
                 }
                 else
                 {
-                    this.a(var1, var3, 0, 2, var10, 2, 2, var10, Block.WOOD.id, 0, false);
+                    this.a(var1, var3, 0, 2, var6, 2, 2, var6, Block.WOOD.id, 0, false);
                 }
 
-                this.a(var1, var3, var2, 0.1F, 0, 2, var10 - 1, Block.WEB.id, 0);
-                this.a(var1, var3, var2, 0.1F, 2, 2, var10 - 1, Block.WEB.id, 0);
-                this.a(var1, var3, var2, 0.1F, 0, 2, var10 + 1, Block.WEB.id, 0);
-                this.a(var1, var3, var2, 0.1F, 2, 2, var10 + 1, Block.WEB.id, 0);
-                this.a(var1, var3, var2, 0.05F, 0, 2, var10 - 2, Block.WEB.id, 0);
-                this.a(var1, var3, var2, 0.05F, 2, 2, var10 - 2, Block.WEB.id, 0);
-                this.a(var1, var3, var2, 0.05F, 0, 2, var10 + 2, Block.WEB.id, 0);
-                this.a(var1, var3, var2, 0.05F, 2, 2, var10 + 2, Block.WEB.id, 0);
-                this.a(var1, var3, var2, 0.05F, 1, 2, var10 - 1, Block.TORCH.id, 0);
-                this.a(var1, var3, var2, 0.05F, 1, 2, var10 + 1, Block.TORCH.id, 0);
+                this.a(var1, var3, var2, 0.1F, 0, 2, var6 - 1, Block.WEB.id, 0);
+                this.a(var1, var3, var2, 0.1F, 2, 2, var6 - 1, Block.WEB.id, 0);
+                this.a(var1, var3, var2, 0.1F, 0, 2, var6 + 1, Block.WEB.id, 0);
+                this.a(var1, var3, var2, 0.1F, 2, 2, var6 + 1, Block.WEB.id, 0);
+                this.a(var1, var3, var2, 0.05F, 0, 2, var6 - 2, Block.WEB.id, 0);
+                this.a(var1, var3, var2, 0.05F, 2, 2, var6 - 2, Block.WEB.id, 0);
+                this.a(var1, var3, var2, 0.05F, 0, 2, var6 + 2, Block.WEB.id, 0);
+                this.a(var1, var3, var2, 0.05F, 2, 2, var6 + 2, Block.WEB.id, 0);
+                this.a(var1, var3, var2, 0.05F, 1, 2, var6 - 1, Block.TORCH.id, 0);
+                this.a(var1, var3, var2, 0.05F, 1, 2, var6 + 1, Block.TORCH.id, 0);
+                ChestGenHooks var8 = ChestGenHooks.getInfo("mineshaftCorridor");
 
                 if (var2.nextInt(100) == 0)
                 {
-                    this.a(var1, var3, var2, 2, 0, var10 - 1, WorldGenMineshaftPieces.func_78816_a(), 3 + var2.nextInt(4));
+                    this.a(var1, var3, var2, 2, 0, var6 - 1, var8.getItems(), var8.getCount(var2));
                 }
 
                 if (var2.nextInt(100) == 0)
                 {
-                    this.a(var1, var3, var2, 0, 0, var10 + 1, WorldGenMineshaftPieces.func_78816_a(), 3 + var2.nextInt(4));
+                    this.a(var1, var3, var2, 0, 0, var6 + 1, var8.getItems(), var8.getCount(var2));
                 }
 
                 if (this.b && !this.c)
                 {
-                    var11 = this.a(0);
-                    int var12 = var10 - 1 + var2.nextInt(3);
-                    int var13 = this.a(1, var12);
-                    var12 = this.b(1, var12);
+                    var7 = this.a(0);
+                    int var9 = var6 - 1 + var2.nextInt(3);
+                    int var10 = this.a(1, var9);
+                    var9 = this.b(1, var9);
 
-                    if (var3.b(var13, var11, var12))
+                    if (var3.b(var10, var7, var9))
                     {
                         this.c = true;
-                        var1.setTypeId(var13, var11, var12, Block.MOB_SPAWNER.id);
-                        TileEntityMobSpawner var14 = (TileEntityMobSpawner)var1.getTileEntity(var13, var11, var12);
+                        var1.setTypeId(var10, var7, var9, Block.MOB_SPAWNER.id);
+                        TileEntityMobSpawner var11 = (TileEntityMobSpawner)var1.getTileEntity(var10, var7, var9);
 
-                        if (var14 != null)
+                        if (var11 != null)
                         {
-                            var14.a("CaveSpider");
+                            var11.a("CaveSpider");
                         }
                     }
                 }
             }
 
-            for (var9 = 0; var9 <= 2; ++var9)
+            for (var5 = 0; var5 <= 2; ++var5)
             {
-                for (var10 = 0; var10 <= var8; ++var10)
+                for (var6 = 0; var6 <= var4; ++var6)
                 {
-                    var11 = this.a(var1, var9, -1, var10, var3);
+                    var7 = this.a(var1, var5, -1, var6, var3);
 
-                    if (var11 == 0)
+                    if (var7 == 0)
                     {
-                        this.a(var1, Block.WOOD.id, 0, var9, -1, var10, var3);
+                        this.a(var1, Block.WOOD.id, 0, var5, -1, var6, var3);
                     }
                 }
             }
 
             if (this.a)
             {
-                for (var9 = 0; var9 <= var8; ++var9)
+                for (var5 = 0; var5 <= var4; ++var5)
                 {
-                    var10 = this.a(var1, 1, -1, var9, var3);
+                    var6 = this.a(var1, 1, -1, var5, var3);
 
-                    if (var10 > 0 && Block.q[var10])
+                    if (var6 > 0 && Block.q[var6])
                     {
-                        this.a(var1, var3, var2, 0.7F, 1, 0, var9, Block.RAILS.id, this.c(Block.RAILS.id, 0));
+                        this.a(var1, var3, var2, 0.7F, 1, 0, var5, Block.RAILS.id, this.c(Block.RAILS.id, 0));
                     }
                 }
             }

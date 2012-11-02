@@ -1,152 +1,116 @@
 package net.minecraft.server;
 
 import java.util.Random;
+import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.CraftWorld;
+import org.bukkit.craftbukkit.event.CraftEventFactory;
+import org.bukkit.event.Cancellable;
+import org.bukkit.event.block.Action;
+import org.bukkit.event.entity.EntityInteractEvent;
+import org.bukkit.plugin.PluginManager;
 
 public class BlockSoil extends Block
 {
-    protected BlockSoil(int var1)
-    {
-        super(var1, Material.EARTH);
-        this.textureId = 87;
-        this.b(true);
-        this.a(0.0F, 0.0F, 0.0F, 1.0F, 0.9375F, 1.0F);
-        this.h(255);
+  protected BlockSoil(int i)
+  {
+    super(i, Material.EARTH);
+    this.textureId = 87;
+    a(true);
+    a(0.0F, 0.0F, 0.0F, 1.0F, 0.9375F, 1.0F);
+    f(255);
+  }
+
+  public AxisAlignedBB e(World world, int i, int j, int k) {
+    return AxisAlignedBB.b(i + 0, j + 0, k + 0, i + 1, j + 1, k + 1);
+  }
+
+  public boolean a() {
+    return false;
+  }
+
+  public boolean b() {
+    return false;
+  }
+
+  public int a(int i, int j) {
+    return i == 1 ? this.textureId : (i == 1) && (j > 0) ? this.textureId - 1 : 2;
+  }
+
+  public void a(World world, int i, int j, int k, Random random) {
+    if ((!h(world, i, j, k)) && (!world.y(i, j + 1, k))) {
+      int l = world.getData(i, j, k);
+
+      if (l > 0)
+        world.setData(i, j, k, l - 1);
+      else if (!g(world, i, j, k))
+        world.setTypeId(i, j, k, Block.DIRT.id);
     }
-
-    /**
-     * Returns a bounding box from the pool of bounding boxes (this means this box can change after the pool has been
-     * cleared to be reused)
-     */
-    public AxisAlignedBB e(World var1, int var2, int var3, int var4)
-    {
-        return AxisAlignedBB.a().a((double)(var2 + 0), (double)(var3 + 0), (double)(var4 + 0), (double)(var2 + 1), (double)(var3 + 1), (double)(var4 + 1));
+    else {
+      world.setData(i, j, k, 7);
     }
+  }
 
-    /**
-     * Is this block (a) opaque and (b) a full 1m cube?  This determines whether or not to render the shared face of two
-     * adjacent blocks and also whether the player can attach torches, redstone wire, etc to this block.
-     */
-    public boolean c()
+  public void a(World world, int i, int j, int k, Entity entity, float f) {
+    if (world.random.nextFloat() < f - 0.5F)
     {
-        return false;
+      Cancellable cancellable;
+      Cancellable cancellable;
+      if ((entity instanceof EntityHuman)) {
+        cancellable = CraftEventFactory.callPlayerInteractEvent((EntityHuman)entity, Action.PHYSICAL, i, j, k, -1, null);
+      } else {
+        cancellable = new EntityInteractEvent(entity.getBukkitEntity(), world.getWorld().getBlockAt(i, j, k));
+        world.getServer().getPluginManager().callEvent((EntityInteractEvent)cancellable);
+      }
+
+      if (cancellable.isCancelled()) {
+        return;
+      }
+
+      world.setTypeId(i, j, k, Block.DIRT.id);
     }
+  }
 
-    /**
-     * If this block doesn't render as an ordinary block it will return False (examples: signs, buttons, stairs, etc)
-     */
-    public boolean b()
-    {
-        return false;
-    }
+  private boolean g(World world, int i, int j, int k) {
+    byte b0 = 0;
 
-    /**
-     * From the specified side and block metadata retrieves the blocks texture. Args: side, metadata
-     */
-    public int a(int var1, int var2)
-    {
-        return var1 == 1 && var2 > 0 ? this.textureId - 1 : (var1 == 1 ? this.textureId : 2);
-    }
+    for (int l = i - b0; l <= i + b0; l++) {
+      for (int i1 = k - b0; i1 <= k + b0; i1++) {
+        int j1 = world.getTypeId(l, j + 1, i1);
 
-    /**
-     * Ticks the block if it's been scheduled
-     */
-    public void b(World var1, int var2, int var3, int var4, Random var5)
-    {
-        if (!this.n(var1, var2, var3, var4) && !var1.B(var2, var3 + 1, var4))
-        {
-            int var6 = var1.getData(var2, var3, var4);
-
-            if (var6 > 0)
-            {
-                var1.setData(var2, var3, var4, var6 - 1);
-            }
-            else if (!this.l(var1, var2, var3, var4))
-            {
-                var1.setTypeId(var2, var3, var4, Block.DIRT.id);
-            }
+        if ((j1 == Block.CROPS.id) || (j1 == Block.MELON_STEM.id) || (j1 == Block.PUMPKIN_STEM.id)) {
+          return true;
         }
-        else
-        {
-            var1.setData(var2, var3, var4, 7);
+      }
+    }
+
+    return false;
+  }
+
+  private boolean h(World world, int i, int j, int k) {
+    for (int l = i - 4; l <= i + 4; l++) {
+      for (int i1 = j; i1 <= j + 1; i1++) {
+        for (int j1 = k - 4; j1 <= k + 4; j1++) {
+          if (world.getMaterial(l, i1, j1) == Material.WATER) {
+            return true;
+          }
         }
+      }
     }
 
-    /**
-     * Block's chance to react to an entity falling on it.
-     */
-    public void a(World var1, int var2, int var3, int var4, Entity var5, float var6)
-    {
-        if (!var1.isStatic && var1.random.nextFloat() < var6 - 0.5F)
-        {
-            var1.setTypeId(var2, var3, var4, Block.DIRT.id);
-        }
-    }
+    return false;
+  }
 
-    /**
-     * returns true if there is at least one cropblock nearby (x-1 to x+1, y+1, z-1 to z+1)
-     */
-    private boolean l(World var1, int var2, int var3, int var4)
-    {
-        byte var5 = 0;
+  public void doPhysics(World world, int i, int j, int k, int l) {
+    super.doPhysics(world, i, j, k, l);
+    Material material = world.getMaterial(i, j + 1, k);
 
-        for (int var6 = var2 - var5; var6 <= var2 + var5; ++var6)
-        {
-            for (int var7 = var4 - var5; var7 <= var4 + var5; ++var7)
-            {
-                int var8 = var1.getTypeId(var6, var3 + 1, var7);
+    if (material.isBuildable())
+      world.setTypeId(i, j, k, Block.DIRT.id);
+  }
 
-                if (var8 == Block.CROPS.id || var8 == Block.MELON_STEM.id || var8 == Block.PUMPKIN_STEM.id)
-                {
-                    return true;
-                }
-            }
-        }
-
-        return false;
-    }
-
-    /**
-     * returns true if there's water nearby (x-4 to x+4, y to y+1, k-4 to k+4)
-     */
-    private boolean n(World var1, int var2, int var3, int var4)
-    {
-        for (int var5 = var2 - 4; var5 <= var2 + 4; ++var5)
-        {
-            for (int var6 = var3; var6 <= var3 + 1; ++var6)
-            {
-                for (int var7 = var4 - 4; var7 <= var4 + 4; ++var7)
-                {
-                    if (var1.getMaterial(var5, var6, var7) == Material.WATER)
-                    {
-                        return true;
-                    }
-                }
-            }
-        }
-
-        return false;
-    }
-
-    /**
-     * Lets the block know when one of its neighbor changes. Doesn't know which neighbor changed (coordinates passed are
-     * their own) Args: x, y, z, neighbor blockID
-     */
-    public void doPhysics(World var1, int var2, int var3, int var4, int var5)
-    {
-        super.doPhysics(var1, var2, var3, var4, var5);
-        Material var6 = var1.getMaterial(var2, var3 + 1, var4);
-
-        if (var6.isBuildable())
-        {
-            var1.setTypeId(var2, var3, var4, Block.DIRT.id);
-        }
-    }
-
-    /**
-     * Returns the ID of the items to drop on destruction.
-     */
-    public int getDropType(int var1, Random var2, int var3)
-    {
-        return Block.DIRT.getDropType(0, var2, var3);
-    }
+  public int getDropType(int i, Random random, int j)
+  {
+    return Block.DIRT.getDropType(0, random, j);
+  }
 }
+

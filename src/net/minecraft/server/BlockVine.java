@@ -1,8 +1,12 @@
 package net.minecraft.server;
 
+import cpw.mods.fml.common.Side;
+import cpw.mods.fml.common.asm.SideOnly;
+import java.util.ArrayList;
 import java.util.Random;
+import net.minecraftforge.common.IShearable;
 
-public class BlockVine extends Block
+public class BlockVine extends Block implements IShearable
 {
     public BlockVine(int var1)
     {
@@ -49,70 +53,70 @@ public class BlockVine extends Block
      */
     public void updateShape(IBlockAccess var1, int var2, int var3, int var4)
     {
-        int var6 = var1.getData(var2, var3, var4);
+        int var5 = var1.getData(var2, var3, var4);
+        float var6 = 1.0F;
         float var7 = 1.0F;
         float var8 = 1.0F;
-        float var9 = 1.0F;
+        float var9 = 0.0F;
         float var10 = 0.0F;
         float var11 = 0.0F;
-        float var12 = 0.0F;
-        boolean var13 = var6 > 0;
+        boolean var12 = var5 > 0;
 
-        if ((var6 & 2) != 0)
+        if ((var5 & 2) != 0)
         {
-            var10 = Math.max(var10, 0.0625F);
-            var7 = 0.0F;
-            var8 = 0.0F;
-            var11 = 1.0F;
-            var9 = 0.0F;
-            var12 = 1.0F;
-            var13 = true;
-        }
-
-        if ((var6 & 8) != 0)
-        {
-            var7 = Math.min(var7, 0.9375F);
-            var10 = 1.0F;
-            var8 = 0.0F;
-            var11 = 1.0F;
-            var9 = 0.0F;
-            var12 = 1.0F;
-            var13 = true;
-        }
-
-        if ((var6 & 4) != 0)
-        {
-            var12 = Math.max(var12, 0.0625F);
-            var9 = 0.0F;
+            var9 = Math.max(var9, 0.0625F);
+            var6 = 0.0F;
             var7 = 0.0F;
             var10 = 1.0F;
             var8 = 0.0F;
             var11 = 1.0F;
-            var13 = true;
+            var12 = true;
         }
 
-        if ((var6 & 1) != 0)
+        if ((var5 & 8) != 0)
         {
-            var9 = Math.min(var9, 0.9375F);
-            var12 = 1.0F;
+            var6 = Math.min(var6, 0.9375F);
+            var9 = 1.0F;
             var7 = 0.0F;
             var10 = 1.0F;
             var8 = 0.0F;
             var11 = 1.0F;
-            var13 = true;
+            var12 = true;
         }
 
-        if (!var13 && this.e(var1.getTypeId(var2, var3 + 1, var4)))
+        if ((var5 & 4) != 0)
+        {
+            var11 = Math.max(var11, 0.0625F);
+            var8 = 0.0F;
+            var6 = 0.0F;
+            var9 = 1.0F;
+            var7 = 0.0F;
+            var10 = 1.0F;
+            var12 = true;
+        }
+
+        if ((var5 & 1) != 0)
         {
             var8 = Math.min(var8, 0.9375F);
             var11 = 1.0F;
+            var6 = 0.0F;
+            var9 = 1.0F;
             var7 = 0.0F;
             var10 = 1.0F;
-            var9 = 0.0F;
-            var12 = 1.0F;
+            var12 = true;
         }
 
-        this.a(var7, var8, var9, var10, var11, var12);
+        if (!var12 && this.e(var1.getTypeId(var2, var3 + 1, var4)))
+        {
+            var7 = Math.min(var7, 0.9375F);
+            var10 = 1.0F;
+            var6 = 0.0F;
+            var9 = 1.0F;
+            var8 = 0.0F;
+            var11 = 1.0F;
+        }
+
+        this.a(var6, var7, var8, var9, var10, var11);
     }
 
     /**
@@ -203,6 +207,24 @@ public class BlockVine extends Block
         }
     }
 
+    @SideOnly(Side.CLIENT)
+    public int o()
+    {
+        return xa.c();
+    }
+
+    @SideOnly(Side.CLIENT)
+    public int g_(int var1)
+    {
+        return xa.c();
+    }
+
+    @SideOnly(Side.CLIENT)
+    public int b(IBlockAccess var1, int var2, int var3, int var4)
+    {
+        return var1.getBiome(var2, var4).l();
+    }
+
     /**
      * Lets the block know when one of its neighbor changes. Doesn't know which neighbor changed (coordinates passed are
      * their own) Args: x, y, z, neighbor blockID
@@ -229,7 +251,7 @@ public class BlockVine extends Block
             int var9;
             int var10;
             int var11;
-            label138:
+            label134:
 
             for (var9 = var2 - var6; var9 <= var2 + var6; ++var9)
             {
@@ -244,7 +266,7 @@ public class BlockVine extends Block
                             if (var7 <= 0)
                             {
                                 var8 = true;
-                                break label138;
+                                break label134;
                             }
                         }
                     }
@@ -410,14 +432,23 @@ public class BlockVine extends Block
      */
     public void a(World var1, EntityHuman var2, int var3, int var4, int var5, int var6)
     {
-        if (!var1.isStatic && var2.bP() != null && var2.bP().id == Item.SHEARS.id)
-        {
-            var2.a(StatisticList.C[this.id], 1);
-            this.a(var1, var3, var4, var5, new ItemStack(Block.VINE, 1, 0));
-        }
-        else
-        {
-            super.a(var1, var2, var3, var4, var5, var6);
-        }
+        super.a(var1, var2, var3, var4, var5, var6);
+    }
+
+    public boolean isShearable(ItemStack var1, World var2, int var3, int var4, int var5)
+    {
+        return true;
+    }
+
+    public ArrayList onSheared(ItemStack var1, World var2, int var3, int var4, int var5, int var6)
+    {
+        ArrayList var7 = new ArrayList();
+        var7.add(new ItemStack(this, 1, 0));
+        return var7;
+    }
+
+    public boolean isLadder(World var1, int var2, int var3, int var4)
+    {
+        return true;
     }
 }

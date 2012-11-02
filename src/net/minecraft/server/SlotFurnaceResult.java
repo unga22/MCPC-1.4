@@ -1,5 +1,7 @@
 package net.minecraft.server;
 
+import cpw.mods.fml.common.registry.GameRegistry;
+
 public class SlotFurnaceResult extends Slot
 {
     /** The player that is using the GUI where this slot resides. */
@@ -88,6 +90,7 @@ public class SlotFurnaceResult extends Slot
         }
 
         this.field_75228_b = 0;
+        GameRegistry.onItemSmelted(this.a, var1);
 
         if (var1.id == Item.IRON_INGOT.id)
         {

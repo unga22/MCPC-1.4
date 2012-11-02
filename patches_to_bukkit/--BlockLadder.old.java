@@ -4,150 +4,109 @@ import java.util.Random;
 
 public class BlockLadder extends Block
 {
-    protected BlockLadder(int var1, int var2)
-    {
-        super(var1, var2, Material.ORIENTABLE);
-        this.a(CreativeModeTab.c);
+  protected BlockLadder(int i, int j)
+  {
+    super(i, j, Material.ORIENTABLE);
+  }
+
+  public AxisAlignedBB e(World world, int i, int j, int k) {
+    int l = world.getData(i, j, k);
+    float f = 0.125F;
+
+    if (l == 2) {
+      a(0.0F, 0.0F, 1.0F - f, 1.0F, 1.0F, 1.0F);
     }
 
-    /**
-     * Returns a bounding box from the pool of bounding boxes (this means this box can change after the pool has been
-     * cleared to be reused)
-     */
-    public AxisAlignedBB e(World var1, int var2, int var3, int var4)
-    {
-        int var5 = var1.getData(var2, var3, var4);
-        float var6 = 0.125F;
-
-        if (var5 == 2)
-        {
-            this.a(0.0F, 0.0F, 1.0F - var6, 1.0F, 1.0F, 1.0F);
-        }
-
-        if (var5 == 3)
-        {
-            this.a(0.0F, 0.0F, 0.0F, 1.0F, 1.0F, var6);
-        }
-
-        if (var5 == 4)
-        {
-            this.a(1.0F - var6, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F);
-        }
-
-        if (var5 == 5)
-        {
-            this.a(0.0F, 0.0F, 0.0F, var6, 1.0F, 1.0F);
-        }
-
-        return super.e(var1, var2, var3, var4);
+    if (l == 3) {
+      a(0.0F, 0.0F, 0.0F, 1.0F, 1.0F, f);
     }
 
-    /**
-     * Is this block (a) opaque and (b) a full 1m cube?  This determines whether or not to render the shared face of two
-     * adjacent blocks and also whether the player can attach torches, redstone wire, etc to this block.
-     */
-    public boolean c()
-    {
-        return false;
+    if (l == 4) {
+      a(1.0F - f, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F);
     }
 
-    /**
-     * If this block doesn't render as an ordinary block it will return False (examples: signs, buttons, stairs, etc)
-     */
-    public boolean b()
-    {
-        return false;
+    if (l == 5) {
+      a(0.0F, 0.0F, 0.0F, f, 1.0F, 1.0F);
     }
 
-    /**
-     * The type of render function that is called for this block
-     */
-    public int d()
-    {
-        return 8;
+    return super.e(world, i, j, k);
+  }
+
+  public boolean a() {
+    return false;
+  }
+
+  public boolean b() {
+    return false;
+  }
+
+  public int c() {
+    return 8;
+  }
+
+  public boolean canPlace(World par1World, int par2, int par3, int par4)
+  {
+    return (par1World.isBlockSolidOnSide(par2 - 1, par3, par4, 5)) || (par1World.isBlockSolidOnSide(par2 + 1, par3, par4, 4)) || (par1World.isBlockSolidOnSide(par2, par3, par4 - 1, 3)) || (par1World.isBlockSolidOnSide(par2, par3, par4 + 1, 2));
+  }
+
+  public void postPlace(World world, int i, int j, int k, int l)
+  {
+    int i1 = world.getData(i, j, k);
+
+    if (((i1 == 0) || (l == 2)) && (world.isBlockSolidOnSide(i, j, k + 1, 2))) {
+      i1 = 2;
     }
 
-    /**
-     * Checks to see if its valid to put this block at the specified coordinates. Args: world, x, y, z
-     */
-    public boolean canPlace(World var1, int var2, int var3, int var4)
-    {
-        return var1.s(var2 - 1, var3, var4) ? true : (var1.s(var2 + 1, var3, var4) ? true : (var1.s(var2, var3, var4 - 1) ? true : var1.s(var2, var3, var4 + 1)));
+    if (((i1 == 0) || (l == 3)) && (world.isBlockSolidOnSide(i, j, k - 1, 3))) {
+      i1 = 3;
     }
 
-    /**
-     * called before onBlockPlacedBy by ItemBlock and ItemReed
-     */
-    public void postPlace(World var1, int var2, int var3, int var4, int var5, float var6, float var7, float var8)
-    {
-        int var9 = var1.getData(var2, var3, var4);
-
-        if ((var9 == 0 || var5 == 2) && var1.s(var2, var3, var4 + 1))
-        {
-            var9 = 2;
-        }
-
-        if ((var9 == 0 || var5 == 3) && var1.s(var2, var3, var4 - 1))
-        {
-            var9 = 3;
-        }
-
-        if ((var9 == 0 || var5 == 4) && var1.s(var2 + 1, var3, var4))
-        {
-            var9 = 4;
-        }
-
-        if ((var9 == 0 || var5 == 5) && var1.s(var2 - 1, var3, var4))
-        {
-            var9 = 5;
-        }
-
-        var1.setData(var2, var3, var4, var9);
+    if (((i1 == 0) || (l == 4)) && (world.isBlockSolidOnSide(i + 1, j, k, 4))) {
+      i1 = 4;
     }
 
-    /**
-     * Lets the block know when one of its neighbor changes. Doesn't know which neighbor changed (coordinates passed are
-     * their own) Args: x, y, z, neighbor blockID
-     */
-    public void doPhysics(World var1, int var2, int var3, int var4, int var5)
-    {
-        int var6 = var1.getData(var2, var3, var4);
-        boolean var7 = false;
-
-        if (var6 == 2 && var1.s(var2, var3, var4 + 1))
-        {
-            var7 = true;
-        }
-
-        if (var6 == 3 && var1.s(var2, var3, var4 - 1))
-        {
-            var7 = true;
-        }
-
-        if (var6 == 4 && var1.s(var2 + 1, var3, var4))
-        {
-            var7 = true;
-        }
-
-        if (var6 == 5 && var1.s(var2 - 1, var3, var4))
-        {
-            var7 = true;
-        }
-
-        if (!var7)
-        {
-            this.c(var1, var2, var3, var4, var6, 0);
-            var1.setTypeId(var2, var3, var4, 0);
-        }
-
-        super.doPhysics(var1, var2, var3, var4, var5);
+    if (((i1 == 0) || (l == 5)) && (world.isBlockSolidOnSide(i - 1, j, k, 5))) {
+      i1 = 5;
     }
 
-    /**
-     * Returns the quantity of items to drop on block destruction.
-     */
-    public int a(Random var1)
-    {
-        return 1;
+    world.setData(i, j, k, i1);
+  }
+
+  public void doPhysics(World world, int i, int j, int k, int l) {
+    int i1 = world.getData(i, j, k);
+    boolean flag = false;
+
+    if ((i1 == 2) && (world.isBlockSolidOnSide(i, j, k + 1, 2))) {
+      flag = true;
     }
+
+    if ((i1 == 3) && (world.isBlockSolidOnSide(i, j, k - 1, 3))) {
+      flag = true;
+    }
+
+    if ((i1 == 4) && (world.isBlockSolidOnSide(i + 1, j, k, 4))) {
+      flag = true;
+    }
+
+    if ((i1 == 5) && (world.isBlockSolidOnSide(i - 1, j, k, 5))) {
+      flag = true;
+    }
+
+    if (!flag) {
+      b(world, i, j, k, i1, 0);
+      world.setTypeId(i, j, k, 0);
+    }
+
+    super.doPhysics(world, i, j, k, l);
+  }
+
+  public int a(Random random) {
+    return 1;
+  }
+
+  public boolean isLadder(World world, int x, int y, int z)
+  {
+    return true;
+  }
 }
+

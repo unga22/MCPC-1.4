@@ -1,100 +1,60 @@
 package net.minecraft.server;
 
+import forge.ForgeHooks;
+
 public class ItemTool extends Item
 {
-    /** Array of blocks the tool has extra effect against. */
-    private Block[] c;
-    protected float a = 4.0F;
+  private Block[] bU;
+  public float a = 4.0F;
+  public int bV;
+  protected EnumToolMaterial b;
 
-    /** Damage versus entities. */
-    private int ck;
+  protected ItemTool(int i, int j, EnumToolMaterial enumtoolmaterial, Block[] ablock)
+  {
+    super(i);
+    this.b = enumtoolmaterial;
+    this.bU = ablock;
+    this.maxStackSize = 1;
+    setMaxDurability(enumtoolmaterial.a());
+    this.a = enumtoolmaterial.b();
+    this.bV = (j + enumtoolmaterial.c());
+  }
 
-    /** The material this tool is made from. */
-    protected EnumToolMaterial b;
-
-    protected ItemTool(int var1, int var2, EnumToolMaterial var3, Block[] var4)
-    {
-        super(var1);
-        this.b = var3;
-        this.c = var4;
-        this.maxStackSize = 1;
-        this.setMaxDurability(var3.a());
-        this.a = var3.b();
-        this.ck = var2 + var3.c();
-        this.a(CreativeModeTab.i);
+  public float getDestroySpeed(ItemStack itemstack, Block block) {
+    for (int i = 0; i < this.bU.length; i++) {
+      if (this.bU[i] == block) {
+        return this.a;
+      }
     }
 
-    /**
-     * Returns the strength of the stack against a given block. 1.0F base, (Quality+1)*2 if correct blocktype, 1.5F if
-     * sword
-     */
-    public float getDestroySpeed(ItemStack var1, Block var2)
+    return 1.0F;
+  }
+
+  public boolean a(ItemStack itemstack, EntityLiving entityliving, EntityLiving entityliving1) {
+    itemstack.damage(2, entityliving1);
+    return true;
+  }
+
+  public boolean a(ItemStack itemstack, int i, int j, int k, int l, EntityLiving entityliving) {
+    itemstack.damage(1, entityliving);
+    return true;
+  }
+
+  public int a(Entity entity) {
+    return this.bV;
+  }
+
+  public int c() {
+    return this.b.e();
+  }
+
+  public float getStrVsBlock(ItemStack stack, Block block, int meta)
+  {
+    if (ForgeHooks.isToolEffective(stack, block, meta))
     {
-        Block[] var3 = this.c;
-        int var4 = var3.length;
-
-        for (int var5 = 0; var5 < var4; ++var5)
-        {
-            Block var6 = var3[var5];
-
-            if (var6 == var2)
-            {
-                return this.a;
-            }
-        }
-
-        return 1.0F;
+      return this.a;
     }
-
-    /**
-     * Current implementations of this method in child classes do not use the entry argument beside ev. They just raise
-     * the damage on the stack.
-     */
-    public boolean a(ItemStack var1, EntityLiving var2, EntityLiving var3)
-    {
-        var1.damage(2, var3);
-        return true;
-    }
-
-    public boolean a(ItemStack var1, World var2, int var3, int var4, int var5, int var6, EntityLiving var7)
-    {
-        if ((double)Block.byId[var3].m(var2, var4, var5, var6) != 0.0D)
-        {
-            var1.damage(1, var7);
-        }
-
-        return true;
-    }
-
-    /**
-     * Returns the damage against a given entity.
-     */
-    public int a(Entity var1)
-    {
-        return this.ck;
-    }
-
-    /**
-     * Return the enchantability factor of the item, most of the time is based on material.
-     */
-    public int c()
-    {
-        return this.b.e();
-    }
-
-    /**
-     * Return the name for this tool's material.
-     */
-    public String g()
-    {
-        return this.b.toString();
-    }
-
-    /**
-     * Return whether this item is repairable in an anvil.
-     */
-    public boolean a(ItemStack var1, ItemStack var2)
-    {
-        return this.b.f() == var2.id ? true : super.a(var1, var2);
-    }
+    return getDestroySpeed(stack, block);
+  }
 }
+

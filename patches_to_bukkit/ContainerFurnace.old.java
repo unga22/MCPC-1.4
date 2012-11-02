@@ -1,154 +1,133 @@
 package net.minecraft.server;
 
-import java.util.Iterator;
+import java.util.List;
+import org.bukkit.craftbukkit.inventory.CraftInventoryFurnace;
+import org.bukkit.craftbukkit.inventory.CraftInventoryView;
 
 public class ContainerFurnace extends Container
 {
-    private TileEntityFurnace furnace;
-    private int f = 0;
-    private int g = 0;
-    private int h = 0;
+  public TileEntityFurnace furnace;
+  private int b = 0;
+  private int c = 0;
+  private int h = 0;
 
-    public ContainerFurnace(PlayerInventory var1, TileEntityFurnace var2)
-    {
-        this.furnace = var2;
-        this.a(new Slot(var2, 0, 56, 17));
-        this.a(new Slot(var2, 1, 56, 53));
-        this.a(new SlotFurnaceResult(var1.player, var2, 2, 116, 35));
-        int var3;
+  private CraftInventoryView bukkitEntity = null;
+  private PlayerInventory player;
 
-        for (var3 = 0; var3 < 3; ++var3)
-        {
-            for (int var4 = 0; var4 < 9; ++var4)
-            {
-                this.a(new Slot(var1, var4 + var3 * 9 + 9, 8 + var4 * 18, 84 + var3 * 18));
-            }
+  public CraftInventoryView getBukkitView()
+  {
+    if (this.bukkitEntity != null) {
+      return this.bukkitEntity;
+    }
+
+    CraftInventoryFurnace inventory = new CraftInventoryFurnace(this.furnace);
+    this.bukkitEntity = new CraftInventoryView(this.player.player.getBukkitEntity(), inventory, this);
+    return this.bukkitEntity;
+  }
+
+  public ContainerFurnace(PlayerInventory playerinventory, TileEntityFurnace tileentityfurnace)
+  {
+    this.furnace = tileentityfurnace;
+    a(new Slot(tileentityfurnace, 0, 56, 17));
+    a(new Slot(tileentityfurnace, 1, 56, 53));
+    a(new SlotResult2(playerinventory.player, tileentityfurnace, 2, 116, 35));
+    this.player = playerinventory;
+
+    for (int i = 0; i < 3; i++) {
+      for (int j = 0; j < 9; j++) {
+        a(new Slot(playerinventory, j + i * 9 + 9, 8 + j * 18, 84 + i * 18));
+      }
+    }
+
+    for (i = 0; i < 9; i++)
+      a(new Slot(playerinventory, i, 8 + i * 18, 142));
+  }
+
+  public void addSlotListener(ICrafting icrafting)
+  {
+    super.addSlotListener(icrafting);
+    icrafting.setContainerData(this, 0, this.furnace.cookTime);
+    icrafting.setContainerData(this, 1, this.furnace.burnTime);
+    icrafting.setContainerData(this, 2, this.furnace.ticksForCurrentFuel);
+  }
+
+  public void a() {
+    super.a();
+
+    for (int i = 0; i < this.listeners.size(); i++) {
+      ICrafting icrafting = (ICrafting)this.listeners.get(i);
+
+      if (this.b != this.furnace.cookTime) {
+        icrafting.setContainerData(this, 0, this.furnace.cookTime);
+      }
+
+      if (this.c != this.furnace.burnTime) {
+        icrafting.setContainerData(this, 1, this.furnace.burnTime);
+      }
+
+      if (this.h != this.furnace.ticksForCurrentFuel) {
+        icrafting.setContainerData(this, 2, this.furnace.ticksForCurrentFuel);
+      }
+    }
+
+    this.b = this.furnace.cookTime;
+    this.c = this.furnace.burnTime;
+    this.h = this.furnace.ticksForCurrentFuel;
+  }
+
+  public boolean b(EntityHuman entityhuman) {
+    if (!this.checkReachable) return true;
+    return this.furnace.a(entityhuman);
+  }
+
+  public ItemStack a(int i) {
+    ItemStack itemstack = null;
+    Slot slot = (Slot)this.e.get(i);
+
+    if ((slot != null) && (slot.c())) {
+      ItemStack itemstack1 = slot.getItem();
+
+      itemstack = itemstack1.cloneItemStack();
+      if (i == 2) {
+        if (!a(itemstack1, 3, 39, true)) {
+          return null;
         }
 
-        for (var3 = 0; var3 < 9; ++var3)
-        {
-            this.a(new Slot(var1, var3, 8 + var3 * 18, 142));
+        slot.a(itemstack1, itemstack);
+      } else if ((i != 1) && (i != 0)) {
+        if (FurnaceRecipes.getInstance().getSmeltingResult(itemstack1) != null) {
+          if (!a(itemstack1, 0, 1, false))
+            return null;
         }
-    }
-
-    public void addSlotListener(ICrafting var1)
-    {
-        super.addSlotListener(var1);
-        var1.setContainerData(this, 0, this.furnace.cookTime);
-        var1.setContainerData(this, 1, this.furnace.burnTime);
-        var1.setContainerData(this, 2, this.furnace.ticksForCurrentFuel);
-    }
-
-    /**
-     * Updates crafting matrix; called from onCraftMatrixChanged. Args: none
-     */
-    public void b()
-    {
-        super.b();
-        Iterator var1 = this.listeners.iterator();
-
-        while (var1.hasNext())
-        {
-            ICrafting var2 = (ICrafting)var1.next();
-
-            if (this.f != this.furnace.cookTime)
-            {
-                var2.setContainerData(this, 0, this.furnace.cookTime);
-            }
-
-            if (this.g != this.furnace.burnTime)
-            {
-                var2.setContainerData(this, 1, this.furnace.burnTime);
-            }
-
-            if (this.h != this.furnace.ticksForCurrentFuel)
-            {
-                var2.setContainerData(this, 2, this.furnace.ticksForCurrentFuel);
-            }
+        else if (TileEntityFurnace.isFuel(itemstack1)) {
+          if (!a(itemstack1, 1, 2, false))
+            return null;
         }
-
-        this.f = this.furnace.cookTime;
-        this.g = this.furnace.burnTime;
-        this.h = this.furnace.ticksForCurrentFuel;
-    }
-
-    public boolean c(EntityHuman var1)
-    {
-        return this.furnace.a(var1);
-    }
-
-    /**
-     * Take a stack from the specified inventory slot.
-     */
-    public ItemStack b(EntityHuman var1, int var2)
-    {
-        ItemStack var3 = null;
-        Slot var4 = (Slot)this.b.get(var2);
-
-        if (var4 != null && var4.d())
-        {
-            ItemStack var5 = var4.getItem();
-            var3 = var5.cloneItemStack();
-
-            if (var2 == 2)
-            {
-                if (!this.a(var5, 3, 39, true))
-                {
-                    return null;
-                }
-
-                var4.a(var5, var3);
-            }
-            else if (var2 != 1 && var2 != 0)
-            {
-                if (RecipesFurnace.getInstance().getResult(var5.getItem().id) != null)
-                {
-                    if (!this.a(var5, 0, 1, false))
-                    {
-                        return null;
-                    }
-                }
-                else if (TileEntityFurnace.isFuel(var5))
-                {
-                    if (!this.a(var5, 1, 2, false))
-                    {
-                        return null;
-                    }
-                }
-                else if (var2 >= 3 && var2 < 30)
-                {
-                    if (!this.a(var5, 30, 39, false))
-                    {
-                        return null;
-                    }
-                }
-                else if (var2 >= 30 && var2 < 39 && !this.a(var5, 3, 30, false))
-                {
-                    return null;
-                }
-            }
-            else if (!this.a(var5, 3, 39, false))
-            {
-                return null;
-            }
-
-            if (var5.count == 0)
-            {
-                var4.set((ItemStack)null);
-            }
-            else
-            {
-                var4.e();
-            }
-
-            if (var5.count == var3.count)
-            {
-                return null;
-            }
-
-            var4.a(var1, var5);
+        else if ((i >= 3) && (i < 30)) {
+          if (!a(itemstack1, 30, 39, false))
+            return null;
         }
+        else if ((i >= 30) && (i < 39) && (!a(itemstack1, 3, 30, false)))
+          return null;
+      }
+      else if (!a(itemstack1, 3, 39, false)) {
+        return null;
+      }
 
-        return var3;
+      if (itemstack1.count == 0)
+        slot.set((ItemStack)null);
+      else {
+        slot.d();
+      }
+
+      if (itemstack1.count == itemstack.count) {
+        return null;
+      }
+
+      slot.c(itemstack1);
     }
+
+    return itemstack;
+  }
 }
+

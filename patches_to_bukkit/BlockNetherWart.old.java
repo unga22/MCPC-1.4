@@ -1,106 +1,70 @@
 package net.minecraft.server;
 
+import java.util.ArrayList;
 import java.util.Random;
+import org.bukkit.craftbukkit.event.CraftEventFactory;
 
 public class BlockNetherWart extends BlockFlower
 {
-    protected BlockNetherWart(int var1)
-    {
-        super(var1, 226);
-        this.b(true);
-        float var2 = 0.5F;
-        this.a(0.5F - var2, 0.0F, 0.5F - var2, 0.5F + var2, 0.25F, 0.5F + var2);
-        this.a((CreativeModeTab)null);
+  protected BlockNetherWart(int i)
+  {
+    super(i, 226);
+    a(true);
+    float f = 0.5F;
+
+    a(0.5F - f, 0.0F, 0.5F - f, 0.5F + f, 0.25F, 0.5F + f);
+  }
+
+  protected boolean d(int i) {
+    return i == Block.SOUL_SAND.id;
+  }
+
+  public boolean f(World world, int i, int j, int k) {
+    return d(world.getTypeId(i, j - 1, k));
+  }
+
+  public void a(World world, int i, int j, int k, Random random) {
+    int l = world.getData(i, j, k);
+
+    if (l < 3) {
+      BiomeBase biomebase = world.getBiome(i, k);
+
+      if (((biomebase instanceof BiomeHell)) && (random.nextInt(10) == 0)) {
+        CraftEventFactory.handleBlockGrowEvent(world, i, j, k, this.id, ++l);
+      }
     }
 
-    /**
-     * Gets passed in the blockID of the block below and supposed to return true if its allowed to grow on the type of
-     * blockID passed in. Args: blockID
-     */
-    protected boolean d_(int var1)
-    {
-        return var1 == Block.SOUL_SAND.id;
+    super.a(world, i, j, k, random);
+  }
+
+  public int a(int i, int j) {
+    return j > 0 ? this.textureId + 1 : j >= 3 ? this.textureId + 2 : this.textureId;
+  }
+
+  public int c() {
+    return 6;
+  }
+
+  public ArrayList<ItemStack> getBlockDropped(World world, int i, int j, int k, int metadata, int fortune)
+  {
+    ArrayList ret = new ArrayList();
+    int n = 1;
+    if (metadata >= 3) {
+      n = 2 + world.random.nextInt(3) + (fortune > 0 ? world.random.nextInt(fortune + 1) : 0);
     }
 
-    /**
-     * Can this block stay at this position.  Similar to canPlaceBlockAt except gets checked often with plants.
-     */
-    public boolean d(World var1, int var2, int var3, int var4)
-    {
-        return this.d_(var1.getTypeId(var2, var3 - 1, var4));
+    for (int m = 0; m < n; m++) {
+      ret.add(new ItemStack(Item.NETHER_STALK));
     }
+    return ret;
+  }
 
-    /**
-     * Ticks the block if it's been scheduled
-     */
-    public void b(World var1, int var2, int var3, int var4, Random var5)
-    {
-        int var6 = var1.getData(var2, var3, var4);
+  public int getDropType(int i, Random random, int j) {
+    return 0;
+  }
 
-        if (var6 < 3 && var5.nextInt(10) == 0)
-        {
-            ++var6;
-            var1.setData(var2, var3, var4, var6);
-        }
-
-        super.b(var1, var2, var3, var4, var5);
-    }
-
-    /**
-     * From the specified side and block metadata retrieves the blocks texture. Args: side, metadata
-     */
-    public int a(int var1, int var2)
-    {
-        return var2 >= 3 ? this.textureId + 2 : (var2 > 0 ? this.textureId + 1 : this.textureId);
-    }
-
-    /**
-     * The type of render function that is called for this block
-     */
-    public int d()
-    {
-        return 6;
-    }
-
-    /**
-     * Drops the block items with a specified chance of dropping the specified items
-     */
-    public void dropNaturally(World var1, int var2, int var3, int var4, int var5, float var6, int var7)
-    {
-        if (!var1.isStatic)
-        {
-            int var8 = 1;
-
-            if (var5 >= 3)
-            {
-                var8 = 2 + var1.random.nextInt(3);
-
-                if (var7 > 0)
-                {
-                    var8 += var1.random.nextInt(var7 + 1);
-                }
-            }
-
-            for (int var9 = 0; var9 < var8; ++var9)
-            {
-                this.a(var1, var2, var3, var4, new ItemStack(Item.NETHER_STALK));
-            }
-        }
-    }
-
-    /**
-     * Returns the ID of the items to drop on destruction.
-     */
-    public int getDropType(int var1, Random var2, int var3)
-    {
-        return 0;
-    }
-
-    /**
-     * Returns the quantity of items to drop on block destruction.
-     */
-    public int a(Random var1)
-    {
-        return 0;
-    }
+  public int a(Random random) {
+    return 0;
+  }
 }
+

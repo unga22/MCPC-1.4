@@ -1,8 +1,11 @@
 package net.minecraft.server;
 
 import java.util.Random;
+import net.minecraftforge.common.EnumPlantType;
+import net.minecraftforge.common.ForgeDirection;
+import net.minecraftforge.common.IPlantable;
 
-public class BlockFlower extends Block
+public class BlockFlower extends Block implements IPlantable
 {
     protected BlockFlower(int var1, int var2, Material var3)
     {
@@ -24,7 +27,7 @@ public class BlockFlower extends Block
      */
     public boolean canPlace(World var1, int var2, int var3, int var4)
     {
-        return super.canPlace(var1, var2, var3, var4) && this.d_(var1.getTypeId(var2, var3 - 1, var4));
+        return super.canPlace(var1, var2, var3, var4) && this.d(var1, var2, var3, var4);
     }
 
     /**
@@ -68,7 +71,8 @@ public class BlockFlower extends Block
      */
     public boolean d(World var1, int var2, int var3, int var4)
     {
-        return (var1.k(var2, var3, var4) >= 8 || var1.j(var2, var3, var4)) && this.d_(var1.getTypeId(var2, var3 - 1, var4));
+        Block var5 = byId[var1.getTypeId(var2, var3 - 1, var4)];
+        return (var1.k(var2, var3, var4) >= 8 || var1.j(var2, var3, var4)) && var5 != null && var5.canSustainPlant(var1, var2, var3 - 1, var4, ForgeDirection.UP, this);
     }
 
     /**
@@ -103,5 +107,20 @@ public class BlockFlower extends Block
     public int d()
     {
         return 1;
+    }
+
+    public EnumPlantType getPlantType(World var1, int var2, int var3, int var4)
+    {
+        return this.id == CROPS.id ? EnumPlantType.Crop : (this.id == DEAD_BUSH.id ? EnumPlantType.Desert : (this.id == WATER_LILY.id ? EnumPlantType.Water : (this.id == RED_MUSHROOM.id ? EnumPlantType.Cave : (this.id == BROWN_MUSHROOM.id ? EnumPlantType.Cave : (this.id == NETHER_WART.id ? EnumPlantType.Nether : (this.id == SAPLING.id ? EnumPlantType.Plains : (this.id == MELON_STEM.id ? EnumPlantType.Crop : (this.id == PUMPKIN_STEM.id ? EnumPlantType.Crop : (this.id == LONG_GRASS.id ? EnumPlantType.Plains : EnumPlantType.Plains)))))))));
+    }
+
+    public int getPlantID(World var1, int var2, int var3, int var4)
+    {
+        return this.id;
+    }
+
+    public int getPlantMetadata(World var1, int var2, int var3, int var4)
+    {
+        return var1.getData(var2, var3, var4);
     }
 }

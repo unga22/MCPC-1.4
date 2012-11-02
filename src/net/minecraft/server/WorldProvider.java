@@ -1,5 +1,10 @@
 package net.minecraft.server;
 
+import cpw.mods.fml.common.Side;
+import cpw.mods.fml.common.asm.SideOnly;
+import net.minecraftforge.client.SkyProvider;
+import net.minecraftforge.common.DimensionManager;
+
 public abstract class WorldProvider
 {
     /** world object being used */
@@ -28,6 +33,7 @@ public abstract class WorldProvider
 
     /** Array for sunrise/sunset colors (RGBA) */
     private float[] i = new float[4];
+    private SkyProvider skyProvider = null;
 
     /**
      * associate an existing world with a World provider, and setup its lightbrightness table
@@ -60,15 +66,7 @@ public abstract class WorldProvider
      */
     protected void b()
     {
-        if (this.a.getWorldData().getType() == WorldType.FLAT)
-        {
-            WorldGenFlatInfo var1 = WorldGenFlatInfo.func_82651_a(this.a.getWorldData().func_82571_y());
-            this.d = new WorldChunkManagerHell(BiomeBase.biomes[var1.func_82648_a()], 0.5F, 0.5F);
-        }
-        else
-        {
-            this.d = new WorldChunkManager(this.a);
-        }
+        this.d = this.type.getChunkManager(this.a);
     }
 
     /**
@@ -76,7 +74,7 @@ public abstract class WorldProvider
      */
     public IChunkProvider getChunkProvider()
     {
-        return (IChunkProvider)(this.type == WorldType.FLAT ? new ChunkProviderFlat(this.a, this.a.getSeed(), this.a.getWorldData().shouldGenerateMapFeatures(), this.field_82913_c) : new ChunkProviderGenerate(this.a, this.a.getSeed(), this.a.getWorldData().shouldGenerateMapFeatures()));
+        return this.type.getChunkGenerator(this.a, this.field_82913_c);
     }
 
     /**
@@ -112,12 +110,66 @@ public abstract class WorldProvider
         return var5;
     }
 
+    @SideOnly(Side.CLIENT)
+    public int b(long var1, float var3)
+    {
+        return (int)(var1 / 24000L) % 8;
+    }
+
     /**
      * Returns 'true' if in the "main surface world", but 'false' if in the Nether or End dimensions.
      */
     public boolean d()
     {
         return true;
+    }
+
+    @SideOnly(Side.CLIENT)
+    public float[] a(float var1, float var2)
+    {
+        float var3 = 0.4F;
+        float var4 = MathHelper.cos(var1 * (float)Math.PI * 2.0F) - 0.0F;
+        float var5 = -0.0F;
+
+        if (var4 >= var5 - var3 && var4 <= var5 + var3)
+        {
+            float var6 = (var4 - var5) / var3 * 0.5F + 0.5F;
+            float var7 = 1.0F - (1.0F - MathHelper.sin(var6 * (float)Math.PI)) * 0.99F;
+            var7 *= var7;
+            this.i[0] = var6 * 0.3F + 0.7F;
+            this.i[1] = var6 * var6 * 0.7F + 0.2F;
+            this.i[2] = var6 * var6 * 0.0F + 0.2F;
+            this.i[3] = var7;
+            return this.i;
+        }
+        else
+        {
+            return null;
+        }
+    }
+
+    @SideOnly(Side.CLIENT)
+    public Vec3D b(float var1, float var2)
+    {
+        float var3 = MathHelper.cos(var1 * (float)Math.PI * 2.0F) * 2.0F + 0.5F;
+
+        if (var3 < 0.0F)
+        {
+            var3 = 0.0F;
+        }
+
+        if (var3 > 1.0F)
+        {
+            var3 = 1.0F;
+        }
+
+        float var4 = 0.7529412F;
+        float var5 = 0.84705883F;
+        float var6 = 1.0F;
+        var4 *= var3 * 0.94F + 0.06F;
+        var5 *= var3 * 0.94F + 0.06F;
+        var6 *= var3 * 0.91F + 0.09F;
+        return this.a.getVec3DPool().create((double)var4, (double)var5, (double)var6);
     }
 
     /**
@@ -130,7 +182,19 @@ public abstract class WorldProvider
 
     public static WorldProvider byDimension(int var0)
     {
-        return (WorldProvider)(var0 == -1 ? new WorldProviderHell() : (var0 == 0 ? new WorldProviderNormal() : (var0 == 1 ? new WorldProviderTheEnd() : null)));
+        return DimensionManager.createProviderFor(var0);
+    }
+
+    @SideOnly(Side.CLIENT)
+    public float f()
+    {
+        return 128.0F;
+    }
+
+    @SideOnly(Side.CLIENT)
+    public boolean g()
+    {
+        return true;
     }
 
     /**
@@ -143,11 +207,211 @@ public abstract class WorldProvider
 
     public int getSeaLevel()
     {
-        return this.type == WorldType.FLAT ? 4 : 64;
+        return this.type.getMinimumSpawnHeight(this.a);
+    }
+
+    @SideOnly(Side.CLIENT)
+    public boolean j()
+    {
+        return this.type.hasVoidParticles(this.f);
+    }
+
+    @SideOnly(Side.CLIENT)
+    public double k()
+    {
+        return this.type.voidFadeMagnitude();
+    }
+
+    @SideOnly(Side.CLIENT)
+    public boolean b(int var1, int var2)
+    {
+        return false;
     }
 
     /**
      * Returns the dimension's name, e.g. "The End", "Nether", or "Overworld".
      */
     public abstract String getName();
+
+    public void setDimension(int var1)
+    {
+        this.dimension = var1;
+    }
+
+    public String getSaveFolder()
+    {
+        return this.dimension == 0 ? null : "DIM" + this.dimension;
+    }
+
+    public String getWelcomeMessage()
+    {
+        return this instanceof WorldProviderTheEnd ? "Entering the End" : (this instanceof WorldProviderHell ? "Entering the Nether" : null);
+    }
+
+    public String getDepartMessage()
+    {
+        return this instanceof WorldProviderTheEnd ? "Leaving the End" : (this instanceof WorldProviderHell ? "Leaving the Nether" : null);
+    }
+
+    public double getMovementFactor()
+    {
+        return this instanceof WorldProviderHell ? 8.0D : 1.0D;
+    }
+
+    @SideOnly(Side.CLIENT)
+    public SkyProvider getSkyProvider()
+    {
+        return this.skyProvider;
+    }
+
+    @SideOnly(Side.CLIENT)
+    public void setSkyProvider(SkyProvider var1)
+    {
+        this.skyProvider = var1;
+    }
+
+    public ChunkCoordinates getRandomizedSpawnPoint()
+    {
+        ChunkCoordinates var1 = new ChunkCoordinates(this.a.getSpawn());
+        boolean var2 = this.a.getWorldData().getGameType() != EnumGamemode.ADVENTURE;
+        int var3 = this.type.getSpawnFuzz();
+        int var4 = var3 / 2;
+
+        if (!this.f && !var2)
+        {
+            var1.x += this.a.random.nextInt(var3) - var4;
+            var1.z += this.a.random.nextInt(var3) - var4;
+            var1.y = this.a.i(var1.x, var1.z);
+        }
+
+        return var1;
+    }
+
+    public BiomeBase getBiomeGenForCoords(int var1, int var2)
+    {
+        return this.a.getBiomeGenForCoordsBody(var1, var2);
+    }
+
+    public boolean isDaytime()
+    {
+        return this.a.j < 4;
+    }
+
+    @SideOnly(Side.CLIENT)
+    public Vec3D getSkyColor(Entity var1, float var2)
+    {
+        return this.a.getSkyColorBody(var1, var2);
+    }
+
+    @SideOnly(Side.CLIENT)
+    public Vec3D drawClouds(float var1)
+    {
+        return this.a.drawCloudsBody(var1);
+    }
+
+    @SideOnly(Side.CLIENT)
+    public float getStarBrightness(float var1)
+    {
+        return this.a.getStarBrightnessBody(var1);
+    }
+
+    public void setAllowedSpawnTypes(boolean var1, boolean var2)
+    {
+        this.a.allowMonsters = var1;
+        this.a.allowAnimals = var2;
+    }
+
+    public void calculateInitialWeather()
+    {
+        this.a.calculateInitialWeatherBody();
+    }
+
+    public void updateWeather()
+    {
+        this.a.updateWeatherBody();
+    }
+
+    public void toggleRain()
+    {
+        this.a.worldData.setWeatherDuration(1);
+    }
+
+    public boolean canBlockFreeze(int var1, int var2, int var3, boolean var4)
+    {
+        return this.a.canBlockFreezeBody(var1, var2, var3, var4);
+    }
+
+    public boolean canSnowAt(int var1, int var2, int var3)
+    {
+        return this.a.canSnowAtBody(var1, var2, var3);
+    }
+
+    public void setWorldTime(long var1)
+    {
+        this.a.worldData.c(var1);
+    }
+
+    public long getSeed()
+    {
+        return this.a.worldData.getSeed();
+    }
+
+    public long getWorldTime()
+    {
+        return this.a.worldData.g();
+    }
+
+    public ChunkCoordinates getSpawnPoint()
+    {
+        WorldData var1 = this.a.worldData;
+        return new ChunkCoordinates(var1.c(), var1.d(), var1.e());
+    }
+
+    public void setSpawnPoint(int var1, int var2, int var3)
+    {
+        this.a.worldData.setSpawn(var1, var2, var3);
+    }
+
+    public boolean canMineBlock(EntityHuman var1, int var2, int var3, int var4)
+    {
+        return this.a.canMineBlockBody(var1, var2, var3, var4);
+    }
+
+    public boolean isBlockHighHumidity(int var1, int var2, int var3)
+    {
+        return this.a.getBiome(var1, var3).e();
+    }
+
+    public int getHeight()
+    {
+        return 256;
+    }
+
+    public int getActualHeight()
+    {
+        return this.f ? 128 : 256;
+    }
+
+    public double getHorizon()
+    {
+        return this.a.worldData.getType().getHorizon(this.a);
+    }
+
+    public void resetRainAndThunder()
+    {
+        this.a.worldData.setWeatherDuration(0);
+        this.a.worldData.setStorm(false);
+        this.a.worldData.setThunderDuration(0);
+        this.a.worldData.setThundering(false);
+    }
+
+    public boolean canDoLightning(Chunk var1)
+    {
+        return true;
+    }
+
+    public boolean canDoRainSnowIce(Chunk var1)
+    {
+        return true;
+    }
 }

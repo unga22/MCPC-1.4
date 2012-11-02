@@ -1,8 +1,12 @@
 package net.minecraft.server;
 
+import cpw.mods.fml.common.Side;
+import cpw.mods.fml.common.asm.SideOnly;
+import java.util.List;
+
 public class CreativeModeTab
 {
-    public static final CreativeModeTab[] a = new CreativeModeTab[12];
+    public static CreativeModeTab[] a = new CreativeModeTab[12];
     public static final CreativeModeTab b = new CreativeModeTab1(0, "buildingBlocks");
     public static final CreativeModeTab c = new CreativeModeTab5(1, "decorations");
     public static final CreativeModeTab d = new CreativeModeTab6(2, "redstone");
@@ -19,17 +23,44 @@ public class CreativeModeTab
     private final String o;
 
     /** Texture to use. */
-    private String p = "list_items.png";
-    private boolean q = true;
+    private String p;
+    private boolean q;
 
     /** Whether to draw the title in the foreground of the creative GUI */
-    private boolean r = true;
+    private boolean r;
+
+    public CreativeModeTab(String var1)
+    {
+        this(getNextID(), var1);
+    }
 
     public CreativeModeTab(int var1, String var2)
     {
+        this.p = "list_items.png";
+        this.q = true;
+        this.r = true;
+
+        if (var1 >= a.length)
+        {
+            CreativeModeTab[] var3 = new CreativeModeTab[var1 + 1];
+
+            for (int var4 = 0; var4 < a.length; ++var4)
+            {
+                var3[var4] = a[var4];
+            }
+
+            a = var3;
+        }
+
         this.n = var1;
         this.o = var2;
         a[var1] = this;
+    }
+
+    @SideOnly(Side.CLIENT)
+    public int a()
+    {
+        return this.n;
     }
 
     public CreativeModeTab a(String var1)
@@ -38,15 +69,101 @@ public class CreativeModeTab
         return this;
     }
 
+    @SideOnly(Side.CLIENT)
+    public String b()
+    {
+        return this.o;
+    }
+
+    @SideOnly(Side.CLIENT)
+    public String c()
+    {
+        return LocaleLanguage.a().b("itemGroup." + this.b());
+    }
+
+    @SideOnly(Side.CLIENT)
+    public Item d()
+    {
+        return Item.byId[this.e()];
+    }
+
+    @SideOnly(Side.CLIENT)
+    public int e()
+    {
+        return 1;
+    }
+
+    @SideOnly(Side.CLIENT)
+    public String f()
+    {
+        return this.p;
+    }
+
+    @SideOnly(Side.CLIENT)
+    public boolean g()
+    {
+        return this.r;
+    }
+
     public CreativeModeTab h()
     {
         this.r = false;
         return this;
     }
 
+    @SideOnly(Side.CLIENT)
+    public boolean i()
+    {
+        return this.q;
+    }
+
     public CreativeModeTab j()
     {
         this.q = false;
         return this;
+    }
+
+    @SideOnly(Side.CLIENT)
+    public int k()
+    {
+        return this.n > 11 ? (this.n - 12) % 10 % 5 : this.n % 6;
+    }
+
+    @SideOnly(Side.CLIENT)
+    public boolean l()
+    {
+        return this.n > 11 ? (this.n - 12) % 10 < 5 : this.n < 6;
+    }
+
+    @SideOnly(Side.CLIENT)
+    public void a(List var1)
+    {
+        Item[] var2 = Item.byId;
+        int var3 = var2.length;
+
+        for (int var4 = 0; var4 < var3; ++var4)
+        {
+            Item var5 = var2[var4];
+
+            if (var5 != null && var5.w() == this)
+            {
+                var5.a(var5.id, this, var1);
+            }
+        }
+    }
+
+    public int getTabPage()
+    {
+        return this.n > 11 ? (this.n - 12) / 10 + 1 : 0;
+    }
+
+    public static int getNextID()
+    {
+        return a.length;
+    }
+
+    public ItemStack getIconItemStack()
+    {
+        return new ItemStack(this.d());
     }
 }

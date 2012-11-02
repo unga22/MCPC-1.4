@@ -1,182 +1,135 @@
 package net.minecraft.server;
 
 import java.util.Random;
+import org.bukkit.BlockChangeDelegate;
 
 public class WorldGenSwampTree extends WorldGenerator
+  implements BlockSapling.TreeGenerator
 {
-    public boolean a(World var1, Random var2, int var3, int var4, int var5)
-    {
-        int var6;
+  public boolean a(World world, Random random, int i, int j, int k)
+  {
+    return generate((BlockChangeDelegate)world, random, i, j, k);
+  }
 
-        for (var6 = var2.nextInt(4) + 5; var1.getMaterial(var3, var4 - 1, var5) == Material.WATER; --var4)
-        {
-            ;
+  public boolean generate(BlockChangeDelegate world, Random random, int i, int j, int k)
+  {
+    for (int l = random.nextInt(4) + 5; (world.getTypeId(i, j - 1, k) != 0) && (Block.byId[world.getTypeId(i, j - 1, k)].material == Material.WATER); j--);
+    boolean flag = true;
+
+    if ((j >= 1) && (j + l + 1 <= 128))
+    {
+      for (int i1 = j; i1 <= j + 1 + l; i1++) {
+        byte b0 = 1;
+
+        if (i1 == j) {
+          b0 = 0;
         }
 
-        boolean var7 = true;
+        if (i1 >= j + 1 + l - 2) {
+          b0 = 3;
+        }
 
-        if (var4 >= 1 && var4 + var6 + 1 <= 128)
-        {
-            int var8;
-            int var10;
-            int var11;
-            int var12;
-
-            for (var8 = var4; var8 <= var4 + 1 + var6; ++var8)
-            {
-                byte var9 = 1;
-
-                if (var8 == var4)
-                {
-                    var9 = 0;
-                }
-
-                if (var8 >= var4 + 1 + var6 - 2)
-                {
-                    var9 = 3;
-                }
-
-                for (var10 = var3 - var9; var10 <= var3 + var9 && var7; ++var10)
-                {
-                    for (var11 = var5 - var9; var11 <= var5 + var9 && var7; ++var11)
-                    {
-                        if (var8 >= 0 && var8 < 128)
-                        {
-                            var12 = var1.getTypeId(var10, var8, var11);
-
-                            if (var12 != 0 && var12 != Block.LEAVES.id)
-                            {
-                                if (var12 != Block.STATIONARY_WATER.id && var12 != Block.WATER.id)
-                                {
-                                    var7 = false;
-                                }
-                                else if (var8 > var4)
-                                {
-                                    var7 = false;
-                                }
-                            }
-                        }
-                        else
-                        {
-                            var7 = false;
-                        }
-                    }
-                }
-            }
-
-            if (!var7)
-            {
-                return false;
+        for (int j1 = i - b0; (j1 <= i + b0) && (flag); j1++) {
+          for (int k1 = k - b0; (k1 <= k + b0) && (flag); k1++) {
+            if ((i1 >= 0) && (i1 < 128)) {
+              int l1 = world.getTypeId(j1, i1, k1);
+              if ((l1 != 0) && (Block.byId[l1] != null) && (!Block.byId[l1].isLeaves(world, j1, i1, k1)))
+                if ((l1 != Block.STATIONARY_WATER.id) && (l1 != Block.WATER.id))
+                  flag = false;
+                else if (i1 > j)
+                  flag = false;
             }
             else
             {
-                var8 = var1.getTypeId(var3, var4 - 1, var5);
-
-                if ((var8 == Block.GRASS.id || var8 == Block.DIRT.id) && var4 < 128 - var6 - 1)
-                {
-                    this.setType(var1, var3, var4 - 1, var5, Block.DIRT.id);
-                    int var13;
-                    int var16;
-
-                    for (var16 = var4 - 3 + var6; var16 <= var4 + var6; ++var16)
-                    {
-                        var10 = var16 - (var4 + var6);
-                        var11 = 2 - var10 / 2;
-
-                        for (var12 = var3 - var11; var12 <= var3 + var11; ++var12)
-                        {
-                            var13 = var12 - var3;
-
-                            for (int var14 = var5 - var11; var14 <= var5 + var11; ++var14)
-                            {
-                                int var15 = var14 - var5;
-
-                                if ((Math.abs(var13) != var11 || Math.abs(var15) != var11 || var2.nextInt(2) != 0 && var10 != 0) && !Block.q[var1.getTypeId(var12, var16, var14)])
-                                {
-                                    this.setType(var1, var12, var16, var14, Block.LEAVES.id);
-                                }
-                            }
-                        }
-                    }
-
-                    for (var16 = 0; var16 < var6; ++var16)
-                    {
-                        var10 = var1.getTypeId(var3, var4 + var16, var5);
-
-                        if (var10 == 0 || var10 == Block.LEAVES.id || var10 == Block.WATER.id || var10 == Block.STATIONARY_WATER.id)
-                        {
-                            this.setType(var1, var3, var4 + var16, var5, Block.LOG.id);
-                        }
-                    }
-
-                    for (var16 = var4 - 3 + var6; var16 <= var4 + var6; ++var16)
-                    {
-                        var10 = var16 - (var4 + var6);
-                        var11 = 2 - var10 / 2;
-
-                        for (var12 = var3 - var11; var12 <= var3 + var11; ++var12)
-                        {
-                            for (var13 = var5 - var11; var13 <= var5 + var11; ++var13)
-                            {
-                                if (var1.getTypeId(var12, var16, var13) == Block.LEAVES.id)
-                                {
-                                    if (var2.nextInt(4) == 0 && var1.getTypeId(var12 - 1, var16, var13) == 0)
-                                    {
-                                        this.b(var1, var12 - 1, var16, var13, 8);
-                                    }
-
-                                    if (var2.nextInt(4) == 0 && var1.getTypeId(var12 + 1, var16, var13) == 0)
-                                    {
-                                        this.b(var1, var12 + 1, var16, var13, 2);
-                                    }
-
-                                    if (var2.nextInt(4) == 0 && var1.getTypeId(var12, var16, var13 - 1) == 0)
-                                    {
-                                        this.b(var1, var12, var16, var13 - 1, 1);
-                                    }
-
-                                    if (var2.nextInt(4) == 0 && var1.getTypeId(var12, var16, var13 + 1) == 0)
-                                    {
-                                        this.b(var1, var12, var16, var13 + 1, 4);
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    return true;
-                }
-                else
-                {
-                    return false;
-                }
+              flag = false;
             }
+          }
         }
-        else
-        {
-            return false;
+      }
+
+      if (!flag) {
+        return false;
+      }
+      i1 = world.getTypeId(i, j - 1, k);
+      if (((i1 == Block.GRASS.id) || (i1 == Block.DIRT.id)) && (j < 128 - l - 1)) {
+        setType(world, i, j - 1, k, Block.DIRT.id);
+
+        for (int j2 = j - 3 + l; j2 <= j + l; j2++) {
+          int j1 = j2 - (j + l);
+          int k1 = 2 - j1 / 2;
+
+          for (int l1 = i - k1; l1 <= i + k1; l1++) {
+            int i2 = l1 - i;
+
+            for (int k2 = k - k1; k2 <= k + k1; k2++) {
+              int l2 = k2 - k;
+              Block bl = Block.byId[world.getTypeId(l1, j2, k2)];
+              if (((Math.abs(i2) != k1) || (Math.abs(l2) != k1) || ((random.nextInt(2) != 0) && (j1 != 0))) && ((bl == null) || (bl.canBeReplacedByLeaves(world, l1, j2, k2))))
+              {
+                setType(world, l1, j2, k2, Block.LEAVES.id);
+              }
+            }
+          }
         }
+
+        for (j2 = 0; j2 < l; j2++) {
+          int j1 = world.getTypeId(i, j + j2, k);
+          Block bl = Block.byId[j1];
+          if ((j1 == 0) || ((bl != null) && (bl.isLeaves(world, i, j + j2, k))) || (j1 == Block.WATER.id) || (j1 == Block.STATIONARY_WATER.id)) {
+            setType(world, i, j + j2, k, Block.LOG.id);
+          }
+        }
+
+        for (j2 = j - 3 + l; j2 <= j + l; j2++) {
+          int j1 = j2 - (j + l);
+          int k1 = 2 - j1 / 2;
+
+          for (int l1 = i - k1; l1 <= i + k1; l1++) {
+            for (int i2 = k - k1; i2 <= k + k1; i2++) {
+              Block bl = Block.byId[world.getTypeId(l1, j2, i2)];
+              if ((bl != null) && (bl.isLeaves(world, l1, j2, i2))) {
+                if ((random.nextInt(4) == 0) && (world.getTypeId(l1 - 1, j2, i2) == 0)) {
+                  b(world, l1 - 1, j2, i2, 8);
+                }
+
+                if ((random.nextInt(4) == 0) && (world.getTypeId(l1 + 1, j2, i2) == 0)) {
+                  b(world, l1 + 1, j2, i2, 2);
+                }
+
+                if ((random.nextInt(4) == 0) && (world.getTypeId(l1, j2, i2 - 1) == 0)) {
+                  b(world, l1, j2, i2 - 1, 1);
+                }
+
+                if ((random.nextInt(4) == 0) && (world.getTypeId(l1, j2, i2 + 1) == 0)) {
+                  b(world, l1, j2, i2 + 1, 4);
+                }
+              }
+            }
+          }
+        }
+
+        return true;
+      }
+      return false;
     }
 
-    /**
-     * Generates vines at the given position until it hits a block.
-     */
-    private void b(World var1, int var2, int var3, int var4, int var5)
+    return false;
+  }
+
+  private void b(BlockChangeDelegate world, int i, int j, int k, int l)
+  {
+    setTypeAndData(world, i, j, k, Block.VINE.id, l);
+    int i1 = 4;
+    while (true)
     {
-        this.setTypeAndData(var1, var2, var3, var4, Block.VINE.id, var5);
-        int var6 = 4;
+      j--;
+      if ((world.getTypeId(i, j, k) != 0) || (i1 <= 0)) {
+        return;
+      }
 
-        while (true)
-        {
-            --var3;
-
-            if (var1.getTypeId(var2, var3, var4) != 0 || var6 <= 0)
-            {
-                return;
-            }
-
-            this.setTypeAndData(var1, var2, var3, var4, Block.VINE.id, var5);
-            --var6;
-        }
+      setTypeAndData(world, i, j, k, Block.VINE.id, l);
+      i1--;
     }
+  }
 }
+

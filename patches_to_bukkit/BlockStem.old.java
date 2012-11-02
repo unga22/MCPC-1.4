@@ -1,241 +1,185 @@
 package net.minecraft.server;
 
 import java.util.Random;
+import org.bukkit.craftbukkit.event.CraftEventFactory;
 
 public class BlockStem extends BlockFlower
 {
-    /** Defines if it is a Melon or a Pumpkin that the stem is producing. */
-    private Block blockFruit;
+  private Block blockFruit;
 
-    protected BlockStem(int var1, Block var2)
-    {
-        super(var1, 111);
-        this.blockFruit = var2;
-        this.b(true);
-        float var3 = 0.125F;
-        this.a(0.5F - var3, 0.0F, 0.5F - var3, 0.5F + var3, 0.25F, 0.5F + var3);
-        this.a((CreativeModeTab)null);
-    }
+  protected BlockStem(int i, Block block)
+  {
+    super(i, 111);
+    this.blockFruit = block;
+    a(true);
+    float f = 0.125F;
 
-    /**
-     * Gets passed in the blockID of the block below and supposed to return true if its allowed to grow on the type of
-     * blockID passed in. Args: blockID
-     */
-    protected boolean d_(int var1)
-    {
-        return var1 == Block.SOIL.id;
-    }
+    a(0.5F - f, 0.0F, 0.5F - f, 0.5F + f, 0.25F, 0.5F + f);
+  }
 
-    /**
-     * Ticks the block if it's been scheduled
-     */
-    public void b(World var1, int var2, int var3, int var4, Random var5)
-    {
-        super.b(var1, var2, var3, var4, var5);
+  protected boolean d(int i) {
+    return i == Block.SOIL.id;
+  }
 
-        if (var1.getLightLevel(var2, var3 + 1, var4) >= 9)
-        {
-            float var6 = this.n(var1, var2, var3, var4);
+  public void a(World world, int i, int j, int k, Random random) {
+    super.a(world, i, j, k, random);
+    if (world.getLightLevel(i, j + 1, k) >= 9) {
+      float f = i(world, i, j, k);
 
-            if (var5.nextInt((int)(25.0F / var6) + 1) == 0)
-            {
-                int var7 = var1.getData(var2, var3, var4);
+      if (random.nextInt((int)(25.0F / f) + 1) == 0) {
+        int l = world.getData(i, j, k);
 
-                if (var7 < 7)
-                {
-                    ++var7;
-                    var1.setData(var2, var3, var4, var7);
-                }
-                else
-                {
-                    if (var1.getTypeId(var2 - 1, var3, var4) == this.blockFruit.id)
-                    {
-                        return;
-                    }
+        if (l < 7) {
+          l++;
+          CraftEventFactory.handleBlockGrowEvent(world, i, j, k, this.id, l);
+        } else {
+          if (world.getTypeId(i - 1, j, k) == this.blockFruit.id) {
+            return;
+          }
 
-                    if (var1.getTypeId(var2 + 1, var3, var4) == this.blockFruit.id)
-                    {
-                        return;
-                    }
+          if (world.getTypeId(i + 1, j, k) == this.blockFruit.id) {
+            return;
+          }
 
-                    if (var1.getTypeId(var2, var3, var4 - 1) == this.blockFruit.id)
-                    {
-                        return;
-                    }
+          if (world.getTypeId(i, j, k - 1) == this.blockFruit.id) {
+            return;
+          }
 
-                    if (var1.getTypeId(var2, var3, var4 + 1) == this.blockFruit.id)
-                    {
-                        return;
-                    }
+          if (world.getTypeId(i, j, k + 1) == this.blockFruit.id) {
+            return;
+          }
 
-                    int var8 = var5.nextInt(4);
-                    int var9 = var2;
-                    int var10 = var4;
+          int i1 = random.nextInt(4);
+          int j1 = i;
+          int k1 = k;
 
-                    if (var8 == 0)
-                    {
-                        var9 = var2 - 1;
-                    }
+          if (i1 == 0) {
+            j1 = i - 1;
+          }
 
-                    if (var8 == 1)
-                    {
-                        ++var9;
-                    }
+          if (i1 == 1) {
+            j1++;
+          }
 
-                    if (var8 == 2)
-                    {
-                        var10 = var4 - 1;
-                    }
+          if (i1 == 2) {
+            k1 = k - 1;
+          }
 
-                    if (var8 == 3)
-                    {
-                        ++var10;
-                    }
+          if (i1 == 3) {
+            k1++;
+          }
 
-                    int var11 = var1.getTypeId(var9, var3 - 1, var10);
+          int l1 = world.getTypeId(j1, j - 1, k1);
 
-                    if (var1.getTypeId(var9, var3, var10) == 0 && (var11 == Block.SOIL.id || var11 == Block.DIRT.id || var11 == Block.GRASS.id))
-                    {
-                        var1.setTypeId(var9, var3, var10, this.blockFruit.id);
-                    }
-                }
-            }
+          if ((world.getTypeId(j1, j, k1) == 0) && ((l1 == Block.SOIL.id) || (l1 == Block.DIRT.id) || (l1 == Block.GRASS.id)))
+            CraftEventFactory.handleBlockGrowEvent(world, j1, j, k1, this.blockFruit.id, 0);
         }
+      }
     }
+  }
 
-    public void l(World var1, int var2, int var3, int var4)
-    {
-        var1.setData(var2, var3, var4, 7);
-    }
+  public void g(World world, int i, int j, int k)
+  {
+    world.setData(i, j, k, 7);
+  }
 
-    private float n(World var1, int var2, int var3, int var4)
-    {
-        float var5 = 1.0F;
-        int var6 = var1.getTypeId(var2, var3, var4 - 1);
-        int var7 = var1.getTypeId(var2, var3, var4 + 1);
-        int var8 = var1.getTypeId(var2 - 1, var3, var4);
-        int var9 = var1.getTypeId(var2 + 1, var3, var4);
-        int var10 = var1.getTypeId(var2 - 1, var3, var4 - 1);
-        int var11 = var1.getTypeId(var2 + 1, var3, var4 - 1);
-        int var12 = var1.getTypeId(var2 + 1, var3, var4 + 1);
-        int var13 = var1.getTypeId(var2 - 1, var3, var4 + 1);
-        boolean var14 = var8 == this.id || var9 == this.id;
-        boolean var15 = var6 == this.id || var7 == this.id;
-        boolean var16 = var10 == this.id || var11 == this.id || var12 == this.id || var13 == this.id;
+  private float i(World world, int i, int j, int k) {
+    float f = 1.0F;
+    int l = world.getTypeId(i, j, k - 1);
+    int i1 = world.getTypeId(i, j, k + 1);
+    int j1 = world.getTypeId(i - 1, j, k);
+    int k1 = world.getTypeId(i + 1, j, k);
+    int l1 = world.getTypeId(i - 1, j, k - 1);
+    int i2 = world.getTypeId(i + 1, j, k - 1);
+    int j2 = world.getTypeId(i + 1, j, k + 1);
+    int k2 = world.getTypeId(i - 1, j, k + 1);
+    boolean flag = (j1 == this.id) || (k1 == this.id);
+    boolean flag1 = (l == this.id) || (i1 == this.id);
+    boolean flag2 = (l1 == this.id) || (i2 == this.id) || (j2 == this.id) || (k2 == this.id);
 
-        for (int var17 = var2 - 1; var17 <= var2 + 1; ++var17)
-        {
-            for (int var18 = var4 - 1; var18 <= var4 + 1; ++var18)
-            {
-                int var19 = var1.getTypeId(var17, var3 - 1, var18);
-                float var20 = 0.0F;
+    for (int l2 = i - 1; l2 <= i + 1; l2++) {
+      for (int i3 = k - 1; i3 <= k + 1; i3++) {
+        int j3 = world.getTypeId(l2, j - 1, i3);
+        float f1 = 0.0F;
 
-                if (var19 == Block.SOIL.id)
-                {
-                    var20 = 1.0F;
-
-                    if (var1.getData(var17, var3 - 1, var18) > 0)
-                    {
-                        var20 = 3.0F;
-                    }
-                }
-
-                if (var17 != var2 || var18 != var4)
-                {
-                    var20 /= 4.0F;
-                }
-
-                var5 += var20;
-            }
+        if (j3 == Block.SOIL.id) {
+          f1 = 1.0F;
+          if (world.getData(l2, j - 1, i3) > 0) {
+            f1 = 3.0F;
+          }
         }
 
-        if (var16 || var14 && var15)
-        {
-            var5 /= 2.0F;
+        if ((l2 != i) || (i3 != k)) {
+          f1 /= 4.0F;
         }
 
-        return var5;
+        f += f1;
+      }
     }
 
-    /**
-     * From the specified side and block metadata retrieves the blocks texture. Args: side, metadata
-     */
-    public int a(int var1, int var2)
-    {
-        return this.textureId;
+    if ((flag2) || ((flag) && (flag1))) {
+      f /= 2.0F;
     }
 
-    /**
-     * Sets the block's bounds for rendering it as an item
-     */
-    public void f()
-    {
-        float var1 = 0.125F;
-        this.a(0.5F - var1, 0.0F, 0.5F - var1, 0.5F + var1, 0.25F, 0.5F + var1);
-    }
+    return f;
+  }
 
-    /**
-     * Updates the blocks bounds based on its current state. Args: world, x, y, z
-     */
-    public void updateShape(IBlockAccess var1, int var2, int var3, int var4)
-    {
-        this.maxY = (double)((float)(var1.getData(var2, var3, var4) * 2 + 2) / 16.0F);
-        float var5 = 0.125F;
-        this.a(0.5F - var5, 0.0F, 0.5F - var5, 0.5F + var5, (float)this.maxY, 0.5F + var5);
-    }
+  public int a(int i, int j) {
+    return this.textureId;
+  }
 
-    /**
-     * The type of render function that is called for this block
-     */
-    public int d()
-    {
-        return 19;
-    }
+  public void f() {
+    float f = 0.125F;
 
-    /**
-     * Drops the block items with a specified chance of dropping the specified items
-     */
-    public void dropNaturally(World var1, int var2, int var3, int var4, int var5, float var6, int var7)
-    {
-        super.dropNaturally(var1, var2, var3, var4, var5, var6, var7);
+    a(0.5F - f, 0.0F, 0.5F - f, 0.5F + f, 0.25F, 0.5F + f);
+  }
 
-        if (!var1.isStatic)
-        {
-            Item var8 = null;
+  public void updateShape(IBlockAccess iblockaccess, int i, int j, int k) {
+    this.maxY = iblockaccess.getData(i, j, k) * 2 + 2 / 16.0F;
+    float f = 0.125F;
 
-            if (this.blockFruit == Block.PUMPKIN)
-            {
-                var8 = Item.PUMPKIN_SEEDS;
-            }
+    a(0.5F - f, 0.0F, 0.5F - f, 0.5F + f, (float)this.maxY, 0.5F + f);
+  }
 
-            if (this.blockFruit == Block.MELON)
-            {
-                var8 = Item.MELON_SEEDS;
-            }
+  public int c() {
+    return 19;
+  }
 
-            for (int var9 = 0; var9 < 3; ++var9)
-            {
-                if (var1.random.nextInt(15) <= var5)
-                {
-                    this.a(var1, var2, var3, var4, new ItemStack(var8));
-                }
-            }
+  public void dropNaturally(World world, int i, int j, int k, int l, float f, int i1) {
+    super.dropNaturally(world, i, j, k, l, f, i1);
+    if (!world.isStatic) {
+      Item item = null;
+
+      if (this.blockFruit == Block.PUMPKIN) {
+        item = Item.PUMPKIN_SEEDS;
+      }
+
+      if (this.blockFruit == Block.MELON) {
+        item = Item.MELON_SEEDS;
+      }
+
+      for (int j1 = 0; j1 < 3; j1++)
+        if (world.random.nextInt(15) <= l) {
+          float f1 = 0.7F;
+          float f2 = world.random.nextFloat() * f1 + (1.0F - f1) * 0.5F;
+          float f3 = world.random.nextFloat() * f1 + (1.0F - f1) * 0.5F;
+          float f4 = world.random.nextFloat() * f1 + (1.0F - f1) * 0.5F;
+          EntityItem entityitem = new EntityItem(world, i + f2, j + f3, k + f4, new ItemStack(item));
+
+          entityitem.pickupDelay = 10;
+          world.addEntity(entityitem);
         }
     }
+  }
 
-    /**
-     * Returns the ID of the items to drop on destruction.
-     */
-    public int getDropType(int var1, Random var2, int var3)
-    {
-        return -1;
-    }
+  public int getDropType(int i, Random random, int j)
+  {
+    if (i == 7);
+    return -1;
+  }
 
-    /**
-     * Returns the quantity of items to drop on block destruction.
-     */
-    public int a(Random var1)
-    {
-        return 1;
-    }
+  public int a(Random random) {
+    return 1;
+  }
 }
+

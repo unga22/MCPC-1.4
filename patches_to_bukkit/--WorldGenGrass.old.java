@@ -4,37 +4,38 @@ import java.util.Random;
 
 public class WorldGenGrass extends WorldGenerator
 {
-    /** Stores ID for WorldGenTallGrass */
-    private int a;
-    private int b;
+  private int a;
+  private int b;
 
-    public WorldGenGrass(int var1, int var2)
-    {
-        this.a = var1;
-        this.b = var2;
+  public WorldGenGrass(int i, int j)
+  {
+    this.a = i;
+    this.b = j;
+  }
+
+  public boolean a(World world, Random random, int i, int j, int k)
+  {
+    Block bl = Block.byId[world.getTypeId(i, j, k)];
+    do {
+      if ((bl != null) && (!bl.isLeaves(world, i, j, k)))
+      {
+        break;
+      }
+      j--;
+    }
+    while (j > 0);
+
+    for (int i1 = 0; i1 < 128; i1++) {
+      int j1 = i + random.nextInt(8) - random.nextInt(8);
+      int k1 = j + random.nextInt(4) - random.nextInt(4);
+      int l1 = k + random.nextInt(8) - random.nextInt(8);
+
+      if ((world.isEmpty(j1, k1, l1)) && (((BlockFlower)Block.byId[this.a]).f(world, j1, k1, l1))) {
+        world.setRawTypeIdAndData(j1, k1, l1, this.a, this.b);
+      }
     }
 
-    public boolean a(World var1, Random var2, int var3, int var4, int var5)
-    {
-        int var11;
-
-        for (boolean var6 = false; ((var11 = var1.getTypeId(var3, var4, var5)) == 0 || var11 == Block.LEAVES.id) && var4 > 0; --var4)
-        {
-            ;
-        }
-
-        for (int var7 = 0; var7 < 128; ++var7)
-        {
-            int var8 = var3 + var2.nextInt(8) - var2.nextInt(8);
-            int var9 = var4 + var2.nextInt(4) - var2.nextInt(4);
-            int var10 = var5 + var2.nextInt(8) - var2.nextInt(8);
-
-            if (var1.isEmpty(var8, var9, var10) && Block.byId[this.a].d(var1, var8, var9, var10))
-            {
-                var1.setRawTypeIdAndData(var8, var9, var10, this.a, this.b);
-            }
-        }
-
-        return true;
-    }
+    return true;
+  }
 }
+

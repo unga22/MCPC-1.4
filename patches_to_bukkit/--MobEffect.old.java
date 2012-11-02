@@ -1,193 +1,101 @@
 package net.minecraft.server;
 
+import java.io.PrintStream;
+
 public class MobEffect
 {
-    /** ID value of the potion this effect matches. */
-    private int effectId;
+  private int effectId;
+  private int duration;
+  private int amplification;
 
-    /** The duration of the potion effect */
-    private int duration;
+  public MobEffect(int paramInt1, int paramInt2, int paramInt3)
+  {
+    this.effectId = paramInt1;
+    this.duration = paramInt2;
+    this.amplification = paramInt3;
+  }
 
-    /** The amplifier of the potion effect */
-    private int amplification;
-    private boolean field_82723_d;
-    private boolean field_82724_e;
+  public MobEffect(MobEffect paramMobEffect) {
+    this.effectId = paramMobEffect.effectId;
+    this.duration = paramMobEffect.duration;
+    this.amplification = paramMobEffect.amplification;
+  }
 
-    public MobEffect(int var1, int var2)
-    {
-        this(var1, var2, 0);
+  public void a(MobEffect paramMobEffect) {
+    if (this.effectId != paramMobEffect.effectId) {
+      System.err.println("This method should only be called for matching effects!");
     }
-
-    public MobEffect(int var1, int var2, int var3)
-    {
-        this(var1, var2, var3, false);
+    if (paramMobEffect.amplification > this.amplification) {
+      this.amplification = paramMobEffect.amplification;
+      this.duration = paramMobEffect.duration;
+    } else if ((paramMobEffect.amplification == this.amplification) && (this.duration < paramMobEffect.duration)) {
+      this.duration = paramMobEffect.duration;
     }
+  }
 
-    public MobEffect(int var1, int var2, int var3, boolean var4)
-    {
-        this.effectId = var1;
-        this.duration = var2;
-        this.amplification = var3;
-        this.field_82724_e = var4;
+  public int getEffectId() {
+    return this.effectId;
+  }
+
+  public int getDuration() {
+    return this.duration;
+  }
+
+  public int getAmplifier() {
+    return this.amplification;
+  }
+
+  public boolean tick(EntityLiving paramEntityLiving)
+  {
+    if (this.duration > 0) {
+      if (MobEffectList.byId[this.effectId].b(this.duration, this.amplification)) {
+        b(paramEntityLiving);
+      }
+      e();
     }
+    return this.duration > 0;
+  }
 
-    public MobEffect(MobEffect var1)
-    {
-        this.effectId = var1.effectId;
-        this.duration = var1.duration;
-        this.amplification = var1.amplification;
+  private int e() {
+    return --this.duration;
+  }
+
+  public void b(EntityLiving paramEntityLiving) {
+    if (this.duration > 0)
+      MobEffectList.byId[this.effectId].tick(paramEntityLiving, this.amplification);
+  }
+
+  public String d()
+  {
+    return MobEffectList.byId[this.effectId].c();
+  }
+
+  public int hashCode()
+  {
+    return this.effectId;
+  }
+
+  public String toString()
+  {
+    String str = "";
+    if (getAmplifier() > 0)
+      str = d() + " x " + (getAmplifier() + 1) + ", Duration: " + getDuration();
+    else {
+      str = d() + ", Duration: " + getDuration();
     }
-
-    /**
-     * merges the input PotionEffect into this one if this.amplifier <= tomerge.amplifier. The duration in the supplied
-     * potion effect is assumed to be greater.
-     */
-    public void a(MobEffect var1)
-    {
-        if (this.effectId != var1.effectId)
-        {
-            System.err.println("This method should only be called for matching effects!");
-        }
-
-        if (var1.amplification > this.amplification)
-        {
-            this.amplification = var1.amplification;
-            this.duration = var1.duration;
-        }
-        else if (var1.amplification == this.amplification && this.duration < var1.duration)
-        {
-            this.duration = var1.duration;
-        }
-        else if (!var1.field_82724_e && this.field_82724_e)
-        {
-            this.field_82724_e = var1.field_82724_e;
-        }
+    if (MobEffectList.byId[this.effectId].f()) {
+      return "(" + str + ")";
     }
+    return str;
+  }
 
-    /**
-     * Retrieve the ID of the potion this effect matches.
-     */
-    public int getEffectId()
-    {
-        return this.effectId;
+  public boolean equals(Object paramObject)
+  {
+    if (!(paramObject instanceof MobEffect)) {
+      return false;
     }
-
-    public int getDuration()
-    {
-        return this.duration;
-    }
-
-    public int getAmplifier()
-    {
-        return this.amplification;
-    }
-
-    /**
-     * Set whether this potion is a splash potion.
-     */
-    public void setSplash(boolean var1)
-    {
-        this.field_82723_d = var1;
-    }
-
-    public boolean func_82720_e()
-    {
-        return this.field_82724_e;
-    }
-
-    public boolean tick(EntityLiving var1)
-    {
-        if (this.duration > 0)
-        {
-            if (MobEffectList.byId[this.effectId].a(this.duration, this.amplification))
-            {
-                this.b(var1);
-            }
-
-            this.g();
-        }
-
-        return this.duration > 0;
-    }
-
-    private int g()
-    {
-        return --this.duration;
-    }
-
-    public void b(EntityLiving var1)
-    {
-        if (this.duration > 0)
-        {
-            MobEffectList.byId[this.effectId].tick(var1, this.amplification);
-        }
-    }
-
-    public String f()
-    {
-        return MobEffectList.byId[this.effectId].a();
-    }
-
-    public int hashCode()
-    {
-        return this.effectId;
-    }
-
-    public String toString()
-    {
-        String var1 = "";
-
-        if (this.getAmplifier() > 0)
-        {
-            var1 = this.f() + " x " + (this.getAmplifier() + 1) + ", Duration: " + this.getDuration();
-        }
-        else
-        {
-            var1 = this.f() + ", Duration: " + this.getDuration();
-        }
-
-        if (this.field_82723_d)
-        {
-            var1 = var1 + ", Splash: true";
-        }
-
-        return MobEffectList.byId[this.effectId].i() ? "(" + var1 + ")" : var1;
-    }
-
-    public boolean equals(Object var1)
-    {
-        if (!(var1 instanceof MobEffect))
-        {
-            return false;
-        }
-        else
-        {
-            MobEffect var2 = (MobEffect)var1;
-            return this.effectId == var2.effectId && this.amplification == var2.amplification && this.duration == var2.duration && this.field_82723_d == var2.field_82723_d && this.field_82724_e == var2.field_82724_e;
-        }
-    }
-
-    /**
-     * Write a custom potion effect to a potion item's NBT data.
-     */
-    public NBTTagCompound a(NBTTagCompound var1)
-    {
-        var1.setByte("Id", (byte)this.getEffectId());
-        var1.setByte("Amplifier", (byte)this.getAmplifier());
-        var1.setInt("Duration", this.getDuration());
-        var1.setBoolean("Ambient", this.func_82720_e());
-        return var1;
-    }
-
-    /**
-     * Read a custom potion effect from a potion item's NBT data.
-     */
-    public static MobEffect b(NBTTagCompound var0)
-    {
-        byte var1 = var0.getByte("Id");
-        byte var2 = var0.getByte("Amplifier");
-        int var3 = var0.getInt("Duration");
-        boolean var4 = var0.getBoolean("Ambient");
-        return new MobEffect(var1, var3, var2, var4);
-    }
+    MobEffect localMobEffect = (MobEffect)paramObject;
+    return (this.effectId == localMobEffect.effectId) && (this.amplification == localMobEffect.amplification) && (this.duration == localMobEffect.duration);
+  }
 }
+

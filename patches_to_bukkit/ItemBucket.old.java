@@ -1,185 +1,164 @@
 package net.minecraft.server;
 
+import forge.MinecraftForge;
+import java.util.Random;
+import org.bukkit.Location;
+import org.bukkit.craftbukkit.event.CraftEventFactory;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
+import org.bukkit.event.player.PlayerBucketEmptyEvent;
+import org.bukkit.event.player.PlayerBucketFillEvent;
+
 public class ItemBucket extends Item
 {
-    /** field for checking if the bucket has been filled. */
-    private int a;
+  private int a;
 
-    public ItemBucket(int var1, int var2)
+  public ItemBucket(int i, int j)
+  {
+    super(i);
+    this.maxStackSize = 1;
+    this.a = j;
+  }
+
+  public ItemStack a(ItemStack itemstack, World world, EntityHuman entityhuman) {
+    float f = 1.0F;
+    double d0 = entityhuman.lastX + (entityhuman.locX - entityhuman.lastX) * f;
+    double d1 = entityhuman.lastY + (entityhuman.locY - entityhuman.lastY) * f + 1.62D - entityhuman.height;
+    double d2 = entityhuman.lastZ + (entityhuman.locZ - entityhuman.lastZ) * f;
+    boolean flag = this.a == 0;
+    MovingObjectPosition movingobjectposition = a(world, entityhuman, flag);
+
+    if (movingobjectposition == null) {
+      return itemstack;
+    }
+    if (movingobjectposition.type == EnumMovingObjectType.TILE) {
+      int i = movingobjectposition.b;
+      int j = movingobjectposition.c;
+      int k = movingobjectposition.d;
+
+      if (!world.a(entityhuman, i, j, k)) {
+        return itemstack;
+      }
+
+      if (this.a == 0) {
+        if ((entityhuman != null) && (!entityhuman.d(i, j, k))) {
+          return itemstack;
+        }
+        ItemStack stack = MinecraftForge.fillCustomBucket(world, i, j, k);
+        if (stack != null)
+        {
+          return stack;
+        }
+
+        if ((world.getMaterial(i, j, k) == Material.WATER) && (world.getData(i, j, k) == 0))
+        {
+          PlayerBucketFillEvent event = CraftEventFactory.callPlayerBucketFillEvent(entityhuman, i, j, k, -1, itemstack, Item.WATER_BUCKET);
+
+          if (event.isCancelled()) {
+            return itemstack;
+          }
+          world.setTypeId(i, j, k, 0);
+          if (entityhuman.abilities.canInstantlyBuild) {
+            return itemstack;
+          }
+
+          return CraftItemStack.createNMSItemStack(event.getItemStack());
+        }
+
+        if ((world.getMaterial(i, j, k) == Material.LAVA) && (world.getData(i, j, k) == 0))
+        {
+          PlayerBucketFillEvent event = CraftEventFactory.callPlayerBucketFillEvent(entityhuman, i, j, k, -1, itemstack, Item.LAVA_BUCKET);
+
+          if (event.isCancelled()) {
+            return itemstack;
+          }
+          world.setTypeId(i, j, k, 0);
+          if (entityhuman.abilities.canInstantlyBuild) {
+            return itemstack;
+          }
+
+          return CraftItemStack.createNMSItemStack(event.getItemStack());
+        }
+      } else {
+        if (this.a < 0)
+        {
+          PlayerBucketEmptyEvent event = CraftEventFactory.callPlayerBucketEmptyEvent(entityhuman, i, j, k, movingobjectposition.face, itemstack);
+
+          if (event.isCancelled()) {
+            return itemstack;
+          }
+
+          return CraftItemStack.createNMSItemStack(event.getItemStack());
+        }
+
+        int clickedX = i; int clickedY = j; int clickedZ = k;
+
+        if (movingobjectposition.face == 0) {
+          j--;
+        }
+
+        if (movingobjectposition.face == 1) {
+          j++;
+        }
+
+        if (movingobjectposition.face == 2) {
+          k--;
+        }
+
+        if (movingobjectposition.face == 3) {
+          k++;
+        }
+
+        if (movingobjectposition.face == 4) {
+          i--;
+        }
+
+        if (movingobjectposition.face == 5) {
+          i++;
+        }
+
+        if (!entityhuman.d(i, j, k)) {
+          return itemstack;
+        }
+
+        if ((world.isEmpty(i, j, k)) || (!world.getMaterial(i, j, k).isBuildable()))
+        {
+          PlayerBucketEmptyEvent event = CraftEventFactory.callPlayerBucketEmptyEvent(entityhuman, clickedX, clickedY, clickedZ, movingobjectposition.face, itemstack);
+
+          if (event.isCancelled()) {
+            return itemstack;
+          }
+
+          if ((world.worldProvider.d) && (this.a == Block.WATER.id)) {
+            world.makeSound(d0 + 0.5D, d1 + 0.5D, d2 + 0.5D, "random.fizz", 0.5F, 2.6F + (world.random.nextFloat() - world.random.nextFloat()) * 0.8F);
+
+            for (int l = 0; l < 8; l++)
+              world.a("largesmoke", i + Math.random(), j + Math.random(), k + Math.random(), 0.0D, 0.0D, 0.0D);
+          }
+          else {
+            world.setTypeIdAndData(i, j, k, this.a, 0);
+          }
+
+          if (entityhuman.abilities.canInstantlyBuild) {
+            return itemstack;
+          }
+
+          return CraftItemStack.createNMSItemStack(event.getItemStack());
+        }
+      }
+    }
+    else if ((this.a == 0) && ((movingobjectposition.entity instanceof EntityCow)))
     {
-        super(var1);
-        this.maxStackSize = 1;
-        this.a = var2;
-        this.a(CreativeModeTab.f);
+      Location loc = movingobjectposition.entity.getBukkitEntity().getLocation();
+      PlayerBucketFillEvent event = CraftEventFactory.callPlayerBucketFillEvent(entityhuman, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), -1, itemstack, Item.MILK_BUCKET);
+
+      if (event.isCancelled()) {
+        return itemstack;
+      }
+
+      return CraftItemStack.createNMSItemStack(event.getItemStack());
     }
 
-    /**
-     * Called whenever this item is equipped and the right mouse button is pressed. Args: itemStack, world, entityPlayer
-     */
-    public ItemStack a(ItemStack var1, World var2, EntityHuman var3)
-    {
-        float var4 = 1.0F;
-        double var5 = var3.lastX + (var3.locX - var3.lastX) * (double)var4;
-        double var7 = var3.lastY + (var3.locY - var3.lastY) * (double)var4 + 1.62D - (double)var3.height;
-        double var9 = var3.lastZ + (var3.locZ - var3.lastZ) * (double)var4;
-        boolean var11 = this.a == 0;
-        MovingObjectPosition var12 = this.a(var2, var3, var11);
-
-        if (var12 == null)
-        {
-            return var1;
-        }
-        else
-        {
-            if (var12.type == EnumMovingObjectType.TILE)
-            {
-                int var13 = var12.b;
-                int var14 = var12.c;
-                int var15 = var12.d;
-
-                if (!var2.a(var3, var13, var14, var15))
-                {
-                    return var1;
-                }
-
-                if (this.a == 0)
-                {
-                    if (!var3.func_82247_a(var13, var14, var15, var12.face, var1))
-                    {
-                        return var1;
-                    }
-
-                    if (var2.getMaterial(var13, var14, var15) == Material.WATER && var2.getData(var13, var14, var15) == 0)
-                    {
-                        var2.setTypeId(var13, var14, var15, 0);
-
-                        if (var3.abilities.canInstantlyBuild)
-                        {
-                            return var1;
-                        }
-
-                        if (--var1.count <= 0)
-                        {
-                            return new ItemStack(Item.WATER_BUCKET);
-                        }
-
-                        if (!var3.inventory.pickup(new ItemStack(Item.WATER_BUCKET)))
-                        {
-                            var3.drop(new ItemStack(Item.WATER_BUCKET.id, 1, 0));
-                        }
-
-                        return var1;
-                    }
-
-                    if (var2.getMaterial(var13, var14, var15) == Material.LAVA && var2.getData(var13, var14, var15) == 0)
-                    {
-                        var2.setTypeId(var13, var14, var15, 0);
-
-                        if (var3.abilities.canInstantlyBuild)
-                        {
-                            return var1;
-                        }
-
-                        if (--var1.count <= 0)
-                        {
-                            return new ItemStack(Item.LAVA_BUCKET);
-                        }
-
-                        if (!var3.inventory.pickup(new ItemStack(Item.LAVA_BUCKET)))
-                        {
-                            var3.drop(new ItemStack(Item.LAVA_BUCKET.id, 1, 0));
-                        }
-
-                        return var1;
-                    }
-                }
-                else
-                {
-                    if (this.a < 0)
-                    {
-                        return new ItemStack(Item.BUCKET);
-                    }
-
-                    if (var12.face == 0)
-                    {
-                        --var14;
-                    }
-
-                    if (var12.face == 1)
-                    {
-                        ++var14;
-                    }
-
-                    if (var12.face == 2)
-                    {
-                        --var15;
-                    }
-
-                    if (var12.face == 3)
-                    {
-                        ++var15;
-                    }
-
-                    if (var12.face == 4)
-                    {
-                        --var13;
-                    }
-
-                    if (var12.face == 5)
-                    {
-                        ++var13;
-                    }
-
-                    if (!var3.func_82247_a(var13, var14, var15, var12.face, var1))
-                    {
-                        return var1;
-                    }
-
-                    if (this.a(var2, var5, var7, var9, var13, var14, var15) && !var3.abilities.canInstantlyBuild)
-                    {
-                        return new ItemStack(Item.BUCKET);
-                    }
-                }
-            }
-            else if (this.a == 0 && var12.entity instanceof EntityCow)
-            {
-                return new ItemStack(Item.MILK_BUCKET);
-            }
-
-            return var1;
-        }
-    }
-
-    /**
-     * Attempts to place the liquid contained inside the bucket.
-     */
-    public boolean a(World var1, double var2, double var4, double var6, int var8, int var9, int var10)
-    {
-        if (this.a <= 0)
-        {
-            return false;
-        }
-        else if (!var1.isEmpty(var8, var9, var10) && var1.getMaterial(var8, var9, var10).isBuildable())
-        {
-            return false;
-        }
-        else
-        {
-            if (var1.worldProvider.e && this.a == Block.WATER.id)
-            {
-                var1.makeSound(var2 + 0.5D, var4 + 0.5D, var6 + 0.5D, "random.fizz", 0.5F, 2.6F + (var1.random.nextFloat() - var1.random.nextFloat()) * 0.8F);
-
-                for (int var11 = 0; var11 < 8; ++var11)
-                {
-                    var1.addParticle("largesmoke", (double)var8 + Math.random(), (double)var9 + Math.random(), (double)var10 + Math.random(), 0.0D, 0.0D, 0.0D);
-                }
-            }
-            else
-            {
-                var1.setTypeIdAndData(var8, var9, var10, this.a, 0);
-            }
-
-            return true;
-        }
-    }
+    return itemstack;
+  }
 }
+

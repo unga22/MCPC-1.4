@@ -20,7 +20,7 @@ public abstract class BlockContainer extends Block
     public void onPlace(World var1, int var2, int var3, int var4)
     {
         super.onPlace(var1, var2, var3, var4);
-        var1.setTileEntity(var2, var3, var4, this.a(var1));
+        var1.setTileEntity(var2, var3, var4, this.createTileEntity(var1, var1.getData(var2, var3, var4)));
     }
 
     /**
@@ -36,6 +36,11 @@ public abstract class BlockContainer extends Block
      * Returns a new instance of a block's tile entity class. Called on placing the block.
      */
     public abstract TileEntity a(World var1);
+
+    public TileEntity createNewTileEntity(World var1, int var2)
+    {
+        return this.a(var1);
+    }
 
     /**
      * Called when the block receives a BlockEvent - see World.addBlockEvent. By default, passes it on to the tile
