@@ -16,12 +16,12 @@ public class EnchantmentManager
     /**
      * Used to calculate the extra armor of enchantments on armors equipped on player.
      */
-    private static final EnchantmentModifierProtection b = new EnchantmentModifierProtection((EmptyClass2)null);
+    private static final EnchantmentModifierProtection b = new EnchantmentModifierProtection((EmptyClass)null);
 
     /**
      * Used to calculate the (magic) extra damage done by enchantments on current equipped item of player.
      */
-    private static final EnchantmentModifierDamage c = new EnchantmentModifierDamage((EmptyClass2)null);
+    private static final EnchantmentModifierDamage c = new EnchantmentModifierDamage((EmptyClass)null);
 
     /**
      * Returns the level of enchantment on the ItemStack passed.
@@ -98,7 +98,7 @@ public class EnchantmentManager
 
         if (var2.size() > 0)
         {
-            var1.func_77983_a("ench", var2);
+            var1.a("ench", var2);
         }
         else if (var1.hasTag())
         {
@@ -193,7 +193,7 @@ public class EnchantmentManager
     {
         c.a = 0;
         c.b = var1;
-        a(c, var0.func_70694_bm());
+        a(c, var0.bA());
         return c.a > 0 ? 1 + random.nextInt(c.a) : 0;
     }
 
@@ -202,7 +202,7 @@ public class EnchantmentManager
      */
     public static int getKnockbackEnchantmentLevel(EntityLiving var0, EntityLiving var1)
     {
-        return getEnchantmentLevel(Enchantment.KNOCKBACK.id, var0.func_70694_bm());
+        return getEnchantmentLevel(Enchantment.KNOCKBACK.id, var0.bA());
     }
 
     /**
@@ -210,7 +210,7 @@ public class EnchantmentManager
      */
     public static int getFireAspectEnchantmentLevel(EntityLiving var0, EntityLiving var1)
     {
-        return getEnchantmentLevel(Enchantment.FIRE_ASPECT.id, var0.func_70694_bm());
+        return getEnchantmentLevel(Enchantment.FIRE_ASPECT.id, var0.bA());
     }
 
     /**
@@ -226,7 +226,7 @@ public class EnchantmentManager
      */
     public static int getDigSpeedEnchantmentLevel(EntityLiving var0)
     {
-        return getEnchantmentLevel(Enchantment.DIG_SPEED.id, var0.func_70694_bm());
+        return getEnchantmentLevel(Enchantment.DIG_SPEED.id, var0.bA());
     }
 
     /**
@@ -234,7 +234,7 @@ public class EnchantmentManager
      */
     public static int getDurabilityEnchantmentLevel(EntityLiving var0)
     {
-        return getEnchantmentLevel(Enchantment.DURABILITY.id, var0.func_70694_bm());
+        return getEnchantmentLevel(Enchantment.DURABILITY.id, var0.bA());
     }
 
     /**
@@ -242,7 +242,7 @@ public class EnchantmentManager
      */
     public static boolean hasSilkTouchEnchantment(EntityLiving var0)
     {
-        return getEnchantmentLevel(Enchantment.SILK_TOUCH.id, var0.func_70694_bm()) > 0;
+        return getEnchantmentLevel(Enchantment.SILK_TOUCH.id, var0.bA()) > 0;
     }
 
     /**
@@ -250,7 +250,7 @@ public class EnchantmentManager
      */
     public static int getBonusBlockLootEnchantmentLevel(EntityLiving var0)
     {
-        return getEnchantmentLevel(Enchantment.LOOT_BONUS_BLOCKS.id, var0.func_70694_bm());
+        return getEnchantmentLevel(Enchantment.LOOT_BONUS_BLOCKS.id, var0.bA());
     }
 
     /**
@@ -258,7 +258,7 @@ public class EnchantmentManager
      */
     public static int getBonusMonsterLootEnchantmentLevel(EntityLiving var0)
     {
-        return getEnchantmentLevel(Enchantment.LOOT_BONUS_MOBS.id, var0.func_70694_bm());
+        return getEnchantmentLevel(Enchantment.LOOT_BONUS_MOBS.id, var0.bA());
     }
 
     /**

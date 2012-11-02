@@ -79,4 +79,9 @@ public abstract class Enchantment {
         this.name = s;
         return this;
     }
+    
+    public boolean canEnchantItem(ItemStack var1)
+    {
+        return this.slot.canEnchant(var1.getItem());
+    }
 }

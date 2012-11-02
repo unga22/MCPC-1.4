@@ -1,5 +1,6 @@
 package net.minecraft.server;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
@@ -98,6 +99,10 @@ public abstract class Entity {
     public EnumEntitySize ar;
     public UUID uniqueId = UUID.randomUUID(); // CraftBukkit
     public boolean valid = false; // CraftBukkit
+    
+    private NBTTagCompound customEntityData;
+    public boolean captureDrops = false;
+    public ArrayList capturedDrops = new ArrayList();
 
     public Entity(World world) {
         this.id = entityCount++;
@@ -1072,6 +1077,12 @@ public abstract class Entity {
         nbttagcompound.setLong("UUIDLeast", this.uniqueId.getLeastSignificantBits());
         nbttagcompound.setLong("UUIDMost", this.uniqueId.getMostSignificantBits());
         // CraftBukkit end
+        
+        if (this.customEntityData != null)
+        {
+        	nbttagcompound.setCompound("ForgeData", this.customEntityData);
+        }
+        
         this.b(nbttagcompound);
     }
 
@@ -1119,6 +1130,12 @@ public abstract class Entity {
         // CraftBukkit end
 
         this.b(this.yaw, this.pitch);
+        
+        if (nbttagcompound.hasKey("ForgeData"))
+        {
+            this.customEntityData = nbttagcompound.getCompound("ForgeData");
+        }
+        
         this.a(nbttagcompound);
 
         // CraftBukkit start - exempt Vehicles from notch's sanity check
@@ -1210,7 +1227,14 @@ public abstract class Entity {
         EntityItem entityitem = new EntityItem(this.world, this.locX, this.locY + (double) f, this.locZ, itemstack);
 
         entityitem.pickupDelay = 10;
-        this.world.addEntity(entityitem);
+        if (this.captureDrops)
+        {
+            this.capturedDrops.add(entityitem);
+        }
+        else
+        {
+            this.world.addEntity(entityitem);
+        }
         return entityitem;
     }
 
@@ -1458,8 +1482,9 @@ public abstract class Entity {
         return this.fireTicks > 0 || this.e(0);
     }
 
-    public boolean ag() {
-        return this.vehicle != null || this.e(2);
+    public boolean ag()     
+    {
+        return this.vehicle != null && this.vehicle.shouldRiderSit() || this.e(2);
     }
 
     public boolean isSneaking() {
@@ -1703,9 +1728,10 @@ public abstract class Entity {
             worldserver1.i();
         }
     }
-
-    public float a(Explosion explosion, Block block, int i, int j, int k) {
-        return block.a(this);
+    
+    public float a(Explosion var1, Block var2, int var3, int var4, int var5)
+    {
+        return var2.getExplosionResistance(this, this.world, var3, var4, var5, this.locX, this.locY + (double)this.getHeadHeight(), this.locZ);
     }
 
     public int as() {
@@ -1718,5 +1744,60 @@ public abstract class Entity {
 
     public boolean au() {
         return false;
+    }
+    
+
+    public NBTTagCompound getEntityData()
+    {
+        if (this.customEntityData == null)
+        {
+            this.customEntityData = new NBTTagCompound();
+        }
+
+        return this.customEntityData;
+    }
+
+    public boolean shouldRiderSit()
+    {
+        return true;
+    }
+
+    public ItemStack getPickedResult(MovingObjectPosition var1)
+    {
+        if (this instanceof EntityPainting)
+        {
+            return new ItemStack(Item.PAINTING);
+        }
+        else if (this instanceof EntityMinecart)
+        {
+            return ((EntityMinecart)this).getCartItem();
+        }
+        else if (this instanceof EntityBoat)
+        {
+            return new ItemStack(Item.BOAT);
+        }
+        else if (this instanceof EntityItemFrame)
+        {
+            ItemStack var3 = ((EntityItemFrame)this).i();
+            return var3 == null ? new ItemStack(Item.ITEM_FRAME) : var3.cloneItemStack();
+        }
+        else
+        {
+            int var2 = EntityTypes.a(this);
+            return var2 > 0 && EntityTypes.a.containsKey(Integer.valueOf(var2)) ? new ItemStack(Item.MONSTER_EGG, 1, var2) : null;
+        }
+    }
+    
+    public UUID getPersistentID()
+    {
+        return this.uniqueId;
+    }
+
+    public synchronized void generatePersistentID()
+    {
+        if (this.uniqueId == null)
+        {
+            this.uniqueId = UUID.randomUUID();
+        }
     }
 }

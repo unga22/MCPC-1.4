@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.concurrent.Callable;
 import java.util.logging.Level;
+import cpw.mods.fml.common.FMLCommonHandler;
 
 // CraftBukkit start
 import java.io.PrintStream;
@@ -52,6 +53,7 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
             log.warning("To start the server with more ram, launch it as \"java -Xmx1024M -Xms1024M -jar minecraft_server.jar\"");
         }
 
+        FMLCommonHandler.instance().onServerStart(this);
         log.info("Loading properties");
         this.propertyManager = new PropertyManager(this.options); // CraftBukkit - CLI argument support
         if (this.I()) {
@@ -102,6 +104,7 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
             log.warning("To change this, set \"online-mode\" to \"true\" in the server.properties file.");
         }
 
+        FMLCommonHandler.instance().onServerStarted();
         this.a((ServerConfigurationManagerAbstract) (new ServerConfigurationManager(this)));
         this.convertable = new WorldLoaderServer(server.getWorldContainer()); // CraftBukkit - moved from MinecraftServer constructor
         long j = System.nanoTime();
@@ -165,6 +168,7 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
             this.propertyManager.savePropertiesFile();
         }
 
+        FMLCommonHandler.instance().handleServerStarting(this);
         return true;
     }
 

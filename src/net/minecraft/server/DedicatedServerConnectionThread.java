@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import cpw.mods.fml.common.FMLLog;
 
 public class DedicatedServerConnectionThread extends Thread {
 
@@ -44,6 +45,7 @@ public class DedicatedServerConnectionThread extends Thread {
                     netloginhandler.c();
                 } catch (Exception exception) {
                     netloginhandler.disconnect("Internal server error");
+                    FMLLog.log(Level.SEVERE, exception, "Error handling login related packet - connection from %s refused", new Object[] {netloginhandler.h});
                     a.log(Level.WARNING, "Failed to handle packet: " + exception, exception);
                 }
 

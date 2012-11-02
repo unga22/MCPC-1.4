@@ -55,7 +55,7 @@ public class CommandHandler implements ICommandHandler
 
                 if (var6 > -1)
                 {
-                    EntityPlayer[] var8 = PlayerSelector.func_82380_c(var1, var3[var6]);
+                    EntityPlayer[] var8 = PlayerSelector.getPlayers(var1, var3[var6]);
                     String var9 = var3[var6];
                     EntityPlayer[] var10 = var8;
                     int var11 = var8.length;
@@ -148,7 +148,7 @@ public class CommandHandler implements ICommandHandler
     /**
      * Performs a "begins with" string match on each token in par2. Only returns commands that par1 can use.
      */
-    public List a(ICommandListener var1, String var2)
+    public List b(ICommandListener var1, String var2)
     {
         String[] var3 = var2.split(" ", -1);
         String var4 = var3[0];
@@ -228,7 +228,7 @@ public class CommandHandler implements ICommandHandler
         {
             for (int var3 = 0; var3 < var2.length; ++var3)
             {
-                if (var1.a(var3) && PlayerSelector.func_82377_a(var2[var3]))
+                if (var1.a(var3) && PlayerSelector.isList(var2[var3]))
                 {
                     return var3;
                 }

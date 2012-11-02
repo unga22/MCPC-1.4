@@ -1,5 +1,6 @@
 package net.minecraft.server;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -8,6 +9,7 @@ public class RecipesFurnace {
     private static final RecipesFurnace a = new RecipesFurnace();
     public Map recipes = new HashMap(); // CraftBukkit - private -> public
     private Map c = new HashMap();
+    private Map metaSmeltingList = new HashMap();
 
     public static final RecipesFurnace getInstance() {
         return a;
@@ -38,8 +40,14 @@ public class RecipesFurnace {
         this.c.put(Integer.valueOf(itemstack.id), Float.valueOf(f));
     }
 
-    public ItemStack getResult(int i) {
-        return (ItemStack) this.recipes.get(Integer.valueOf(i));
+    @Deprecated
+
+    /**
+     * Returns the smelting result of an item.
+     */
+    public ItemStack getResult(int var1)
+    {
+        return (ItemStack)this.recipes.get(Integer.valueOf(var1));
     }
 
     public Map getRecipes() {
@@ -48,5 +56,24 @@ public class RecipesFurnace {
 
     public float c(int i) {
         return this.c.containsKey(Integer.valueOf(i)) ? ((Float) this.c.get(Integer.valueOf(i))).floatValue() : 0.0F;
+    }
+    
+
+    public void addSmelting(int var1, int var2, ItemStack var3)
+    {
+        this.metaSmeltingList.put(Arrays.asList(new Integer[] {Integer.valueOf(var1), Integer.valueOf(var2)}), var3);
+    }
+
+    public ItemStack getSmeltingResult(ItemStack var1)
+    {
+        if (var1 == null)
+        {
+            return null;
+        }
+        else
+        {
+            ItemStack var2 = (ItemStack)this.metaSmeltingList.get(Arrays.asList(new Integer[] {Integer.valueOf(var1.id), Integer.valueOf(var1.getData())}));
+            return var2 != null ? var2 : (ItemStack)this.recipes.get(Integer.valueOf(var1.id));
+        }
     }
 }

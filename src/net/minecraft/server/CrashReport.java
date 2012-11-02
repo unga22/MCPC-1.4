@@ -14,6 +14,7 @@ import java.util.Map.Entry;
 import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import cpw.mods.fml.common.FMLCommonHandler;
 
 public class CrashReport {
 
@@ -37,6 +38,7 @@ public class CrashReport {
         this.a("JVM Flags", (Callable) (new CrashReportJVMFlags(this)));
         this.a("AABB Pool Size", (Callable) (new CrashReportAABBPoolSize(this)));
         this.a("CraftBukkit Information", (Callable) (new org.bukkit.craftbukkit.CraftCrashReport())); // CraftBukkit
+        FMLCommonHandler.instance().enhanceCrashReport(this);
     }
 
     public void a(String s, Callable callable) {
