@@ -8,7 +8,7 @@ namespace ChangedMCClasses
 {
     class Program
     {
-        static string[] patchFolders = { @"D:\Git\MCPC-1.4\patches_to_vanilla\Fml", @"D:\Git\MCPC-1.4\patches_to_vanilla\Forge" }; // containc patch files from FML and Forge Github
+        static string patchFolders = @"D:\Git\MCPC-1.4\patches_to_vanilla"; // containc patch files from FML and Forge Github
         static string bukkitMap = @"D:\Git\MCPC-1.4\server-mappings-bukkit.srg"; // replaced net.minecraft.src with net.minecraft.server
         static string mcpMap = @"D:\Git\MCPC-1.4\server-mappings-mcp.srg"; // original
 
@@ -18,7 +18,7 @@ namespace ChangedMCClasses
         static string forgeSource = @"D:\Git\MCP 7 - clean\src\minecraft_server\net\minecraft\server";
         static string oldFilesSource = @"D:\Git\craftbukkit-1.2.5-R5.0-MCPC-SNAPSHOT-183.src\net\minecraft\server";
 
-        static string workFolder = @"D:\Git\MCPC-1.4\net\minecraft\server"; // Copy bukkit files here which need to be changed (e.g. theres a forge patch for it)
+        static string workFolder = @"D:\Git\MCPC-1.4\src\net\minecraft\server"; // Copy bukkit files here which need to be changed (e.g. theres a forge patch for it)
         static string targetPatches = @"D:\Git\MCPC-1.4\patches_to_bukkit"; // Copy patches with bukkit class names here
         static string forgeFilesDest = @"D:\Git\MCPC-1.4\patches_to_bukkit";
         static string oldFilesDest = @"D:\Git\MCPC-1.4\patches_to_bukkit";
@@ -33,8 +33,8 @@ namespace ChangedMCClasses
             //RemoveComments();
 
             Console.WriteLine();
-            Console.WriteLine("Press to exit");
-            Console.Read();
+            Console.WriteLine("Exiting");
+            //Console.Read();
         }
 
         static void ListPatchesInBukkit()
@@ -44,23 +44,21 @@ namespace ChangedMCClasses
 
             CreateMappings();
 
-            foreach (string patchFolder in patchFolders)
+            string[] files = Directory.GetFiles(patchFolders, "*.java.patch", SearchOption.AllDirectories);
+            files = files.OrderBy(x => Path.GetFileName(x)).ToArray();
+
+            foreach (string f in files)
             {
-                string[] files = Directory.GetFiles(patchFolder, "*.java.patch");
+                string fn = Path.GetFileNameWithoutExtension(Path.GetFileNameWithoutExtension(f));
 
-                foreach (string f in files)
-                {
-                    string fn = Path.GetFileNameWithoutExtension(Path.GetFileNameWithoutExtension(f));
+                Mapping m = mappings.FirstOrDefault(x => string.Equals("net/minecraft/src/" + fn, x.MCP, StringComparison.InvariantCultureIgnoreCase));
+                if (m == null)
+                    m = mappings.FirstOrDefault(x => string.Equals("net/minecraft/server/" + fn, x.MCP, StringComparison.InvariantCultureIgnoreCase));
 
-                    Mapping m = mappings.FirstOrDefault(x => string.Equals("net/minecraft/src/" + fn, x.MCP, StringComparison.InvariantCultureIgnoreCase));
-                    if (m == null)
-                        m = mappings.FirstOrDefault(x => string.Equals("net/minecraft/server/" + fn, x.MCP, StringComparison.InvariantCultureIgnoreCase));
-
-                    if (m == null)
-                        throw new Exception("Unknown class - " + fn + " from " + f);
-                    else
-                        HandlePatch(f, m);
-                }
+                if (m == null)
+                    throw new Exception("Unknown class - " + fn + " from " + f);
+                else
+                    HandlePatch(f, m);
             }
         }
 
@@ -83,20 +81,17 @@ namespace ChangedMCClasses
 
             bool isBukkitChanged = File.Exists(bukkitSourceFile);
 
-            foreach (string patchFolder in patchFolders)
+            string[] files = Directory.GetFiles(patchFolders, cleanPacket(map.MCP) + ".java.patch", SearchOption.AllDirectories);
+            if (files.Length > 0)
             {
-                string[] files = Directory.GetFiles(patchFolder, cleanPacket(map.MCP) + ".java.patch");
-                if (files.Length > 0)
+                foreach (string f in files)
                 {
-                    foreach (string f in files)
-                    {
-                        int i = 1;
-                        string targetPatch = Path.Combine(targetPatches, formatIfForge(cleanPacket(map.Bukkit), isBukkitChanged) + ".java.patch");
-                        while (File.Exists(targetPatch))
-                            targetPatch = Path.Combine(targetPatches, formatIfForge(cleanPacket(map.Bukkit), isBukkitChanged) + "_" + (++i) + ".java.patch");
+                    int i = 1;
+                    string targetPatch = Path.Combine(targetPatches, formatIfForge(cleanPacket(map.Bukkit), isBukkitChanged) + ".java.patch");
+                    while (File.Exists(targetPatch))
+                        targetPatch = Path.Combine(targetPatches, formatIfForge(cleanPacket(map.Bukkit), isBukkitChanged) + "_" + (++i) + ".java.patch");
 
-                        File.Copy(f, targetPatch);
-                    }
+                    File.Copy(f, targetPatch);
                 }
             }
 
@@ -117,7 +112,7 @@ namespace ChangedMCClasses
 
         static string formatIfForge(string fn, bool bukkit)
         {
-            return (bukkit ? "--" : "") + fn;
+            return (!bukkit ? "--" : "") + fn;
         }
 
         static void CreateMappings()

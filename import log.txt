@@ -1,41 +1,4 @@
 + ChunkRegionLoader Using BUKKIT file
-+ BlockDispenser Using BUKKIT file
-+ ChunkProviderServer Using BUKKIT file
-+ ConsoleLogManager Using BUKKIT file
-+ CrashReport Using BUKKIT file
-+ DedicatedServer Using BUKKIT file
-- PathfinderGoalMakeLove using forge, no changes needed
-+ EntityItem Using BUKKIT file
-+ EntityTypes Using BUKKIT file
-+ EntityHuman Using BUKKIT file
-+ EntitySlime Using BUKKIT file
-+ EntityTracker Using BUKKIT file
-+ EntityTrackerEntry Using BUKKIT file
-- EntityVillager using forge, no changes needed
-- GenLayerBiome using forge, no changes needed
-+ ItemWorldMap Using BUKKIT file
-+ WorldMap Using BUKKIT file
-+ MinecraftServer Using BUKKIT file
-- NetHandler using forge, no changes needed
-+ NetLoginHandler Using BUKKIT file
-+ NetServerHandler Using BUKKIT file
-- ServerConnection using forge, no changes needed
-+ Packet Using BUKKIT file
-- Packet1Login using forge, no changes needed
-+ WorldNBTStorage Using BUKKIT file
-+ ServerConfigurationManagerAbstract Using BUKKIT file
-+ DedicatedServerConnectionThread Using BUKKIT file
-- SlotResult using forge, no changes needed
-- SlotFurnaceResult using forge, no changes needed
-- LocaleLanguage using forge, no changes needed
-- WorldGenVillagePieces using forge, no changes needed
-+ NetworkManager Using BUKKIT file
-+ TileEntity Using BUKKIT file
-+ TileEntityFurnace Using BUKKIT file
-+ World Using BUKKIT file
-+ WorldData Using BUKKIT file
-- WorldProvider using forge, no changes needed
-- WorldType using forge, no changes needed
 - Previously done patch net/minecraft/src/AnvilChunkLoader
 - ServerNBTManager using forge, no changes needed
 + Block Using BUKKIT file
@@ -44,6 +7,7 @@
 - BlockChest using forge, no changes needed
 - BlockContainer using forge, no changes needed
 + BlockCrops Using BUKKIT file
++ BlockDispenser Using BUKKIT file
 + BlockDoor Using BUKKIT file
 + BlockSoil Using BUKKIT file
 + BlockFire Using BUKKIT file
@@ -69,6 +33,7 @@
 - BlockVine using forge, no changes needed
 + Chunk Using BUKKIT file
 - ChunkCache using forge, no changes needed
++ ChunkProviderServer Using BUKKIT file
 - Previously done patch net/minecraft/src/ChunkProviderServer
 - CommandHandler using forge, no changes needed
 - WorldGenMineshaftCorridor using forge, no changes needed
@@ -79,23 +44,35 @@
 - WorldGenStrongholdRoomCrossing using forge, no changes needed
 - WorldGenVillageBlacksmith using forge, no changes needed
 - NBTCompressedStreamTools using forge, no changes needed
++ ConsoleLogManager Using BUKKIT file
 + ContainerFurnace Using BUKKIT file
 + CraftingManager Using BUKKIT file
++ CrashReport Using BUKKIT file
 - CreativeModeTab using forge, no changes needed
++ DedicatedServer Using BUKKIT file
 + Enchantment Using BUKKIT file
 - EnchantmentManager using forge, no changes needed
 + Entity Using BUKKIT file
+- PathfinderGoalMakeLove using forge, no changes needed
 + EntityEnderDragon Using BUKKIT file
++ EntityItem Using BUKKIT file
 - Previously done patch net/minecraft/src/EntityItem
++ EntityTypes Using BUKKIT file
 + EntityLiving Using BUKKIT file
 + EntityMinecart Using BUKKIT file
 + EntityMushroomCow Using BUKKIT file
 + EntityOcelot Using BUKKIT file
++ EntityHuman Using BUKKIT file
 - Previously done patch net/minecraft/src/EntityPlayer
 + EntityPlayer Using BUKKIT file
 + EntitySheep Using BUKKIT file
++ EntitySlime Using BUKKIT file
++ EntityTracker Using BUKKIT file
++ EntityTrackerEntry Using BUKKIT file
+- EntityVillager using forge, no changes needed
 + Explosion Using BUKKIT file
 + RecipesFurnace Using BUKKIT file
+- GenLayerBiome using forge, no changes needed
 - GuiStatsComponent using forge, no changes needed
 - Item using forge, no changes needed
 + ItemBlock Using BUKKIT file
@@ -105,29 +82,49 @@
 + ItemDye Using BUKKIT file
 + ItemHoe Using BUKKIT file
 + ItemInWorldManager Using BUKKIT file
++ ItemWorldMap Using BUKKIT file
 - Previously done patch net/minecraft/src/ItemMap
 + ItemSeeds Using BUKKIT file
 - ItemShears using forge, no changes needed
 - ItemTool using forge, no changes needed
++ WorldMap Using BUKKIT file
 - WorldGenStronghold using forge, no changes needed
++ MinecraftServer Using BUKKIT file
 - Previously done patch net/minecraft/server/MinecraftServer
 - MovingObjectPosition using forge, no changes needed
+- NetHandler using forge, no changes needed
++ NetLoginHandler Using BUKKIT file
++ NetServerHandler Using BUKKIT file
 - Previously done patch net/minecraft/src/NetServerHandler
+- ServerConnection using forge, no changes needed
++ Packet Using BUKKIT file
+- Packet1Login using forge, no changes needed
 + Packet51MapChunk Using BUKKIT file
 + Packet56MapChunkBulk Using BUKKIT file
 + PlayerInstance Using BUKKIT file
 - MobEffect using forge, no changes needed
 - MinecartTrackLogic using forge, no changes needed
++ WorldNBTStorage Using BUKKIT file
++ ServerConfigurationManagerAbstract Using BUKKIT file
 - Previously done patch net/minecraft/src/ServerConfigurationManager
++ DedicatedServerConnectionThread Using BUKKIT file
+- SlotResult using forge, no changes needed
 - Previously done patch net/minecraft/src/SlotCrafting
+- SlotFurnaceResult using forge, no changes needed
 - Previously done patch net/minecraft/src/SlotFurnace
 + SpawnerCreature Using BUKKIT file
 - StatisticList using forge, no changes needed
+- LocaleLanguage using forge, no changes needed
+- WorldGenVillagePieces using forge, no changes needed
++ NetworkManager Using BUKKIT file
++ TileEntity Using BUKKIT file
 - Previously done patch net/minecraft/src/TileEntity
 + TileEntityBeacon Using BUKKIT file
 + TileEntityBrewingStand Using BUKKIT file
++ TileEntityFurnace Using BUKKIT file
 - Previously done patch net/minecraft/src/TileEntityFurnace
 - StructurePieceTreasure using forge, no changes needed
++ World Using BUKKIT file
 - Previously done patch net/minecraft/src/World
 - WorldChunkManager using forge, no changes needed
 + WorldGenHugeMushroom Using BUKKIT file
@@ -142,6 +139,11 @@
 + WorldGenTaiga2 Using BUKKIT file
 - WorldGenGrass using forge, no changes needed
 + WorldGenTrees Using BUKKIT file
++ WorldData Using BUKKIT file
+- WorldProvider using forge, no changes needed
 - Previously done patch net/minecraft/src/WorldProvider
 + WorldServer Using BUKKIT file
+- WorldType using forge, no changes needed
 - Previously done patch net/minecraft/src/WorldType
+
+Exiting
