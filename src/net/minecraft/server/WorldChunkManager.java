@@ -60,6 +60,16 @@ public class WorldChunkManager
     {
         return this.f.b(var1, var2);
     }
+    
+    /**
+     * Proxy for bukkit
+     */
+    public BiomeBase getBiome(int var1, int var2)
+    {
+        return this.a(var1, var2);
+    }
+    
+    
 
     /**
      * Returns a list of rainfall values for the specified blocks. Args: listToReuse, x, z, width, length.

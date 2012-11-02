@@ -1,5 +1,7 @@
 package net.minecraft.server;
 
+import cpw.mods.fml.common.Side;
+import cpw.mods.fml.common.asm.SideOnly;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -19,7 +21,10 @@ public class TileEntity {
 
     public TileEntity() {}
 
-    private static void a(Class oclass, String s) {
+    /**
+     * Adds a new two-way mapping between the class and its string name in both hashmaps.
+     */
+    public static void a(Class oclass, String s) {
         if (a.containsKey(s)) {
             throw new IllegalArgumentException("Duplicate id: " + s);
         } else {
@@ -27,6 +32,15 @@ public class TileEntity {
             b.put(oclass, s);
         }
     }
+    
+    public boolean canUpdate()
+    {
+        return true;
+    }
+
+    public void onDataPacket(INetworkManager var1, Packet132TileEntityData var2) {}
+
+    public void onChunkUnload() {}
 
     public void b(World world) {
         this.world = world;

@@ -1,10 +1,24 @@
 package net.minecraft.server;
 
+import cpw.mods.fml.common.Side;
+import cpw.mods.fml.common.asm.SideOnly;
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
+//import net.minecraft.server.Block$1; - forge enum
+import net.minecraftforge.common.EnumPlantType;
+import net.minecraftforge.common.ForgeDirection;
+import net.minecraftforge.common.ForgeHooks;
+import net.minecraftforge.common.IPlantable;
+import net.minecraftforge.common.MinecraftForge;
 
 public class Block {
-
+    protected static int[] blockFireSpreadSpeed = new int[4096];
+    protected static int[] blockFlammability = new int[4096];
+    protected String currentTexture;
+    public boolean isDefaultTexture;
+    
     private CreativeModeTab creativeTab;
     public static final StepSound d = new StepSound("stone", 1.0F, 1.0F);
     public static final StepSound e = new StepSound("wood", 1.0F, 1.0F);
@@ -191,6 +205,9 @@ public class Block {
     private String name;
 
     protected Block(int i, Material material) {
+        this.currentTexture = "/terrain.png";
+        this.isDefaultTexture = true;
+        
         this.cp = true;
         this.cq = true;
         this.stepSound = d;
@@ -206,37 +223,38 @@ public class Block {
             q[i] = this.c();
             lightBlock[i] = this.c() ? 255 : 0;
             s[i] = !material.blocksLight();
+            this.isDefaultTexture = this.getTextureFile() != null && this.getTextureFile().equalsIgnoreCase("/terrain.png");
         }
     }
 
-    protected Block r() {
+    public Block r() {
         u[this.id] = true;
         return this;
     }
 
     protected void t_() {}
 
-    protected Block(int i, int j, Material material) {
+    public Block(int i, int j, Material material) {
         this(i, material);
         this.textureId = j;
     }
 
-    protected Block a(StepSound stepsound) {
+    public Block a(StepSound stepsound) {
         this.stepSound = stepsound;
         return this;
     }
 
-    protected Block h(int i) {
+    public Block h(int i) {
         lightBlock[this.id] = i;
         return this;
     }
 
-    protected Block a(float f) {
+    public Block a(float f) {
         lightEmission[this.id] = (int) (15.0F * f);
         return this;
     }
 
-    protected Block b(float f) {
+    public Block b(float f) {
         this.durability = f * 3.0F;
         return this;
     }
@@ -259,7 +277,7 @@ public class Block {
         return 0;
     }
 
-    protected Block c(float f) {
+    public Block c(float f) {
         this.strength = f;
         if (this.durability < f * 5.0F) {
             this.durability = f * 5.0F;
@@ -268,7 +286,7 @@ public class Block {
         return this;
     }
 
-    protected Block s() {
+    public Block s() {
         this.c(-1.0F);
         return this;
     }
@@ -277,7 +295,7 @@ public class Block {
         return this.strength;
     }
 
-    protected Block b(boolean flag) {
+    public Block b(boolean flag) {
         this.cr = flag;
         return this;
     }
@@ -286,11 +304,16 @@ public class Block {
         return this.cr;
     }
 
-    public boolean u() {
-        return this.isTileEntity;
+    @Deprecated
+    public boolean u()
+    {
+        return this.hasTileEntity(0);
     }
 
-    protected final void a(float f, float f1, float f2, float f3, float f4, float f5) {
+    /**
+     * Sets the bounds of the block.  minX, minY, minZ, maxX, maxY, maxZ
+     */
+    public final void a(float f, float f1, float f2, float f3, float f4, float f5) {
         this.minX = (double) f;
         this.minY = (double) f1;
         this.minZ = (double) f2;
@@ -357,10 +380,13 @@ public class Block {
         return this.id;
     }
 
-    public float getDamage(EntityHuman entityhuman, World world, int i, int j, int k) {
-        float f = this.m(world, i, j, k);
-
-        return f < 0.0F ? 0.0F : (!entityhuman.b(this) ? 1.0F / f / 100.0F : entityhuman.a(this) / f / 30.0F);
+    /**
+     * Gets the hardness of block at the given coordinates in the given world, relative to the ability of the given
+     * EntityPlayer.
+     */
+    public float getDamage(EntityHuman var1, World var2, int var3, int var4, int var5)
+    {
+        return ForgeHooks.blockStrength(this, var1, var2, var3, var4, var5);
     }
 
     public final void c(World world, int i, int j, int k, int l, int i1) {
@@ -369,16 +395,16 @@ public class Block {
 
     public void dropNaturally(World world, int i, int j, int k, int l, float f, int i1) {
         if (!world.isStatic) {
-            int j1 = this.getDropCount(i1, world.random);
+            ArrayList var8 = this.getBlockDropped(world, i, j, k, l, i1);
+            Iterator var9 = var8.iterator();
 
-            for (int k1 = 0; k1 < j1; ++k1) {
+            while (var9.hasNext())
+            {
+                ItemStack var10 = (ItemStack)var9.next();
+
                 // CraftBukkit - <= to < to allow for plugins to completely disable block drops from explosions
                 if (world.random.nextFloat() < f) {
-                    int l1 = this.getDropType(l, world.random, i1);
-
-                    if (l1 > 0) {
-                        this.a(world, i, j, k, new ItemStack(l1, 1, this.getDropData(l)));
-                    }
+                    this.a(world, i, j, k, var10);
                 }
             }
         }
@@ -591,7 +617,9 @@ public class Block {
     public void a(World world, EntityHuman entityhuman, int i, int j, int k, int l) {
         entityhuman.a(StatisticList.C[this.id], 1);
         entityhuman.j(0.025F);
-        if (this.s_() && EnchantmentManager.hasSilkTouchEnchantment(entityhuman)) {
+        
+        if (this.canSilkHarvest(world, entityhuman, i, j, k, l) && EnchantmentManager.hasSilkTouchEnchantment(entityhuman))
+        {
             ItemStack itemstack = this.f_(l);
 
             if (itemstack != null) {
@@ -675,6 +703,330 @@ public class Block {
 
     public boolean l() {
         return true;
+    }
+
+
+    public int getLightValue(IBlockAccess var1, int var2, int var3, int var4)
+    {
+        return lightEmission[this.id];
+    }
+
+    public boolean isLadder(World var1, int var2, int var3, int var4)
+    {
+        return false;
+    }
+
+    public boolean isBlockNormalCube(World var1, int var2, int var3, int var4)
+    {
+        return this.material.k() && this.b();
+    }
+
+    public boolean isBlockSolidOnSide(World var1, int var2, int var3, int var4, ForgeDirection var5)
+    {
+        int var6 = var1.getData(var2, var3, var4);
+
+        if (this instanceof BlockStepAbstract)
+        {
+            return (var6 & 8) == 8 && var5 == ForgeDirection.UP || this.c();
+        }
+        else if (this instanceof BlockSoil)
+        {
+            return var5 != ForgeDirection.DOWN && var5 != ForgeDirection.UP;
+        }
+        else if (this instanceof BlockStairs)
+        {
+            boolean var7 = (var6 & 4) != 0;
+            return (var6 & 3) + var5.ordinal() == 5 || var5 == ForgeDirection.UP && var7;
+        }
+        else
+        {
+            return this.isBlockNormalCube(var1, var2, var3, var4);
+        }
+    }
+
+    public boolean isBlockReplaceable(World var1, int var2, int var3, int var4)
+    {
+        return false;
+    }
+
+    public boolean isBlockBurning(World var1, int var2, int var3, int var4)
+    {
+        return false;
+    }
+
+    public boolean isAirBlock(World var1, int var2, int var3, int var4)
+    {
+        return false;
+    }
+
+    public boolean canHarvestBlock(EntityHuman var1, int var2)
+    {
+        return ForgeHooks.canHarvestBlock(this, var1, var2);
+    }
+
+    public boolean removeBlockByPlayer(World var1, EntityHuman var2, int var3, int var4, int var5)
+    {
+        return var1.setTypeId(var3, var4, var5, 0);
+    }
+
+    public void addCreativeItems(ArrayList var1) {}
+
+    public int getFlammability(IBlockAccess var1, int var2, int var3, int var4, int var5, ForgeDirection var6)
+    {
+        return blockFlammability[this.id];
+    }
+
+    public boolean isFlammable(IBlockAccess var1, int var2, int var3, int var4, int var5, ForgeDirection var6)
+    {
+        return this.getFlammability(var1, var2, var3, var4, var5, var6) > 0;
+    }
+
+    public int getFireSpreadSpeed(World var1, int var2, int var3, int var4, int var5, ForgeDirection var6)
+    {
+        return blockFireSpreadSpeed[this.id];
+    }
+
+    public boolean isFireSource(World var1, int var2, int var3, int var4, int var5, ForgeDirection var6)
+    {
+        return this.id == NETHERRACK.id && var6 == ForgeDirection.UP ? true : var1.worldProvider instanceof WorldProviderTheEnd && this.id == BEDROCK.id && var6 == ForgeDirection.UP;
+    }
+
+    public static void setBurnProperties(int var0, int var1, int var2)
+    {
+        blockFireSpreadSpeed[var0] = var1;
+        blockFlammability[var0] = var2;
+    }
+
+    public boolean hasTileEntity(int var1)
+    {
+        return this.isTileEntity;
+    }
+
+    public TileEntity createTileEntity(World var1, int var2)
+    {
+        return this instanceof BlockContainer ? ((BlockContainer)this).createNewTileEntity(var1, var2) : null;
+    }
+
+    public int quantityDropped(int var1, int var2, Random var3)
+    {
+        return this.getDropCount(var2, var3);
+    }
+
+    public ArrayList getBlockDropped(World var1, int var2, int var3, int var4, int var5, int var6)
+    {
+        ArrayList var7 = new ArrayList();
+        int var8 = this.quantityDropped(var5, var6, var1.random);
+
+        for (int var9 = 0; var9 < var8; ++var9)
+        {
+            int var10 = this.getDropType(var5, var1.random, 0);
+
+            if (var10 > 0)
+            {
+                var7.add(new ItemStack(var10, 1, this.getDropData(var5)));
+            }
+        }
+
+        return var7;
+    }
+
+    public boolean canSilkHarvest(World var1, EntityHuman var2, int var3, int var4, int var5, int var6)
+    {
+        return !(this instanceof BlockGlass) && !(this instanceof BlockEnderChest) ? this.b() && !this.hasTileEntity(var6) : true;
+    }
+
+    public boolean canCreatureSpawn(EnumCreatureType var1, World var2, int var3, int var4, int var5)
+    {
+        int var6 = var2.getData(var3, var4, var5);
+        return this instanceof BlockStep ? (!MinecraftForge.SPAWNER_ALLOW_ON_INVERTED ? i(this.id) : (var6 & 8) == 8 || this.c()) : (this instanceof BlockStairs ? (MinecraftForge.SPAWNER_ALLOW_ON_INVERTED ? (var6 & 4) != 0 : i(this.id)) : this.isBlockSolidOnSide(var2, var3, var4, var5, ForgeDirection.UP));
+    }
+
+    public boolean isBed(World var1, int var2, int var3, int var4, EntityLiving var5)
+    {
+        return this.id == BED.id;
+    }
+
+    public ChunkCoordinates getBedSpawnPosition(World var1, int var2, int var3, int var4, EntityHuman var5)
+    {
+        return BlockBed.b(var1, var2, var3, var4, 0);
+    }
+
+    public void setBedOccupied(World var1, int var2, int var3, int var4, EntityHuman var5, boolean var6)
+    {
+        BlockBed.a(var1, var2, var3, var4, var6);
+    }
+
+    public int getBedDirection(IBlockAccess var1, int var2, int var3, int var4)
+    {
+        return BlockBed.e(var1.getData(var2, var3, var4));
+    }
+
+    public boolean isBedFoot(IBlockAccess var1, int var2, int var3, int var4)
+    {
+        return BlockBed.b_(var1.getData(var2, var3, var4));
+    }
+
+    public void beginLeavesDecay(World var1, int var2, int var3, int var4) {}
+
+    public boolean canSustainLeaves(World var1, int var2, int var3, int var4)
+    {
+        return false;
+    }
+
+    public boolean isLeaves(World var1, int var2, int var3, int var4)
+    {
+        return false;
+    }
+
+    public boolean canBeReplacedByLeaves(World var1, int var2, int var3, int var4)
+    {
+        return !q[this.id];
+    }
+
+    public boolean isWood(World var1, int var2, int var3, int var4)
+    {
+        return false;
+    }
+
+    public boolean isGenMineableReplaceable(World var1, int var2, int var3, int var4)
+    {
+        return this.id == STONE.id;
+    }
+
+    public String getTextureFile()
+    {
+        return this.currentTexture;
+    }
+
+    public void setTextureFile(String var1)
+    {
+        this.currentTexture = var1;
+        this.isDefaultTexture = false;
+    }
+
+    public float getExplosionResistance(Entity var1, World var2, int var3, int var4, int var5, double var6, double var8, double var10)
+    {
+        return this.a(var1);
+    }
+
+    public boolean canConnectRedstone(IBlockAccess var1, int var2, int var3, int var4, int var5)
+    {
+        return byId[this.id].isPowerSource() && var5 != -1;
+    }
+
+    public boolean canPlaceTorchOnTop(World var1, int var2, int var3, int var4)
+    {
+        if (var1.t(var2, var3, var4))
+        {
+            return true;
+        }
+        else
+        {
+            int var5 = var1.getTypeId(var2, var3, var4);
+            return var5 == FENCE.id || var5 == NETHER_FENCE.id || var5 == GLASS.id || var5 == COBBLE_WALL.id;
+        }
+    }
+
+    @SideOnly(Side.CLIENT)
+    public int n()
+    {
+        return 0;
+    }
+    
+    public boolean canRenderInPass(int var1)
+    {
+        return var1 == this.n();
+    }
+    
+    @SideOnly(Side.CLIENT)
+    public int a(World var1, int var2, int var3, int var4)
+    {
+        return this.id;
+    }
+
+    public ItemStack getPickBlock(MovingObjectPosition var1, World var2, int var3, int var4, int var5)
+    {
+        int var6 = this.a(var2, var3, var4, var5);
+
+        if (var6 == 0)
+        {
+            return null;
+        }
+        else
+        {
+            Item var7 = Item.byId[var6];
+            return var7 == null ? null : new ItemStack(var6, 1, this.getDropData(var2, var3, var4, var5));
+        }
+    }
+
+    public boolean isBlockFoliage(World var1, int var2, int var3, int var4)
+    {
+        return false;
+    }
+
+    public boolean canSustainPlant(World var1, int var2, int var3, int var4, ForgeDirection var5, IPlantable var6)
+    {
+        int var7 = var6.getPlantID(var1, var2, var3 + 1, var4);
+        EnumPlantType var8 = var6.getPlantType(var1, var2, var3 + 1, var4);
+
+        if (var7 == CACTUS.id && this.id == CACTUS.id)
+        {
+            return true;
+        }
+        else if (var7 == SUGAR_CANE_BLOCK.id && this.id == SUGAR_CANE_BLOCK.id)
+        {
+            return true;
+        }
+        else if (var6 instanceof BlockFlower && ((BlockFlower)var6).d_(this.id))
+        {
+            return true;
+        }
+        else
+        {
+            switch (var8.ordinal())
+            {
+                case 1:
+                    return this.id == SAND.id;
+
+                case 2:
+                    return this.id == SOUL_SAND.id;
+
+                case 3:
+                    return this.id == SOIL.id;
+
+                case 4:
+                    return this.isBlockSolidOnSide(var1, var2, var3, var4, ForgeDirection.UP);
+
+                case 5:
+                    return this.id == GRASS.id || this.id == DIRT.id;
+
+                case 6:
+                    return var1.getMaterial(var2, var3, var4) == Material.WATER && var1.getData(var2, var3, var4) == 0;
+
+                case 7:
+                    boolean var9 = this.id == GRASS.id || this.id == DIRT.id || this.id == SAND.id;
+                    boolean var10 = var1.getMaterial(var2 - 1, var3 - 1, var4) == Material.WATER || var1.getMaterial(var2 + 1, var3 - 1, var4) == Material.WATER || var1.getMaterial(var2, var3 - 1, var4 - 1) == Material.WATER || var1.getMaterial(var2, var3 - 1, var4 + 1) == Material.WATER;
+                    return var9 && var10;
+
+                default:
+                    return false;
+            }
+        }
+    }
+
+    public boolean isFertile(World var1, int var2, int var3, int var4)
+    {
+        return this.id == SOIL.id ? var1.getData(var2, var3, var4) > 0 : false;
+    }
+
+    public int getLightOpacity(World var1, int var2, int var3, int var4)
+    {
+        return lightBlock[this.id];
+    }
+
+    public boolean canDragonDestroy(World var1, int var2, int var3, int var4)
+    {
+        return this.id != OBSIDIAN.id && this.id != WHITESTONE.id && this.id != BEDROCK.id;
     }
 
     static {
