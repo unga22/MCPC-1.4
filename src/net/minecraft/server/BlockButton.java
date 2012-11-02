@@ -2,7 +2,7 @@ package net.minecraft.server;
 
 import java.util.List;
 import java.util.Random;
-
+import net.minecraftforge.common.ForgeDirection;
 import org.bukkit.event.block.BlockRedstoneEvent; // CraftBukkit
 
 public class BlockButton extends Block {
@@ -32,62 +32,97 @@ public class BlockButton extends Block {
         return false;
     }
 
-    public boolean canPlace(World world, int i, int j, int k, int l) {
-        return l == 2 && world.s(i, j, k + 1) ? true : (l == 3 && world.s(i, j, k - 1) ? true : (l == 4 && world.s(i + 1, j, k) ? true : l == 5 && world.s(i - 1, j, k)));
+    /**
+     * checks to see if you can place this block can be placed on that side of a block: BlockLever overrides
+     */
+    public boolean canPlace(World var1, int var2, int var3, int var4, int var5)
+    {
+        ForgeDirection var6 = ForgeDirection.getOrientation(var5);
+        return var6 == ForgeDirection.NORTH && var1.isBlockSolidOnSide(var2, var3, var4 + 1, ForgeDirection.NORTH) || var6 == ForgeDirection.SOUTH && var1.isBlockSolidOnSide(var2, var3, var4 - 1, ForgeDirection.SOUTH) || var6 == ForgeDirection.WEST && var1.isBlockSolidOnSide(var2 + 1, var3, var4, ForgeDirection.WEST) || var6 == ForgeDirection.EAST && var1.isBlockSolidOnSide(var2 - 1, var3, var4, ForgeDirection.EAST);
     }
 
     public boolean canPlace(World world, int i, int j, int k) {
         return world.s(i - 1, j, k) ? true : (world.s(i + 1, j, k) ? true : (world.s(i, j, k - 1) ? true : world.s(i, j, k + 1)));
     }
 
-    public void postPlace(World world, int i, int j, int k, int l, float f, float f1, float f2) {
-        int i1 = world.getData(i, j, k);
-        int j1 = i1 & 8;
+    /**
+     * called before onBlockPlacedBy by ItemBlock and ItemReed
+     */
+    public void postPlace(World var1, int var2, int var3, int var4, int var5, float var6, float var7, float var8)
+    {
+        int var9 = var1.getData(var2, var3, var4);
+        int var10 = var9 & 8;
+        var9 &= 7;
+        ForgeDirection var11 = ForgeDirection.getOrientation(var5);
 
-        i1 &= 7;
-        if (l == 2 && world.s(i, j, k + 1)) {
-            i1 = 4;
-        } else if (l == 3 && world.s(i, j, k - 1)) {
-            i1 = 3;
-        } else if (l == 4 && world.s(i + 1, j, k)) {
-            i1 = 2;
-        } else if (l == 5 && world.s(i - 1, j, k)) {
-            i1 = 1;
-        } else {
-            i1 = this.l(world, i, j, k);
+        if (var11 == ForgeDirection.NORTH && var1.isBlockSolidOnSide(var2, var3, var4 + 1, ForgeDirection.NORTH))
+        {
+            var9 = 4;
+        }
+        else if (var11 == ForgeDirection.SOUTH && var1.isBlockSolidOnSide(var2, var3, var4 - 1, ForgeDirection.SOUTH))
+        {
+            var9 = 3;
+        }
+        else if (var11 == ForgeDirection.WEST && var1.isBlockSolidOnSide(var2 + 1, var3, var4, ForgeDirection.WEST))
+        {
+            var9 = 2;
+        }
+        else if (var11 == ForgeDirection.EAST && var1.isBlockSolidOnSide(var2 - 1, var3, var4, ForgeDirection.EAST))
+        {
+            var9 = 1;
+        }
+        else
+        {
+            var9 = this.l(var1, var2, var3, var4);
         }
 
-        world.setData(i, j, k, i1 + j1);
+        var1.setData(var2, var3, var4, var9 + var10);
     }
 
-    private int l(World world, int i, int j, int k) {
-        return world.s(i - 1, j, k) ? 1 : (world.s(i + 1, j, k) ? 2 : (world.s(i, j, k - 1) ? 3 : (world.s(i, j, k + 1) ? 4 : 1)));
+    /**
+     * Get side which this button is facing.
+     */
+    private int l(World var1, int var2, int var3, int var4)
+    {
+        return var1.isBlockSolidOnSide(var2 - 1, var3, var4, ForgeDirection.EAST) ? 1 : (var1.isBlockSolidOnSide(var2 + 1, var3, var4, ForgeDirection.WEST) ? 2 : (var1.isBlockSolidOnSide(var2, var3, var4 - 1, ForgeDirection.SOUTH) ? 3 : (var1.isBlockSolidOnSide(var2, var3, var4 + 1, ForgeDirection.NORTH) ? 4 : 1)));
     }
 
-    public void doPhysics(World world, int i, int j, int k, int l) {
-        if (this.n(world, i, j, k)) {
-            int i1 = world.getData(i, j, k) & 7;
-            boolean flag = false;
 
-            if (!world.s(i - 1, j, k) && i1 == 1) {
-                flag = true;
+    /**
+     * Lets the block know when one of its neighbor changes. Doesn't know which neighbor changed (coordinates passed are
+     * their own) Args: x, y, z, neighbor blockID
+     */
+    public void doPhysics(World var1, int var2, int var3, int var4, int var5)
+    {
+        if (this.n(var1, var2, var3, var4))
+        {
+            int var6 = var1.getData(var2, var3, var4) & 7;
+            boolean var7 = false;
+
+            if (!var1.isBlockSolidOnSide(var2 - 1, var3, var4, ForgeDirection.EAST) && var6 == 1)
+            {
+                var7 = true;
             }
 
-            if (!world.s(i + 1, j, k) && i1 == 2) {
-                flag = true;
+            if (!var1.isBlockSolidOnSide(var2 + 1, var3, var4, ForgeDirection.WEST) && var6 == 2)
+            {
+                var7 = true;
             }
 
-            if (!world.s(i, j, k - 1) && i1 == 3) {
-                flag = true;
+            if (!var1.isBlockSolidOnSide(var2, var3, var4 - 1, ForgeDirection.SOUTH) && var6 == 3)
+            {
+                var7 = true;
             }
 
-            if (!world.s(i, j, k + 1) && i1 == 4) {
-                flag = true;
+            if (!var1.isBlockSolidOnSide(var2, var3, var4 + 1, ForgeDirection.NORTH) && var6 == 4)
+            {
+                var7 = true;
             }
 
-            if (flag) {
-                this.c(world, i, j, k, world.getData(i, j, k), 0);
-                world.setTypeId(i, j, k, 0);
+            if (var7)
+            {
+                this.c(var1, var2, var3, var4, var1.getData(var2, var3, var4), 0);
+                var1.setTypeId(var2, var3, var4, 0);
             }
         }
     }
@@ -231,41 +266,45 @@ public class BlockButton extends Block {
         this.a(0.5F - f, 0.5F - f1, 0.5F - f2, 0.5F + f, 0.5F + f1, 0.5F + f2);
     }
 
-    public void a(World world, int i, int j, int k, Entity entity) {
-        if (!world.isStatic) {
-            if (this.a) {
-                if ((world.getData(i, j, k) & 8) == 0) {
-                    this.o(world, i, j, k);
-                }
-            }
+    /**
+     * Triggered whenever an entity collides with this block (enters into the block). Args: world, x, y, z, entity
+     */
+    public void a(World var1, int var2, int var3, int var4, Entity var5)
+    {
+        if (!var1.isStatic && this.a && (var1.getData(var2, var3, var4) & 8) == 0)
+        {
+            this.o(var1, var2, var3, var4);
         }
     }
 
-    private void o(World world, int i, int j, int k) {
-        int l = world.getData(i, j, k);
-        int i1 = l & 7;
-        boolean flag = (l & 8) != 0;
+    private void o(World var1, int var2, int var3, int var4)
+    {
+        int var5 = var1.getData(var2, var3, var4);
+        int var6 = var5 & 7;
+        boolean var7 = (var5 & 8) != 0;
+        this.e(var5);
+        List var8 = var1.a(EntityArrow.class, AxisAlignedBB.a().a((double)var2 + this.minX, (double)var3 + this.minY, (double)var4 + this.minZ, (double)var2 + this.maxX, (double)var3 + this.maxY, (double)var4 + this.maxZ));
+        boolean var9 = !var8.isEmpty();
 
-        this.e(l);
-        List list = world.a(EntityArrow.class, AxisAlignedBB.a().a((double) i + this.minX, (double) j + this.minY, (double) k + this.minZ, (double) i + this.maxX, (double) j + this.maxY, (double) k + this.maxZ));
-        boolean flag1 = !list.isEmpty();
-
-        if (flag1 && !flag) {
-            world.setData(i, j, k, i1 | 8);
-            this.d(world, i, j, k, i1);
-            world.e(i, j, k, i, j, k);
-            world.makeSound((double) i + 0.5D, (double) j + 0.5D, (double) k + 0.5D, "random.click", 0.3F, 0.6F);
+        if (var9 && !var7)
+        {
+            var1.setData(var2, var3, var4, var6 | 8);
+            this.d(var1, var2, var3, var4, var6);
+            var1.e(var2, var3, var4, var2, var3, var4);
+            var1.makeSound((double)var2 + 0.5D, (double)var3 + 0.5D, (double)var4 + 0.5D, "random.click", 0.3F, 0.6F);
         }
 
-        if (!flag1 && flag) {
-            world.setData(i, j, k, i1);
-            this.d(world, i, j, k, i1);
-            world.e(i, j, k, i, j, k);
-            world.makeSound((double) i + 0.5D, (double) j + 0.5D, (double) k + 0.5D, "random.click", 0.3F, 0.5F);
+        if (!var9 && var7)
+        {
+            var1.setData(var2, var3, var4, var6);
+            this.d(var1, var2, var3, var4, var6);
+            var1.e(var2, var3, var4, var2, var3, var4);
+            var1.makeSound((double)var2 + 0.5D, (double)var3 + 0.5D, (double)var4 + 0.5D, "random.click", 0.3F, 0.5F);
         }
 
-        if (flag1) {
-            world.a(i, j, k, this.id, this.r_());
+        if (var9)
+        {
+            var1.a(var2, var3, var4, this.id, this.r_());
         }
     }
 

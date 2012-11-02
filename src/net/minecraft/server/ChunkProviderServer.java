@@ -7,6 +7,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
+import cpw.mods.fml.common.registry.GameRegistry;
+import net.minecraftforge.common.DimensionManager;
+import net.minecraftforge.common.ForgeChunkManager;
+
 // CraftBukkit start
 import java.util.Random;
 
@@ -23,7 +27,7 @@ public class ChunkProviderServer implements IChunkProvider {
     public LongHashSet unloadQueue = new LongHashSet();
     public Chunk emptyChunk;
     public IChunkProvider chunkProvider; // CraftBukkit
-    private IChunkLoader e;
+    IChunkLoader e;
     public boolean forceChunkLoad = false; // true -> false
     public LongObjectHashMap<Chunk> chunks = new LongObjectHashMap<Chunk>();
     public WorldServer world;
@@ -41,7 +45,7 @@ public class ChunkProviderServer implements IChunkProvider {
     }
 
     public void queueUnload(int i, int j) {
-        if (this.world.worldProvider.e()) {
+        if (this.world.worldProvider.e() && DimensionManager.shouldLoadSpawn(this.world.worldProvider.dimension)) {
             ChunkCoordinates chunkcoordinates = this.world.getSpawn();
             int k = i * 16 + 8 - chunkcoordinates.x;
             int l = j * 16 + 8 - chunkcoordinates.z;
@@ -87,7 +91,11 @@ public class ChunkProviderServer implements IChunkProvider {
         // CraftBukkit end
 
         if (chunk == null) {
-            chunk = this.loadChunk(i, j);
+            chunk =  ForgeChunkManager.fetchDormantChunk(LongHash.toLong(i, j), this.world);
+            
+            if (chunk == null)
+            	chunk = this.loadChunk(i, j);
+            
             if (chunk == null) {
                 if (this.chunkProvider == null) {
                     chunk = this.emptyChunk;
@@ -211,6 +219,8 @@ public class ChunkProviderServer implements IChunkProvider {
                 this.world.getServer().getPluginManager().callEvent(new org.bukkit.event.world.ChunkPopulateEvent(chunk.bukkitChunk));
                 // CraftBukkit end
 
+                GameRegistry.generateWorld(i, j, this.world, this.chunkProvider, ichunkprovider);
+                
                 chunk.e();
             }
         }
@@ -250,6 +260,16 @@ public class ChunkProviderServer implements IChunkProvider {
 
     public boolean unloadChunks() {
         if (!this.world.savingDisabled) {
+        	
+            Iterator var1 = this.world.getPersistentChunks().keySet().iterator();
+
+            while (var1.hasNext())
+            {
+                ChunkCoordIntPair var2 = (ChunkCoordIntPair)var1.next();
+                this.unloadQueue.remove(Long.valueOf(ChunkCoordIntPair.a(var2.x, var2.z)));
+            }
+
+            
             // CraftBukkit start
             Server server = this.world.getServer();
             for (int i = 0; i < 100 && !this.unloadQueue.isEmpty(); i++) {
@@ -265,6 +285,14 @@ public class ChunkProviderServer implements IChunkProvider {
                     this.saveChunkNOP(chunk);
                     // this.unloadQueue.remove(integer);
                     this.chunks.remove(chunkcoordinates); // CraftBukkit
+                    
+                    ForgeChunkManager.putDormantChunk(ChunkCoordIntPair.a(chunk.x, chunk.z), chunk);
+
+                    if (this.chunks.size() == 0 && ForgeChunkManager.getPersistentChunksFor(this.world).size() == 0 && !DimensionManager.shouldLoadSpawn(this.world.worldProvider.dimension))
+                    {
+                        DimensionManager.unloadWorld(this.world.worldProvider.dimension);
+                        return this.chunkProvider.unloadChunks();
+                    }
                 }
             }
             // CraftBukkit end

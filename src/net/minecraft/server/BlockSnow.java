@@ -32,10 +32,14 @@ public class BlockSnow extends Block {
         this.a(0.0F, 0.0F, 0.0F, 1.0F, f, 1.0F);
     }
 
-    public boolean canPlace(World world, int i, int j, int k) {
-        int l = world.getTypeId(i, j - 1, k);
-
-        return l != 0 && (l == Block.LEAVES.id || Block.byId[l].c()) ? world.getMaterial(i, j - 1, k).isSolid() : false;
+    /**
+     * Checks to see if its valid to put this block at the specified coordinates. Args: world, x, y, z
+     */
+    public boolean canPlace(World var1, int var2, int var3, int var4)
+    {
+        int var5 = var1.getTypeId(var2, var3 - 1, var4);
+        Block var6 = Block.byId[var5];
+        return var6 != null && (var6.isLeaves(var1, var2, var3 - 1, var4) || Block.byId[var5].c()) ? var1.getMaterial(var2, var3 - 1, var4).isSolid() : false;
     }
 
     public void doPhysics(World world, int i, int j, int k, int l) {
@@ -44,7 +48,7 @@ public class BlockSnow extends Block {
 
     private boolean n(World world, int i, int j, int k) {
         if (!this.canPlace(world, i, j, k)) {
-            this.c(world, i, j, k, world.getData(i, j, k), 0);
+            //this.c(world, i, j, k, world.getData(i, j, k), 0);
             world.setRawTypeId(i, j, k, 0); // CraftBukkit
             world.notify(i, j, k); // CraftBukkit - Notify clients of the reversion
             return false;
@@ -53,12 +57,14 @@ public class BlockSnow extends Block {
         }
     }
 
-    public void a(World world, EntityHuman entityhuman, int i, int j, int k, int l) {
-        int i1 = Item.SNOW_BALL.id;
-
-        this.a(world, i, j, k, new ItemStack(i1, 1, 0));
-        world.setTypeId(i, j, k, 0);
-        entityhuman.a(StatisticList.C[this.id], 1);
+    /**
+     * Called when the player destroys a block with an item that can harvest it. (i, j, k) are the coordinates of the
+     * block and l is the block's subtype/damage.
+     */
+    public void a(World var1, EntityHuman var2, int var3, int var4, int var5, int var6)
+    {
+        super.a(var1, var2, var3, var4, var5, var6);
+        var1.setTypeId(var3, var4, var5, 0);
     }
 
     public int getDropType(int i, Random random, int j) {
@@ -66,7 +72,7 @@ public class BlockSnow extends Block {
     }
 
     public int a(Random random) {
-        return 0;
+        return 1;
     }
 
     public void b(World world, int i, int j, int k, Random random) {
@@ -77,7 +83,7 @@ public class BlockSnow extends Block {
             }
             // CraftBukkit end
 
-            this.c(world, i, j, k, world.getData(i, j, k), 0);
+            //this.c(world, i, j, k, world.getData(i, j, k), 0);
             world.setTypeId(i, j, k, 0);
         }
     }

@@ -23,7 +23,7 @@ public class BlockMycel extends Block {
 
     public void b(World world, int i, int j, int k, Random random) {
         if (!world.isStatic) {
-            if (world.getLightLevel(i, j + 1, k) < 4 && Block.lightBlock[world.getTypeId(i, j + 1, k)] > 2) {
+            if (world.getLightLevel(i, j + 1, k) < 4 && world.b(i, j + 1, k) > 2) {
                 // CraftBukkit start
                 org.bukkit.World bworld = world.getWorld();
                 BlockState blockState = bworld.getBlockAt(i, j, k).getState();
@@ -43,7 +43,7 @@ public class BlockMycel extends Block {
                     int k1 = k + random.nextInt(3) - 1;
                     int l1 = world.getTypeId(i1, j1 + 1, k1);
 
-                    if (world.getTypeId(i1, j1, k1) == Block.DIRT.id && world.getLightLevel(i1, j1 + 1, k1) >= 4 && Block.lightBlock[l1] <= 2) {
+                    if (world.getTypeId(i1, j1, k1) == Block.DIRT.id && world.getLightLevel(i1, j1 + 1, k1) >= 4 && world.b(i1, j1 + 1, k1) <= 2) {
                         // CraftBukkit start
                         org.bukkit.World bworld = world.getWorld();
                         BlockState blockState = bworld.getBlockAt(i1, j1, k1).getState();

@@ -109,7 +109,7 @@ public class BlockDoor extends Block {
 
     public boolean interact(World world, int i, int j, int k, EntityHuman entityhuman, int l, float f, float f1, float f2) {
         if (this.material == Material.ORE) {
-            return true;
+            return false;
         } else {
             int i1 = this.b_(world, i, j, k);
             int j1 = i1 & 7;

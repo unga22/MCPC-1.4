@@ -3,6 +3,7 @@ package net.minecraft.server;
 import java.util.Random;
 
 import org.bukkit.event.block.BlockRedstoneEvent; // CraftBukkit
+import net.minecraftforge.common.ForgeDirection;
 
 public class BlockTripwireHook extends Block {
 
@@ -32,63 +33,88 @@ public class BlockTripwireHook extends Block {
         return 10;
     }
 
-    public boolean canPlace(World world, int i, int j, int k, int l) {
-        return l == 2 && world.s(i, j, k + 1) ? true : (l == 3 && world.s(i, j, k - 1) ? true : (l == 4 && world.s(i + 1, j, k) ? true : l == 5 && world.s(i - 1, j, k)));
+    /**
+     * checks to see if you can place this block can be placed on that side of a block: BlockLever overrides
+     */
+    public boolean canPlace(World var1, int var2, int var3, int var4, int var5)
+    {
+        ForgeDirection var6 = ForgeDirection.getOrientation(var5);
+        return var6 == ForgeDirection.NORTH && var1.isBlockSolidOnSide(var2, var3, var4 + 1, ForgeDirection.NORTH) || var6 == ForgeDirection.SOUTH && var1.isBlockSolidOnSide(var2, var3, var4 - 1, ForgeDirection.SOUTH) || var6 == ForgeDirection.WEST && var1.isBlockSolidOnSide(var2 + 1, var3, var4, ForgeDirection.WEST) || var6 == ForgeDirection.EAST && var1.isBlockSolidOnSide(var2 - 1, var3, var4, ForgeDirection.EAST);
     }
 
-    public boolean canPlace(World world, int i, int j, int k) {
-        return world.s(i - 1, j, k) ? true : (world.s(i + 1, j, k) ? true : (world.s(i, j, k - 1) ? true : world.s(i, j, k + 1)));
+    /**
+     * Checks to see if its valid to put this block at the specified coordinates. Args: world, x, y, z
+     */
+    public boolean canPlace(World var1, int var2, int var3, int var4)
+    {
+        return var1.isBlockSolidOnSide(var2 - 1, var3, var4, ForgeDirection.SOUTH) || var1.isBlockSolidOnSide(var2 + 1, var3, var4, ForgeDirection.NORTH) || var1.isBlockSolidOnSide(var2, var3, var4 - 1, ForgeDirection.EAST) || var1.isBlockSolidOnSide(var2, var3, var4 + 1, ForgeDirection.WEST);
     }
 
-    public void postPlace(World world, int i, int j, int k, int l, float f, float f1, float f2) {
-        byte b0 = 0;
+    /**
+     * called before onBlockPlacedBy by ItemBlock and ItemReed
+     */
+    public void postPlace(World var1, int var2, int var3, int var4, int var5, float var6, float var7, float var8)
+    {
+        byte var9 = 0;
 
-        if (l == 2 && world.b(i, j, k + 1, true)) {
-            b0 = 2;
+        if (var5 == 2 && var1.isBlockSolidOnSide(var2, var3, var4 + 1, ForgeDirection.WEST, true))
+        {
+            var9 = 2;
         }
 
-        if (l == 3 && world.b(i, j, k - 1, true)) {
-            b0 = 0;
+        if (var5 == 3 && var1.isBlockSolidOnSide(var2, var3, var4 - 1, ForgeDirection.EAST, true))
+        {
+            var9 = 0;
         }
 
-        if (l == 4 && world.b(i + 1, j, k, true)) {
-            b0 = 1;
+        if (var5 == 4 && var1.isBlockSolidOnSide(var2 + 1, var3, var4, ForgeDirection.NORTH, true))
+        {
+            var9 = 1;
         }
 
-        if (l == 5 && world.b(i - 1, j, k, true)) {
-            b0 = 3;
+        if (var5 == 5 && var1.isBlockSolidOnSide(var2 - 1, var3, var4, ForgeDirection.SOUTH, true))
+        {
+            var9 = 3;
         }
 
-        this.a(world, i, j, k, this.id, b0, false, -1, 0);
+        this.a(var1, var2, var3, var4, this.id, var9, false, -1, 0);
     }
+    /**
+     * Lets the block know when one of its neighbor changes. Doesn't know which neighbor changed (coordinates passed are
+     * their own) Args: x, y, z, neighbor blockID
+     */
+    public void doPhysics(World var1, int var2, int var3, int var4, int var5)
+    {
+        if (var5 != this.id && this.l(var1, var2, var3, var4))
+        {
+            int var6 = var1.getData(var2, var3, var4);
+            int var7 = var6 & 3;
+            boolean var8 = false;
 
-    public void doPhysics(World world, int i, int j, int k, int l) {
-        if (l != this.id) {
-            if (this.l(world, i, j, k)) {
-                int i1 = world.getData(i, j, k);
-                int j1 = i1 & 3;
-                boolean flag = false;
+            if (!var1.isBlockSolidOnSide(var2 - 1, var3, var4, ForgeDirection.SOUTH) && var7 == 3)
+            {
+                var8 = true;
+            }
 
-                if (!world.s(i - 1, j, k) && j1 == 3) {
-                    flag = true;
-                }
+            if (!var1.isBlockSolidOnSide(var2 + 1, var3, var4, ForgeDirection.NORTH) && var7 == 1)
+            {
+                var8 = true;
+            }
 
-                if (!world.s(i + 1, j, k) && j1 == 1) {
-                    flag = true;
-                }
+            if (!var1.isBlockSolidOnSide(var2, var3, var4 - 1, ForgeDirection.EAST) && var7 == 0)
+            {
+                var8 = true;
+            }
 
-                if (!world.s(i, j, k - 1) && j1 == 0) {
-                    flag = true;
-                }
+            if (!var1.isBlockSolidOnSide(var2, var3, var4 + 1, ForgeDirection.WEST) && var7 == 2)
+            {
+                var8 = true;
+            }
 
-                if (!world.s(i, j, k + 1) && j1 == 2) {
-                    flag = true;
-                }
-
-                if (flag) {
-                    this.c(world, i, j, k, i1, 0);
-                    world.setTypeId(i, j, k, 0);
-                }
+            if (var8)
+            {
+                this.c(var1, var2, var3, var4, var6, 0);
+                var1.setTypeId(var2, var3, var4, 0);
             }
         }
     }
@@ -99,7 +125,7 @@ public class BlockTripwireHook extends Block {
         boolean flag2 = (i1 & 8) == 8;
         boolean flag3 = l == Block.TRIPWIRE_SOURCE.id;
         boolean flag4 = false;
-        boolean flag5 = !world.t(i, j - 1, k);
+        boolean flag5 = !world.isBlockSolidOnSide(i, j - 1, k, ForgeDirection.UP);
         int i2 = Direction.a[l1];
         int j2 = Direction.b[l1];
         int k2 = 0;

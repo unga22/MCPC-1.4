@@ -4,7 +4,7 @@ import java.util.logging.ConsoleHandler;
 import java.util.logging.FileHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
+import cpw.mods.fml.common.FMLLog;
 import java.io.File; // CraftBukkit
 
 public class ConsoleLogManager {
@@ -17,6 +17,8 @@ public class ConsoleLogManager {
         ConsoleLogFormatter consolelogformatter = new ConsoleLogFormatter(server.options.has("log-strip-color")); // CraftBukkit - pass strip color option
 
         a.setUseParentHandlers(false);
+        a.setParent(FMLLog.getLogger());
+        
         // CraftBukkit start
         ConsoleHandler consolehandler = new org.bukkit.craftbukkit.util.TerminalConsoleHandler(server.reader);
 

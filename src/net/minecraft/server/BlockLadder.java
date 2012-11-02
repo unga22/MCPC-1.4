@@ -45,35 +45,6 @@ public class BlockLadder extends Block
         return super.e(var1, var2, var3, var4);
     }
 
-    @SideOnly(Side.CLIENT)
-    public AxisAlignedBB b_(World var1, int var2, int var3, int var4)
-    {
-        int var5 = var1.getData(var2, var3, var4);
-        float var6 = 0.125F;
-
-        if (var5 == 2)
-        {
-            this.a(0.0F, 0.0F, 1.0F - var6, 1.0F, 1.0F, 1.0F);
-        }
-
-        if (var5 == 3)
-        {
-            this.a(0.0F, 0.0F, 0.0F, 1.0F, 1.0F, var6);
-        }
-
-        if (var5 == 4)
-        {
-            this.a(1.0F - var6, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F);
-        }
-
-        if (var5 == 5)
-        {
-            this.a(0.0F, 0.0F, 0.0F, var6, 1.0F, 1.0F);
-        }
-
-        return super.b_(var1, var2, var3, var4);
-    }
-
     /**
      * Is this block (a) opaque and (b) a full 1m cube?  This determines whether or not to render the shared face of two
      * adjacent blocks and also whether the player can attach torches, redstone wire, etc to this block.

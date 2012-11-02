@@ -1,7 +1,8 @@
 package net.minecraft.server;
 
+import java.util.ArrayList;
 import java.util.Random;
-
+import net.minecraftforge.common.ForgeDirection;
 import org.bukkit.craftbukkit.event.CraftEventFactory; // CraftBukkit
 
 public class BlockStem extends BlockFlower {
@@ -71,8 +72,9 @@ public class BlockStem extends BlockFlower {
                     }
 
                     int l1 = world.getTypeId(j1, j - 1, k1);
+                    boolean var12 = byId[l1] != null && byId[l1].canSustainPlant(world, j1, j - 1, k1, ForgeDirection.UP, this);
 
-                    if (world.getTypeId(j1, j, k1) == 0 && (l1 == Block.SOIL.id || l1 == Block.DIRT.id || l1 == Block.GRASS.id)) {
+                    if (world.getTypeId(j1, j, k1) == 0 && (var12 || l1 == Block.DIRT.id || l1 == Block.GRASS.id)) {
                         CraftEventFactory.handleBlockGrowEvent(world, j1, j, k1, this.blockFruit.id, 0); // CraftBukkit
                     }
                 }
@@ -84,45 +86,54 @@ public class BlockStem extends BlockFlower {
         world.setData(i, j, k, 7);
     }
 
-    private float n(World world, int i, int j, int k) {
-        float f = 1.0F;
-        int l = world.getTypeId(i, j, k - 1);
-        int i1 = world.getTypeId(i, j, k + 1);
-        int j1 = world.getTypeId(i - 1, j, k);
-        int k1 = world.getTypeId(i + 1, j, k);
-        int l1 = world.getTypeId(i - 1, j, k - 1);
-        int i2 = world.getTypeId(i + 1, j, k - 1);
-        int j2 = world.getTypeId(i + 1, j, k + 1);
-        int k2 = world.getTypeId(i - 1, j, k + 1);
-        boolean flag = j1 == this.id || k1 == this.id;
-        boolean flag1 = l == this.id || i1 == this.id;
-        boolean flag2 = l1 == this.id || i2 == this.id || j2 == this.id || k2 == this.id;
 
-        for (int l2 = i - 1; l2 <= i + 1; ++l2) {
-            for (int i3 = k - 1; i3 <= k + 1; ++i3) {
-                int j3 = world.getTypeId(l2, j - 1, i3);
-                float f1 = 0.0F;
+    private float n(World var1, int var2, int var3, int var4)
+    {
+        float var5 = 1.0F;
+        int var6 = var1.getTypeId(var2, var3, var4 - 1);
+        int var7 = var1.getTypeId(var2, var3, var4 + 1);
+        int var8 = var1.getTypeId(var2 - 1, var3, var4);
+        int var9 = var1.getTypeId(var2 + 1, var3, var4);
+        int var10 = var1.getTypeId(var2 - 1, var3, var4 - 1);
+        int var11 = var1.getTypeId(var2 + 1, var3, var4 - 1);
+        int var12 = var1.getTypeId(var2 + 1, var3, var4 + 1);
+        int var13 = var1.getTypeId(var2 - 1, var3, var4 + 1);
+        boolean var14 = var8 == this.id || var9 == this.id;
+        boolean var15 = var6 == this.id || var7 == this.id;
+        boolean var16 = var10 == this.id || var11 == this.id || var12 == this.id || var13 == this.id;
 
-                if (j3 == Block.SOIL.id) {
-                    f1 = 1.0F;
-                    if (world.getData(l2, j - 1, i3) > 0) {
-                        f1 = 3.0F;
+        for (int var17 = var2 - 1; var17 <= var2 + 1; ++var17)
+        {
+            for (int var18 = var4 - 1; var18 <= var4 + 1; ++var18)
+            {
+                int var19 = var1.getTypeId(var17, var3 - 1, var18);
+                float var20 = 0.0F;
+
+                if (byId[var19] != null && byId[var19].canSustainPlant(var1, var17, var3 - 1, var18, ForgeDirection.UP, this))
+                {
+                    var20 = 1.0F;
+
+                    if (byId[var19].isFertile(var1, var17, var3 - 1, var18))
+                    {
+                        var20 = 3.0F;
                     }
                 }
 
-                if (l2 != i || i3 != k) {
-                    f1 /= 4.0F;
+                if (var17 != var2 || var18 != var4)
+                {
+                    var20 /= 4.0F;
                 }
 
-                f += f1;
+                var5 += var20;
             }
         }
 
-        if (flag2 || flag && flag1) {
-            f /= 2.0F;
+        if (var16 || var14 && var15)
+        {
+            var5 /= 2.0F;
         }
 
-        return f;
+        return var5;
     }
 
     public int a(int i, int j) {
@@ -146,25 +157,28 @@ public class BlockStem extends BlockFlower {
         return 19;
     }
 
-    public void dropNaturally(World world, int i, int j, int k, int l, float f, int i1) {
-        super.dropNaturally(world, i, j, k, l, f, i1);
-        if (!world.isStatic) {
-            Item item = null;
 
-            if (this.blockFruit == Block.PUMPKIN) {
-                item = Item.PUMPKIN_SEEDS;
-            }
+    /**
+     * Drops the block items with a specified chance of dropping the specified items
+     */
+    public void dropNaturally(World var1, int var2, int var3, int var4, int var5, float var6, int var7)
+    {
+        super.dropNaturally(var1, var2, var3, var4, var5, var6, var7);
+    }
 
-            if (this.blockFruit == Block.MELON) {
-                item = Item.MELON_SEEDS;
-            }
+    public ArrayList getBlockDropped(World var1, int var2, int var3, int var4, int var5, int var6)
+    {
+        ArrayList var7 = new ArrayList();
 
-            for (int j1 = 0; j1 < 3; ++j1) {
-                if (world.random.nextInt(15) <= l) {
-                    this.a(world, i, j, k, new ItemStack(item));
-                }
+        for (int var8 = 0; var8 < 3; ++var8)
+        {
+            if (var1.random.nextInt(15) <= var5)
+            {
+                var7.add(new ItemStack(this.blockFruit == PUMPKIN ? Item.PUMPKIN_SEEDS : Item.MELON_SEEDS));
             }
         }
+
+        return var7;
     }
 
     public int getDropType(int i, Random random, int j) {

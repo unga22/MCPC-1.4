@@ -1,8 +1,10 @@
 package net.minecraft.server;
 
 import java.util.Random;
+import net.minecraftforge.common.EnumPlantType;
+import net.minecraftforge.common.IPlantable;
 
-public class BlockReed extends Block {
+public class BlockReed extends Block implements IPlantable {
 
     protected BlockReed(int i, int j) {
         super(i, Material.PLANT);
@@ -73,5 +75,20 @@ public class BlockReed extends Block {
 
     public int d() {
         return 1;
+    }
+
+    public EnumPlantType getPlantType(World var1, int var2, int var3, int var4)
+    {
+        return EnumPlantType.Beach;
+    }
+
+    public int getPlantID(World var1, int var2, int var3, int var4)
+    {
+        return this.id;
+    }
+
+    public int getPlantMetadata(World var1, int var2, int var3, int var4)
+    {
+        return var1.getData(var2, var3, var4);
     }
 }

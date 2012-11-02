@@ -263,7 +263,7 @@ public class BlockPiston extends Block {
                 return false;
             }
 
-            return !(Block.byId[i] instanceof BlockContainer);
+            return !world.isTileEntity(j, k, l);
         }
     }
 

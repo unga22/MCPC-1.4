@@ -1,9 +1,6 @@
 package net.minecraft.server;
 
-import cpw.mods.fml.common.Side;
-import cpw.mods.fml.common.asm.SideOnly;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Random;
 import net.minecraftforge.common.ForgeHooks;
 import net.minecraftforge.common.IShearable;
@@ -50,40 +47,11 @@ public class BlockLongGrass extends BlockFlower implements IShearable
         super.a(var1, var2, var3, var4, var5, var6);
     }
 
-    @SideOnly(Side.CLIENT)
-    public int o()
-    {
-        double var1 = 0.5D;
-        double var3 = 1.0D;
-        return xd.a(var1, var3);
-    }
-
-    @SideOnly(Side.CLIENT)
-    public int g_(int var1)
-    {
-        return var1 == 0 ? 16777215 : xa.c();
-    }
-
-    @SideOnly(Side.CLIENT)
-    public int b(IBlockAccess var1, int var2, int var3, int var4)
-    {
-        int var5 = var1.getData(var2, var3, var4);
-        return var5 == 0 ? 16777215 : var1.getBiome(var2, var4).k();
-    }
-
-    public int func_71873_h(World var1, int var2, int var3, int var4)
+    public int h(World var1, int var2, int var3, int var4)
     {
         return var1.getData(var2, var3, var4);
     }
 
-    @SideOnly(Side.CLIENT)
-    public void a(int var1, CreativeModeTab var2, List var3)
-    {
-        for (int var4 = 1; var4 < 3; ++var4)
-        {
-            var3.add(new ItemStack(var1, 1, var4));
-        }
-    }
 
     public ArrayList getBlockDropped(World var1, int var2, int var3, int var4, int var5, int var6)
     {

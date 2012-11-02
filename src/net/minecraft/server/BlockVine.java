@@ -1,9 +1,8 @@
 package net.minecraft.server;
 
-import cpw.mods.fml.common.Side;
-import cpw.mods.fml.common.asm.SideOnly;
 import java.util.ArrayList;
 import java.util.Random;
+
 import net.minecraftforge.common.IShearable;
 
 public class BlockVine extends Block implements IShearable
@@ -205,24 +204,6 @@ public class BlockVine extends Block implements IShearable
 
             return true;
         }
-    }
-
-    @SideOnly(Side.CLIENT)
-    public int o()
-    {
-        return xa.c();
-    }
-
-    @SideOnly(Side.CLIENT)
-    public int g_(int var1)
-    {
-        return xa.c();
-    }
-
-    @SideOnly(Side.CLIENT)
-    public int b(IBlockAccess var1, int var2, int var3, int var4)
-    {
-        return var1.getBiome(var2, var4).l();
     }
 
     /**

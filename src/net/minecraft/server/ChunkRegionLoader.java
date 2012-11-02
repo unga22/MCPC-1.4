@@ -10,19 +10,23 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.io.IOException;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.world.ChunkDataEvent$Load;
+import net.minecraftforge.event.world.ChunkDataEvent$Save;
 
 public class ChunkRegionLoader implements IAsyncChunkSaver, IChunkLoader {
 
     private List a = new ArrayList();
     private Set b = new HashSet();
     private Object c = new Object();
-    private final File d;
+    final File d;
 
     public ChunkRegionLoader(File file1) {
         this.d = file1;
     }
 
-    public Chunk a(World world, int i, int j) {
+    public Chunk a(World world, int i, int j) throws IOException {
         NBTTagCompound nbttagcompound = null;
         ChunkCoordIntPair chunkcoordintpair = new ChunkCoordIntPair(i, j);
         Object object = this.c;
@@ -71,19 +75,15 @@ public class ChunkRegionLoader implements IAsyncChunkSaver, IChunkLoader {
                 nbttagcompound.getCompound("Level").setInt("zPos", j); // CraftBukkit - .getCompound("Level")
                 chunk = this.a(world, nbttagcompound.getCompound("Level"));
             }
-
+            
+            MinecraftForge.EVENT_BUS.post(new ChunkDataEvent$Load(chunk, nbttagcompound));
             return chunk;
         }
     }
 
-    public void a(World world, Chunk chunk) {
-        // CraftBukkit start - "handle" exception
-        try {
-            world.C();
-        } catch (ExceptionWorldConflict ex) {
-            ex.printStackTrace();
-        }
-        // CraftBukkit end
+    public void a(World world, Chunk chunk) throws ExceptionWorldConflict, IOException {
+        
+    	world.C();
 
         try {
             NBTTagCompound nbttagcompound = new NBTTagCompound();
@@ -92,6 +92,7 @@ public class ChunkRegionLoader implements IAsyncChunkSaver, IChunkLoader {
             nbttagcompound.set("Level", nbttagcompound1);
             this.a(chunk, world, nbttagcompound1);
             this.a(chunk.l(), nbttagcompound);
+            MinecraftForge.EVENT_BUS.post(new ChunkDataEvent$Save(chunk, nbttagcompound));
         } catch (Exception exception) {
             exception.printStackTrace();
         }

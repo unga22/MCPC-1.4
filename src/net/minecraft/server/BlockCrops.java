@@ -1,6 +1,8 @@
 package net.minecraft.server;
 
+import java.util.ArrayList;
 import java.util.Random;
+import net.minecraftforge.common.ForgeDirection;
 
 public class BlockCrops extends BlockFlower {
 
@@ -41,46 +43,60 @@ public class BlockCrops extends BlockFlower {
         world.setData(i, j, k, 7);
     }
 
-    private float l(World world, int i, int j, int k) {
-        float f = 1.0F;
-        int l = world.getTypeId(i, j, k - 1);
-        int i1 = world.getTypeId(i, j, k + 1);
-        int j1 = world.getTypeId(i - 1, j, k);
-        int k1 = world.getTypeId(i + 1, j, k);
-        int l1 = world.getTypeId(i - 1, j, k - 1);
-        int i2 = world.getTypeId(i + 1, j, k - 1);
-        int j2 = world.getTypeId(i + 1, j, k + 1);
-        int k2 = world.getTypeId(i - 1, j, k + 1);
-        boolean flag = j1 == this.id || k1 == this.id;
-        boolean flag1 = l == this.id || i1 == this.id;
-        boolean flag2 = l1 == this.id || i2 == this.id || j2 == this.id || k2 == this.id;
+    /**
+     * Gets the growth rate for the crop. Setup to encourage rows by halving growth rate if there is diagonals, crops on
+     * different sides that aren't opposing, and by adding growth for every crop next to this one (and for crop below
+     * this one). Args: x, y, z
+     */
+    private float l(World var1, int var2, int var3, int var4)
+    {
+        float var5 = 1.0F;
+        int var6 = var1.getTypeId(var2, var3, var4 - 1);
+        int var7 = var1.getTypeId(var2, var3, var4 + 1);
+        int var8 = var1.getTypeId(var2 - 1, var3, var4);
+        int var9 = var1.getTypeId(var2 + 1, var3, var4);
+        int var10 = var1.getTypeId(var2 - 1, var3, var4 - 1);
+        int var11 = var1.getTypeId(var2 + 1, var3, var4 - 1);
+        int var12 = var1.getTypeId(var2 + 1, var3, var4 + 1);
+        int var13 = var1.getTypeId(var2 - 1, var3, var4 + 1);
+        boolean var14 = var8 == this.id || var9 == this.id;
+        boolean var15 = var6 == this.id || var7 == this.id;
+        boolean var16 = var10 == this.id || var11 == this.id || var12 == this.id || var13 == this.id;
 
-        for (int l2 = i - 1; l2 <= i + 1; ++l2) {
-            for (int i3 = k - 1; i3 <= k + 1; ++i3) {
-                int j3 = world.getTypeId(l2, j - 1, i3);
-                float f1 = 0.0F;
+        for (int var17 = var2 - 1; var17 <= var2 + 1; ++var17)
+        {
+            for (int var18 = var4 - 1; var18 <= var4 + 1; ++var18)
+            {
+                int var19 = var1.getTypeId(var17, var3 - 1, var18);
+                float var20 = 0.0F;
 
-                if (j3 == Block.SOIL.id) {
-                    f1 = 1.0F;
-                    if (world.getData(l2, j - 1, i3) > 0) {
-                        f1 = 3.0F;
+                if (byId[var19] != null && byId[var19].canSustainPlant(var1, var17, var3 - 1, var18, ForgeDirection.UP, this))
+                {
+                    var20 = 1.0F;
+
+                    if (byId[var19].isFertile(var1, var17, var3 - 1, var18))
+                    {
+                        var20 = 3.0F;
                     }
                 }
 
-                if (l2 != i || i3 != k) {
-                    f1 /= 4.0F;
+                if (var17 != var2 || var18 != var4)
+                {
+                    var20 /= 4.0F;
                 }
 
-                f += f1;
+                var5 += var20;
             }
         }
 
-        if (flag2 || flag && flag1) {
-            f /= 2.0F;
+        if (var16 || var14 && var15)
+        {
+            var5 /= 2.0F;
         }
 
-        return f;
+        return var5;
     }
+
 
     public int a(int i, int j) {
         if (j < 0) {
@@ -102,20 +118,48 @@ public class BlockCrops extends BlockFlower {
         return Item.WHEAT.id;
     }
 
-    public void dropNaturally(World world, int i, int j, int k, int l, float f, int i1) {
-        super.dropNaturally(world, i, j, k, l, f, 0);
-        if (!world.isStatic) {
-            if (l >= 7) {
-                int j1 = 3 + i1;
+    /**
+     * Drops the block items with a specified chance of dropping the specified items
+     */
+    public void dropNaturally(World var1, int var2, int var3, int var4, int var5, float var6, int var7)
+    {
+        super.dropNaturally(var1, var2, var3, var4, var5, var6, 0);
+    }
 
-                for (int k1 = 0; k1 < j1; ++k1) {
-                    if (world.random.nextInt(15) <= l) {
-                        this.a(world, i, j, k, new ItemStack(this.h(), 1, 0));
-                    }
+    public ArrayList getBlockDropped(World var1, int var2, int var3, int var4, int var5, int var6)
+    {
+        ArrayList<ItemStack> var7 = new ArrayList<ItemStack>();
+        int var8;
+
+        if (var5 == 7)
+        {
+            var8 = this.quantityDropped(var5, var6, var1.random);
+
+            for (int var9 = 0; var9 < var8; ++var9)
+            {
+                int var10 = this.getDropType(var5, var1.random, 0);
+
+                if (var10 > 0)
+                {
+                    var7.add(new ItemStack(var10, 1, this.getDropData(var5)));
                 }
             }
         }
+
+        if (var5 >= 7)
+        {
+            for (var8 = 0; var8 < 3 + var6; ++var8)
+            {
+                if (var1.random.nextInt(15) <= var5)
+                {
+                    var7.add(new ItemStack(this.h(), 1, 0));
+                }
+            }
+        }
+
+        return var7;
     }
+
 
     public int getDropType(int i, Random random, int j) {
         return i == 7 ? this.j() : this.h();

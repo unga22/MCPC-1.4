@@ -356,7 +356,7 @@ public class BlockRedstoneWire extends Block {
         } else if (i1 == 0) {
             return false;
         } else if (i1 != Block.DIODE_OFF.id && i1 != Block.DIODE_ON.id) {
-            return Block.byId[i1].isPowerSource() && l != -1;
+            return Block.byId[i1] != null && Block.byId[i1].canConnectRedstone(iblockaccess, i, j, k, l);
         } else {
             int j1 = iblockaccess.getData(i, j, k);
 

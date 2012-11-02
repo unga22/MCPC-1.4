@@ -1,5 +1,8 @@
 package net.minecraft.server;
 
+import cpw.mods.fml.common.Side;
+import cpw.mods.fml.common.asm.SideOnly;
+import java.util.ArrayList;
 import java.util.Random;
 
 public class BlockNetherWart extends BlockFlower {
@@ -38,22 +41,13 @@ public class BlockNetherWart extends BlockFlower {
     public int d() {
         return 6;
     }
-
-    public void dropNaturally(World world, int i, int j, int k, int l, float f, int i1) {
-        if (!world.isStatic) {
-            int j1 = 1;
-
-            if (l >= 3) {
-                j1 = 2 + world.random.nextInt(3);
-                if (i1 > 0) {
-                    j1 += world.random.nextInt(i1 + 1);
-                }
-            }
-
-            for (int k1 = 0; k1 < j1; ++k1) {
-                this.a(world, i, j, k, new ItemStack(Item.NETHER_STALK));
-            }
-        }
+    
+    /**
+     * Drops the block items with a specified chance of dropping the specified items
+     */
+    public void dropNaturally(World var1, int var2, int var3, int var4, int var5, float var6, int var7)
+    {
+        super.dropNaturally(var1, var2, var3, var4, var5, var6, var7);
     }
 
     public int getDropType(int i, Random random, int j) {
@@ -62,5 +56,24 @@ public class BlockNetherWart extends BlockFlower {
 
     public int a(Random random) {
         return 0;
+    }
+    
+
+    public ArrayList getBlockDropped(World var1, int var2, int var3, int var4, int var5, int var6)
+    {
+        ArrayList var7 = new ArrayList();
+        int var8 = 1;
+
+        if (var5 >= 3)
+        {
+            var8 = 2 + var1.random.nextInt(3) + (var6 > 0 ? var1.random.nextInt(var6 + 1) : 0);
+        }
+
+        for (int var9 = 0; var9 < var8; ++var9)
+        {
+            var7.add(new ItemStack(Item.NETHER_STALK));
+        }
+
+        return var7;
     }
 }
