@@ -177,7 +177,19 @@ public abstract class MinecraftServer implements Runnable, IMojangStatistics, IC
 
         Integer[] var11 = DimensionManager.getStaticDimensionIDs();
         int worldCount = var11.length;
-        World mainw = null;
+        WorldServer mainw = null;
+        
+        org.bukkit.generator.ChunkGenerator gen = this.server.getGenerator(s);
+        WorldSettings worldsettings = new WorldSettings(i, this.getGamemode(), this.getGenerateStructures(), this.isHardcore(), worldtype);
+        worldsettings.a(s2);
+        
+        if (this.M()) { // Strip out DEMO?
+            // CraftBukkit
+        	mainw = new DemoWorldServer(this, new ServerNBTManager(server.getWorldContainer(), s1, true), s1, 0, this.methodProfiler);
+        } else {
+            // CraftBukkit
+        	mainw = new WorldServer(this, new ServerNBTManager(server.getWorldContainer(), s1, true), s1, 0, worldsettings, this.methodProfiler, Environment.getEnvironment(0), gen);
+        }
 
         for (int j = 0; j < worldCount; ++j) {
             WorldServer world;
@@ -186,19 +198,12 @@ public abstract class MinecraftServer implements Runnable, IMojangStatistics, IC
             String worldType = Environment.getEnvironment(dimension).toString().toLowerCase();
             String name = (dimension == 0) ? s : s + "_" + worldType;
 
-            org.bukkit.generator.ChunkGenerator gen = this.server.getGenerator(name);
-            WorldSettings worldsettings = new WorldSettings(i, this.getGamemode(), this.getGenerateStructures(), this.isHardcore(), worldtype);
+            gen = this.server.getGenerator(name);
+            worldsettings = new WorldSettings(i, this.getGamemode(), this.getGenerateStructures(), this.isHardcore(), worldtype);
             worldsettings.a(s2);
 
-            if (j == 0) {
-                if (this.M()) { // Strip out DEMO?
-                    // CraftBukkit
-                    world = new DemoWorldServer(this, new ServerNBTManager(server.getWorldContainer(), s1, true), s1, dimension, this.methodProfiler);
-                } else {
-                    // CraftBukkit
-                    world = new WorldServer(this, new ServerNBTManager(server.getWorldContainer(), s1, true), s1, dimension, worldsettings, this.methodProfiler, Environment.getEnvironment(dimension), gen);
-                }
-                mainw = world;
+            if (dimension == 0) {
+                world = mainw;
             } else {
  /*
                 String dim = "DIM" + dimension;
@@ -232,7 +237,7 @@ public abstract class MinecraftServer implements Runnable, IMojangStatistics, IC
                 this.c(name);
 */
                 // CraftBukkit
-                world = new SecondaryWorldServer(this, new ServerNBTManager(server.getWorldContainer(), name, true), name, dimension, worldsettings, this.worlds.get(0), this.methodProfiler, Environment.getEnvironment(dimension), gen);
+                world = new SecondaryWorldServer(this, new ServerNBTManager(server.getWorldContainer(), name, true), name, dimension, worldsettings, mainw, this.methodProfiler, Environment.getEnvironment(dimension), gen);
             }
 
             if (gen != null) {
@@ -589,7 +594,7 @@ public abstract class MinecraftServer implements Runnable, IMojangStatistics, IC
             // } // CraftBukkit
 
             // this.k[i][this.ticks % 100] = System.nanoTime() - j; // CraftBukkit
-                ((long[])this.worldTickTimes.get(i))[this.ticks % 100] = System.nanoTime() - j;
+                ((long[])this.worldTickTimes.get(worldserver.dimension))[this.ticks % 100] = System.nanoTime() - j;
         }
         this.methodProfiler.c("dim_unloading");
         DimensionManager.unloadWorlds(this.worldTickTimes);
