@@ -10,6 +10,7 @@ public class ItemBlock extends Item {
         super(i);
         this.id = i + 256;
         this.c(Block.byId[i + 256].a(2));
+        this.isDefaultTexture = Block.byId[this.id].isDefaultTexture;
     }
 
     public int g() {
@@ -22,8 +23,9 @@ public class ItemBlock extends Item {
 
         if (i1 == Block.SNOW.id) {
             l = 1;
-        } else if (i1 != Block.VINE.id && i1 != Block.LONG_GRASS.id && i1 != Block.DEAD_BUSH.id) {
-            if (l == 0) {
+        } else if (i1 != Block.VINE.id && i1 != Block.LONG_GRASS.id && i1 != Block.DEAD_BUSH.id && (Block.byId[i1] == null || !Block.byId[i1].isBlockReplaceable(world, i, j, k)))
+        {
+        	if (l == 0) {
                 --j;
             }
 
@@ -82,13 +84,9 @@ public class ItemBlock extends Item {
             if (event.isCancelled() || !event.canBuild()) {
                 return true;
             }
-            if (world.setTypeIdAndData(i, j, k, id, data)) {
-                if (world.getTypeId(i, j, k) == id && Block.byId[id] != null) {
-                    Block.byId[id].postPlace(world, i, j, k, l, f, f1, f2);
-                    Block.byId[id].postPlace(world, i, j, k, entityhuman);
-                    // CraftBukkit end
-                }
-
+            
+            if (this.placeBlockAt(itemstack, entityhuman, world,  i, j, k, l, f, f1, f2))
+            {
                 world.makeSound((double) ((float) i + 0.5F), (double) ((float) j + 0.5F), (double) ((float) k + 0.5F), block.stepSound.b(), (block.stepSound.getVolume1() + 1.0F) / 2.0F, block.stepSound.getVolume2() * 0.8F);
                 --itemstack.count;
             }
@@ -105,5 +103,23 @@ public class ItemBlock extends Item {
 
     public String getName() {
         return Block.byId[this.id].a();
+    }
+
+    public boolean placeBlockAt(ItemStack var1, EntityHuman var2, World var3, int var4, int var5, int var6, int var7, float var8, float var9, float var10)
+    {
+        if (!var3.setTypeIdAndData(var4, var5, var6, this.id, this.filterData(var1.getData())))
+        {
+            return false;
+        }
+        else
+        {
+            if (var3.getTypeId(var4, var5, var6) == this.id)
+            {
+                Block.byId[this.id].postPlace(var3, var4, var5, var6, var7, var8, var9, var10);
+                Block.byId[this.id].postPlace(var3, var4, var5, var6, var2);
+            }
+
+            return true;
+        }
     }
 }

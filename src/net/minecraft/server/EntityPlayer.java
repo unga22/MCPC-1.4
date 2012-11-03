@@ -7,6 +7,9 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import net.minecraftforge.common.ForgeHooks;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.entity.player.PlayerDropsEvent;
 
 // CraftBukkit start
 import org.bukkit.Bukkit;
@@ -35,7 +38,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
     private int cs = 0;
     private int ct = 0;
     private boolean cu = true;
-    private int containerCounter = 0;
+    public int containerCounter = 0;
     public boolean h;
     public int ping;
     public boolean viewingCredits = false;
@@ -54,18 +57,10 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
         iteminworldmanager.player = this;
         this.itemInWorldManager = iteminworldmanager;
         this.cs = minecraftserver.getServerConfigurationManager().o();
-        ChunkCoordinates chunkcoordinates = world.getSpawn();
+        ChunkCoordinates chunkcoordinates = world.worldProvider.getRandomizedSpawnPoint();
         int i = chunkcoordinates.x;
         int j = chunkcoordinates.z;
         int k = chunkcoordinates.y;
-
-        if (!world.worldProvider.f && world.getWorldData().getGameType() != EnumGamemode.ADVENTURE) {
-            int l = Math.max(5, minecraftserver.getSpawnProtection() - 6);
-
-            i += this.random.nextInt(l * 2) - l;
-            j += this.random.nextInt(l * 2) - l;
-            k = world.i(i, j);
-        }
 
         this.setPositionRotation((double) i + 0.5D, (double) k, (double) j + 0.5D, 0.0F, 0.0F);
         this.server = minecraftserver;
@@ -147,7 +142,7 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
                 iterator.remove();
                 if (chunkcoordintpair != null && this.world.isLoaded(chunkcoordintpair.x << 4, 0, chunkcoordintpair.z << 4)) {
                     arraylist.add(this.world.getChunkAt(chunkcoordintpair.x, chunkcoordintpair.z));
-                    arraylist1.addAll(((WorldServer) this.world).getTileEntities(chunkcoordintpair.x * 16, 0, chunkcoordintpair.z * 16, chunkcoordintpair.x * 16 + 16, 256, chunkcoordintpair.z * 16 + 16));
+                    arraylist1.addAll(((WorldServer) this.world).getTileEntities(chunkcoordintpair.x * 16, 0, chunkcoordintpair.z * 16, chunkcoordintpair.x * 16 + 15, 256, chunkcoordintpair.z * 16 + 15));
                 }
             }
 
@@ -228,9 +223,18 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
         if (this.dead) {
             return;
         }
+        
+        if (ForgeHooks.onLivingDeath(this, damagesource))
+        	return;
 
         java.util.List<org.bukkit.inventory.ItemStack> loot = new java.util.ArrayList<org.bukkit.inventory.ItemStack>();
         boolean keepInventory = this.world.getGameRules().getBoolean("keepInventory");
+
+        if (!keepInventory)
+        {
+	        this.captureDrops = true;
+	        this.capturedDrops.clear();
+        }
 
         if (!keepInventory) {
             for (int i = 0; i < this.inventory.items.length; ++i) {
@@ -266,6 +270,23 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
         }
 
         this.closeInventory();
+        
+        if (!keepInventory)
+        {
+        	this.captureDrops = false;
+            PlayerDropsEvent var2 = new PlayerDropsEvent(this, damagesource, this.capturedDrops, this.lastDamageByPlayerTime > 0);
+
+            if (!MinecraftForge.EVENT_BUS.post(var2))
+            {
+                Iterator var3 = this.capturedDrops.iterator();
+
+                while (var3.hasNext())
+                {
+                    EntityItem var4 = (EntityItem)var3.next();
+                    this.a(var4);
+                }
+            }
+        }
 
         // Update effects on player death
         this.updateEffects = true;
@@ -535,11 +556,14 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
         }
     }
 
-    public void a(Container container, int i, ItemStack itemstack) {
-        if (!(container.getSlot(i) instanceof SlotResult)) {
-            if (!this.h) {
-                this.netServerHandler.sendPacket(new Packet103SetSlot(container.windowId, i, itemstack));
-            }
+    /**
+     * inform the player of a change in a single slot
+     */
+    public void a(Container var1, int var2, ItemStack var3)
+    {
+        if (!(var1.getSlot(var2) instanceof SlotResult) && !this.h)
+        {
+            this.netServerHandler.sendPacket(new Packet103SetSlot(var1.windowId, var2, var3));
         }
     }
 
@@ -577,16 +601,20 @@ public class EntityPlayer extends EntityHuman implements ICrafting {
         this.activeContainer = this.defaultContainer;
     }
 
-    public void a(Statistic statistic, int i) {
-        if (statistic != null) {
-            if (!statistic.f) {
-                while (i > 100) {
-                    this.netServerHandler.sendPacket(new Packet200Statistic(statistic.e, 100));
-                    i -= 100;
-                }
-
-                this.netServerHandler.sendPacket(new Packet200Statistic(statistic.e, i));
+    /**
+     * Adds a value to a statistic field.
+     */
+    public void a(Statistic var1, int var2)
+    {
+        if (var1 != null && !var1.f)
+        {
+            while (var2 > 100)
+            {
+                this.netServerHandler.sendPacket(new Packet200Statistic(var1.e, 100));
+                var2 -= 100;
             }
+
+            this.netServerHandler.sendPacket(new Packet200Statistic(var1.e, var2));
         }
     }
 

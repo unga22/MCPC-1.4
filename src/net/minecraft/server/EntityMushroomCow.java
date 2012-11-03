@@ -1,9 +1,13 @@
 package net.minecraft.server;
 
 import org.bukkit.event.player.PlayerShearEntityEvent; // CraftBukkit
+import java.util.ArrayList;
+import net.minecraftforge.common.IShearable;
 
-public class EntityMushroomCow extends EntityCow {
+public class EntityMushroomCow extends EntityCow implements IShearable {
 
+	EntityHuman shearer = null;
+	
     public EntityMushroomCow(World world) {
         super(world);
         this.texture = "/mob/redcow.png";
@@ -25,38 +29,48 @@ public class EntityMushroomCow extends EntityCow {
             }
         }
 
-        if (itemstack != null && itemstack.id == Item.SHEARS.id && this.getAge() >= 0) {
-            // CraftBukkit start
-            PlayerShearEntityEvent event = new PlayerShearEntityEvent((org.bukkit.entity.Player) entityhuman.getBukkitEntity(), this.getBukkitEntity());
-            this.world.getServer().getPluginManager().callEvent(event);
+        shearer = entityhuman; // for bukkit down there
+        return super.c(entityhuman);
 
-            if (event.isCancelled()) {
-                return false;
-            }
-            // CraftBukkit end
-
-            this.die();
-            this.world.addParticle("largeexplode", this.locX, this.locY + (double) (this.length / 2.0F), this.locZ, 0.0D, 0.0D, 0.0D);
-            if (!this.world.isStatic) {
-                EntityCow entitycow = new EntityCow(this.world);
-
-                entitycow.setPositionRotation(this.locX, this.locY, this.locZ, this.yaw, this.pitch);
-                entitycow.setHealth(this.getHealth());
-                entitycow.aw = this.aw;
-                this.world.addEntity(entitycow);
-
-                for (int i = 0; i < 5; ++i) {
-                    this.world.addEntity(new EntityItem(this.world, this.locX, this.locY + (double) this.length, this.locZ, new ItemStack(Block.RED_MUSHROOM)));
-                }
-            }
-
-            return true;
-        } else {
-            return super.c(entityhuman);
-        }
     }
 
     public EntityAnimal createChild(EntityAnimal entityanimal) {
         return new EntityMushroomCow(this.world);
+    }
+    
+    public boolean isShearable(ItemStack var1, World var2, int var3, int var4, int var5)
+    {
+        return this.getAge() >= 0;
+    }
+
+    public ArrayList onSheared(ItemStack var1, World var2, int var3, int var4, int var5, int var6)
+    {
+    	ArrayList var8 = new ArrayList();
+    	
+        // CraftBukkit start
+        PlayerShearEntityEvent event = new PlayerShearEntityEvent((org.bukkit.entity.Player) shearer.getBukkitEntity(), this.getBukkitEntity());
+        this.world.getServer().getPluginManager().callEvent(event);
+        shearer = null;
+
+        if (event.isCancelled()) {
+            return var8;
+        }
+        // CraftBukkit end
+        
+        this.die();
+        EntityCow var7 = new EntityCow(this.world);
+        var7.setPositionRotation(this.locX, this.locY, this.locZ, this.yaw, this.pitch);
+        var7.setHealth(this.getHealth());
+        var7.aw = this.aw;
+        this.world.addEntity(var7);
+        this.world.addParticle("largeexplode", this.locX, this.locY + (double)(this.length / 2.0F), this.locZ, 0.0D, 0.0D, 0.0D);
+        
+
+        for (int var9 = 0; var9 < 5; ++var9)
+        {
+            var8.add(new ItemStack(Block.RED_MUSHROOM));
+        }
+
+        return var8;
     }
 }

@@ -34,10 +34,10 @@ public class Item
     public static Item STONE_SPADE = (new ItemSpade(17, EnumToolMaterial.STONE)).b(1, 5).b("shovelStone");
     public static Item STONE_PICKAXE = (new ItemPickaxe(18, EnumToolMaterial.STONE)).b(1, 6).b("pickaxeStone");
     public static Item STONE_AXE = (new ItemAxe(19, EnumToolMaterial.STONE)).b(1, 7).b("hatchetStone");
-    public static Item DIAMOND_SWORD = (new ItemSword(20, EnumToolMaterial.EMERALD)).b(3, 4).b("swordDiamond");
-    public static Item DIAMOND_SPADE = (new ItemSpade(21, EnumToolMaterial.EMERALD)).b(3, 5).b("shovelDiamond");
-    public static Item DIAMOND_PICKAXE = (new ItemPickaxe(22, EnumToolMaterial.EMERALD)).b(3, 6).b("pickaxeDiamond");
-    public static Item DIAMOND_AXE = (new ItemAxe(23, EnumToolMaterial.EMERALD)).b(3, 7).b("hatchetDiamond");
+    public static Item DIAMOND_SWORD = (new ItemSword(20, EnumToolMaterial.DIAMOND)).b(3, 4).b("swordDiamond");
+    public static Item DIAMOND_SPADE = (new ItemSpade(21, EnumToolMaterial.DIAMOND)).b(3, 5).b("shovelDiamond");
+    public static Item DIAMOND_PICKAXE = (new ItemPickaxe(22, EnumToolMaterial.DIAMOND)).b(3, 6).b("pickaxeDiamond");
+    public static Item DIAMOND_AXE = (new ItemAxe(23, EnumToolMaterial.DIAMOND)).b(3, 7).b("hatchetDiamond");
     public static Item STICK = (new Item(24)).b(5, 3).o().b("stick").a(CreativeModeTab.l);
     public static Item BOWL = (new Item(25)).b(7, 4).b("bowl").a(CreativeModeTab.l);
     public static Item MUSHROOM_SOUP = (new ItemSoup(26, 6)).b(8, 4).b("mushroomStew");
@@ -51,7 +51,7 @@ public class Item
     public static Item WOOD_HOE = (new ItemHoe(34, EnumToolMaterial.WOOD)).b(0, 8).b("hoeWood");
     public static Item STONE_HOE = (new ItemHoe(35, EnumToolMaterial.STONE)).b(1, 8).b("hoeStone");
     public static Item IRON_HOE = (new ItemHoe(36, EnumToolMaterial.IRON)).b(2, 8).b("hoeIron");
-    public static Item DIAMOND_HOE = (new ItemHoe(37, EnumToolMaterial.EMERALD)).b(3, 8).b("hoeDiamond");
+    public static Item DIAMOND_HOE = (new ItemHoe(37, EnumToolMaterial.DIAMOND)).b(3, 8).b("hoeDiamond");
     public static Item GOLD_HOE = (new ItemHoe(38, EnumToolMaterial.GOLD)).b(4, 8).b("hoeGold");
     public static Item SEEDS = (new ItemSeeds(39, Block.CROPS.id, Block.SOIL.id)).b(9, 0).b("seeds");
     public static Item WHEAT = (new Item(40)).b(9, 1).b("wheat").a(CreativeModeTab.l);
@@ -166,7 +166,7 @@ public class Item
     public static Item POTATO_BAKED = (new ItemFood(137, 6, 0.6F, false)).b(6, 7).b("potatoBaked");
     public static Item POTATO_POISON = (new ItemFood(138, 2, 0.3F, false)).a(MobEffectList.POISON.id, 5, 0, 0.6F).b(6, 8).b("potatoPoisonous");
     public static ItemMapEmpty MAP_EMPTY = (ItemMapEmpty)(new ItemMapEmpty(139)).b(13, 12).b("emptyMap");
-    public static Item CARROT_GOLDEN = (new ItemFood(140, 6, 1.2F, false)).b(6, 9).b("carrotGolden").c(PotionBrewer.field_82818_l);
+    public static Item CARROT_GOLDEN = (new ItemFood(140, 6, 1.2F, false)).b(6, 9).b("carrotGolden").c(PotionBrewer.l);
     public static Item SKULL = (new ItemSkull(141)).b("skull");
     public static Item CARROT_STICK = (new ItemCarrotStick(142)).b(6, 6).b("carrotOnAStick");
     public static Item NETHER_STAR = (new ItemNetherStar(143)).b(9, 11).b("netherStar").a(CreativeModeTab.l);
@@ -392,18 +392,6 @@ public class Item
         return this;
     }
 
-    @SideOnly(Side.CLIENT)
-    public boolean n_()
-    {
-        return this.ci;
-    }
-
-    @SideOnly(Side.CLIENT)
-    public boolean o_()
-    {
-        return false;
-    }
-
     /**
      * set name of item from language file
      */
@@ -470,16 +458,11 @@ public class Item
         return LocaleI18n.get(this.getName() + ".name");
     }
 
-    public String func_77653_i(ItemStack var1)
+    public String i(ItemStack var1)
     {
         return LocaleI18n.get(this.c_(var1) + ".name");
     }
 
-    @SideOnly(Side.CLIENT)
-    public int a(ItemStack var1, int var2)
-    {
-        return 16777215;
-    }
 
     /**
      * Called each tick as long the item is on a player inventory. Uses by maps to check if is on a player hand and
@@ -505,7 +488,7 @@ public class Item
      */
     public EnumAnimation d_(ItemStack var1)
     {
-        return EnumAnimation.none;
+        return EnumAnimation.a;
     }
 
     /**
@@ -544,26 +527,6 @@ public class Item
     public boolean v()
     {
         return this.ck != null;
-    }
-
-    @SideOnly(Side.CLIENT)
-    public void a(ItemStack var1, EntityHuman var2, List var3, boolean var4) {}
-
-    public String func_77628_j(ItemStack var1)
-    {
-        return ("" + LocaleLanguage.a().func_74809_c(this.func_77657_g(var1))).trim();
-    }
-
-    @SideOnly(Side.CLIENT)
-    public boolean d(ItemStack var1)
-    {
-        return var1.hasEnchantments();
-    }
-
-    @SideOnly(Side.CLIENT)
-    public uf e(ItemStack var1)
-    {
-        return var1.hasEnchantments() ? uf.c : uf.a;
     }
 
     /**
@@ -614,18 +577,6 @@ public class Item
         return false;
     }
 
-    @SideOnly(Side.CLIENT)
-    public int a(int var1, int var2)
-    {
-        return this.b(var1);
-    }
-
-    @SideOnly(Side.CLIENT)
-    public void a(int var1, CreativeModeTab var2, List var3)
-    {
-        var3.add(new ItemStack(var1, 1, 0));
-    }
-
     /**
      * returns this;
      */
@@ -635,13 +586,7 @@ public class Item
         return this;
     }
 
-    @SideOnly(Side.CLIENT)
-    public CreativeModeTab w()
-    {
-        return this.a;
-    }
-
-    public boolean func_82788_x()
+    public boolean x()
     {
         return true;
     }

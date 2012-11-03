@@ -1,5 +1,8 @@
 package net.minecraft.server;
 
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.Event$Result;
+import net.minecraftforge.event.entity.player.FillBucketEvent;
 // CraftBukkit start
 import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
@@ -29,138 +32,167 @@ public class ItemBucket extends Item {
         if (movingobjectposition == null) {
             return itemstack;
         } else {
-            if (movingobjectposition.type == EnumMovingObjectType.TILE) {
-                int i = movingobjectposition.b;
-                int j = movingobjectposition.c;
-                int k = movingobjectposition.d;
+        	FillBucketEvent var13 = new FillBucketEvent(entityhuman, itemstack, world, movingobjectposition);
 
-                if (!world.a(entityhuman, i, j, k)) {
-                    return itemstack;
-                }
-
-                if (this.a == 0) {
-                    if (!entityhuman.a(i, j, k, movingobjectposition.face, itemstack)) {
-                        return itemstack;
-                    }
-
-                    if (world.getMaterial(i, j, k) == Material.WATER && world.getData(i, j, k) == 0) {
-                        // CraftBukkit start
-                        PlayerBucketFillEvent event = CraftEventFactory.callPlayerBucketFillEvent(entityhuman, i, j, k, -1, itemstack, Item.WATER_BUCKET);
-
-                        if (event.isCancelled()) {
-                            return itemstack;
-                        }
-                        // CraftBukkit end
-                        world.setTypeId(i, j, k, 0);
-                        if (entityhuman.abilities.canInstantlyBuild) {
-                            return itemstack;
-                        }
-
-                        ItemStack result = CraftItemStack.createNMSItemStack(event.getItemStack()); // CraftBukkit - TODO: Check this stuff later... Not sure how this behavior should work
-                        if (--itemstack.count <= 0) {
-                            return result; // CraftBukkit
-                        }
-
-                        if (!entityhuman.inventory.pickup(result)) { // CraftBukkit
-                            entityhuman.drop(CraftItemStack.createNMSItemStack(event.getItemStack())); // CraftBukkit
-                        }
-
-                        return itemstack;
-                    }
-
-                    if (world.getMaterial(i, j, k) == Material.LAVA && world.getData(i, j, k) == 0) {
-                        // CraftBukkit start
-                        PlayerBucketFillEvent event = CraftEventFactory.callPlayerBucketFillEvent(entityhuman, i, j, k, -1, itemstack, Item.LAVA_BUCKET);
-
-                        if (event.isCancelled()) {
-                            return itemstack;
-                        }
-                        // CraftBukkit end
-                        world.setTypeId(i, j, k, 0);
-                        if (entityhuman.abilities.canInstantlyBuild) {
-                            return itemstack;
-                        }
-
-                        ItemStack result = CraftItemStack.createNMSItemStack(event.getItemStack()); // CraftBukkit - TODO: Check this stuff later... Not sure how this behavior should work
-                        if (--itemstack.count <= 0) {
-                            return result; // CraftBukkit
-                        }
-
-                        if (!entityhuman.inventory.pickup(result)) { // CraftBukkit
-                            entityhuman.drop(CraftItemStack.createNMSItemStack(event.getItemStack())); // CraftBukkit
-                        }
-
-                        return itemstack;
-                    }
-                } else {
-                    if (this.a < 0) {
-                        // CraftBukkit start
-                        PlayerBucketEmptyEvent event = CraftEventFactory.callPlayerBucketEmptyEvent(entityhuman, i, j, k, movingobjectposition.face, itemstack);
-
-                        if (event.isCancelled()) {
-                            return itemstack;
-                        }
-
-                        return CraftItemStack.createNMSItemStack(event.getItemStack());
-                    }
-
-                    int clickedX = i, clickedY = j, clickedZ = k;
-                    // CraftBukkit end
-
-                    if (movingobjectposition.face == 0) {
-                        --j;
-                    }
-
-                    if (movingobjectposition.face == 1) {
-                        ++j;
-                    }
-
-                    if (movingobjectposition.face == 2) {
-                        --k;
-                    }
-
-                    if (movingobjectposition.face == 3) {
-                        ++k;
-                    }
-
-                    if (movingobjectposition.face == 4) {
-                        --i;
-                    }
-
-                    if (movingobjectposition.face == 5) {
-                        ++i;
-                    }
-
-                    if (!entityhuman.a(i, j, k, movingobjectposition.face, itemstack)) {
-                        return itemstack;
-                    }
-
-                    // CraftBukkit start
-                    PlayerBucketEmptyEvent event = CraftEventFactory.callPlayerBucketEmptyEvent(entityhuman, clickedX, clickedY, clickedZ, movingobjectposition.face, itemstack);
-
-                    if (event.isCancelled()) {
-                        return itemstack;
-                    }
-                    // CraftBukkit end
-
-                    if (this.a(world, d0, d1, d2, i, j, k) && !entityhuman.abilities.canInstantlyBuild) {
-                        return CraftItemStack.createNMSItemStack(event.getItemStack()); // CraftBukkit
-                    }
-                }
-            } else if (this.a == 0 && movingobjectposition.entity instanceof EntityCow) {
-                // CraftBukkit start - This codepath seems to be *NEVER* called
-                org.bukkit.Location loc = movingobjectposition.entity.getBukkitEntity().getLocation();
-                PlayerBucketFillEvent event = CraftEventFactory.callPlayerBucketFillEvent(entityhuman, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), -1, itemstack, Item.MILK_BUCKET);
-
-                if (event.isCancelled()) {
-                    return itemstack;
-                }
-
-                return CraftItemStack.createNMSItemStack(event.getItemStack());
-                // CraftBukkit end
+            if (MinecraftForge.EVENT_BUS.post(var13))
+            {
+                return itemstack;
             }
+            else if (var13.getResult() == Event$Result.ALLOW)
+            {
+                if (entityhuman.abilities.canInstantlyBuild)
+                {
+                    return itemstack;
+                }
+                else if (--itemstack.count <= 0)
+                {
+                    return var13.result;
+                }
+                else
+                {
+                    if (!entityhuman.inventory.pickup(var13.result))
+                    {
+                    	entityhuman.drop(var13.result);
+                    }
 
-            return itemstack;
+                    return itemstack;
+                }
+            }
+            else
+            {
+	            if (movingobjectposition.type == EnumMovingObjectType.TILE) {
+	                int i = movingobjectposition.b;
+	                int j = movingobjectposition.c;
+	                int k = movingobjectposition.d;
+	
+	                if (!world.a(entityhuman, i, j, k)) {
+	                    return itemstack;
+	                }
+	
+	                if (this.a == 0) {
+	                    if (!entityhuman.a(i, j, k, movingobjectposition.face, itemstack)) {
+	                        return itemstack;
+	                    }
+	
+	                    if (world.getMaterial(i, j, k) == Material.WATER && world.getData(i, j, k) == 0) {
+	                        // CraftBukkit start
+	                        PlayerBucketFillEvent event = CraftEventFactory.callPlayerBucketFillEvent(entityhuman, i, j, k, -1, itemstack, Item.WATER_BUCKET);
+	
+	                        if (event.isCancelled()) {
+	                            return itemstack;
+	                        }
+	                        // CraftBukkit end
+	                        world.setTypeId(i, j, k, 0);
+	                        if (entityhuman.abilities.canInstantlyBuild) {
+	                            return itemstack;
+	                        }
+	
+	                        ItemStack result = CraftItemStack.createNMSItemStack(event.getItemStack()); // CraftBukkit - TODO: Check this stuff later... Not sure how this behavior should work
+	                        if (--itemstack.count <= 0) {
+	                            return result; // CraftBukkit
+	                        }
+	
+	                        if (!entityhuman.inventory.pickup(result)) { // CraftBukkit
+	                            entityhuman.drop(CraftItemStack.createNMSItemStack(event.getItemStack())); // CraftBukkit
+	                        }
+	
+	                        return itemstack;
+	                    }
+	
+	                    if (world.getMaterial(i, j, k) == Material.LAVA && world.getData(i, j, k) == 0) {
+	                        // CraftBukkit start
+	                        PlayerBucketFillEvent event = CraftEventFactory.callPlayerBucketFillEvent(entityhuman, i, j, k, -1, itemstack, Item.LAVA_BUCKET);
+	
+	                        if (event.isCancelled()) {
+	                            return itemstack;
+	                        }
+	                        // CraftBukkit end
+	                        world.setTypeId(i, j, k, 0);
+	                        if (entityhuman.abilities.canInstantlyBuild) {
+	                            return itemstack;
+	                        }
+	
+	                        ItemStack result = CraftItemStack.createNMSItemStack(event.getItemStack()); // CraftBukkit - TODO: Check this stuff later... Not sure how this behavior should work
+	                        if (--itemstack.count <= 0) {
+	                            return result; // CraftBukkit
+	                        }
+	
+	                        if (!entityhuman.inventory.pickup(result)) { // CraftBukkit
+	                            entityhuman.drop(CraftItemStack.createNMSItemStack(event.getItemStack())); // CraftBukkit
+	                        }
+	
+	                        return itemstack;
+	                    }
+	                } else {
+	                    if (this.a < 0) {
+	                        // CraftBukkit start
+	                        PlayerBucketEmptyEvent event = CraftEventFactory.callPlayerBucketEmptyEvent(entityhuman, i, j, k, movingobjectposition.face, itemstack);
+	
+	                        if (event.isCancelled()) {
+	                            return itemstack;
+	                        }
+	
+	                        return CraftItemStack.createNMSItemStack(event.getItemStack());
+	                    }
+	
+	                    int clickedX = i, clickedY = j, clickedZ = k;
+	                    // CraftBukkit end
+	
+	                    if (movingobjectposition.face == 0) {
+	                        --j;
+	                    }
+	
+	                    if (movingobjectposition.face == 1) {
+	                        ++j;
+	                    }
+	
+	                    if (movingobjectposition.face == 2) {
+	                        --k;
+	                    }
+	
+	                    if (movingobjectposition.face == 3) {
+	                        ++k;
+	                    }
+	
+	                    if (movingobjectposition.face == 4) {
+	                        --i;
+	                    }
+	
+	                    if (movingobjectposition.face == 5) {
+	                        ++i;
+	                    }
+	
+	                    if (!entityhuman.a(i, j, k, movingobjectposition.face, itemstack)) {
+	                        return itemstack;
+	                    }
+	
+	                    // CraftBukkit start
+	                    PlayerBucketEmptyEvent event = CraftEventFactory.callPlayerBucketEmptyEvent(entityhuman, clickedX, clickedY, clickedZ, movingobjectposition.face, itemstack);
+	
+	                    if (event.isCancelled()) {
+	                        return itemstack;
+	                    }
+	                    // CraftBukkit end
+	
+	                    if (this.a(world, d0, d1, d2, i, j, k) && !entityhuman.abilities.canInstantlyBuild) {
+	                        return CraftItemStack.createNMSItemStack(event.getItemStack()); // CraftBukkit
+	                    }
+	                }
+	            } else if (this.a == 0 && movingobjectposition.entity instanceof EntityCow) {
+	                // CraftBukkit start - This codepath seems to be *NEVER* called
+	                org.bukkit.Location loc = movingobjectposition.entity.getBukkitEntity().getLocation();
+	                PlayerBucketFillEvent event = CraftEventFactory.callPlayerBucketFillEvent(entityhuman, loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), -1, itemstack, Item.MILK_BUCKET);
+	
+	                if (event.isCancelled()) {
+	                    return itemstack;
+	                }
+	
+	                return CraftItemStack.createNMSItemStack(event.getItemStack());
+	                // CraftBukkit end
+	            }
+	
+	            return itemstack;
+            }
         }
     }
 

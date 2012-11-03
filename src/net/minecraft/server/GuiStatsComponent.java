@@ -13,7 +13,7 @@ import net.minecraftforge.common.DimensionManager;
 @SideOnly(Side.SERVER)
 public class GuiStatsComponent extends JComponent
 {
-    private static final DecimalFormat field_79020_a = new DecimalFormat("########0.000");
+    private static final DecimalFormat a = new DecimalFormat("########0.000");
 
     /** An array containing the columns that make up the memory use graph. */
     private int[] b = new int[256];
@@ -25,11 +25,11 @@ public class GuiStatsComponent extends JComponent
 
     /** An array containing the strings displayed in this stats component. */
     private String[] d = new String[11];
-    private final MinecraftServer field_79017_e;
+    private final MinecraftServer e;
 
     public GuiStatsComponent(MinecraftServer var1)
     {
-        this.field_79017_e = var1;
+        this.e = var1;
         this.setPreferredSize(new Dimension(456, 246));
         this.setMinimumSize(new Dimension(456, 246));
         this.setMaximumSize(new Dimension(456, 246));
@@ -46,12 +46,12 @@ public class GuiStatsComponent extends JComponent
         long var1 = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
         System.gc();
         this.d[0] = "Memory use: " + var1 / 1024L / 1024L + " mb (" + Runtime.getRuntime().freeMemory() * 100L / Runtime.getRuntime().maxMemory() + "% free)";
-        this.d[1] = "Threads: " + NetworkManager.field_74471_a.get() + " + " + NetworkManager.field_74469_b.get();
-        this.d[2] = "Avg tick: " + field_79020_a.format(this.func_79015_a(this.field_79017_e.j) * 1.0E-6D) + " ms";
-        this.d[3] = "Avg sent: " + (int)this.func_79015_a(this.field_79017_e.f) + ", Avg size: " + (int)this.func_79015_a(this.field_79017_e.g);
-        this.d[4] = "Avg rec: " + (int)this.func_79015_a(this.field_79017_e.h) + ", Avg size: " + (int)this.func_79015_a(this.field_79017_e.i);
+        this.d[1] = "Threads: " + NetworkManager.a.get() + " + " + NetworkManager.b.get();
+        this.d[2] = "Avg tick: " + a.format(this.a(this.e.j) * 1.0E-6D) + " ms";
+        this.d[3] = "Avg sent: " + (int)this.a(this.e.f) + ", Avg size: " + (int)this.a(this.e.g);
+        this.d[4] = "Avg rec: " + (int)this.a(this.e.h) + ", Avg size: " + (int)this.a(this.e.i);
 
-        if (this.field_79017_e.worldServer != null)
+        if (this.e.worldServer != null)
         {
             int var3 = 0;
             Integer[] var4 = DimensionManager.getIDs();
@@ -60,24 +60,24 @@ public class GuiStatsComponent extends JComponent
             for (int var6 = 0; var6 < var5; ++var6)
             {
                 Integer var7 = var4[var6];
-                this.d[5 + var3] = "Lvl " + var7 + " tick: " + field_79020_a.format(this.func_79015_a((long[])this.field_79017_e.worldTickTimes.get(var7)) * 1.0E-6D) + " ms";
+                this.d[5 + var3] = "Lvl " + var7 + " tick: " + a.format(this.a((long[])this.e.worldTickTimes.get(var7)) * 1.0E-6D) + " ms";
                 WorldServer var8 = DimensionManager.getWorld(var7.intValue());
 
                 if (var8 != null && var8.chunkProviderServer != null)
                 {
                     this.d[5 + var3] = this.d[5 + var3] + ", " + var8.chunkProviderServer.getName();
-                    this.d[5 + var3] = this.d[5 + var3] + ", Vec3: " + var8.getVec3DPool().func_82590_d() + " / " + var8.getVec3DPool().func_82591_c();
+                    this.d[5 + var3] = this.d[5 + var3] + ", Vec3: " + var8.getVec3DPool().d() + " / " + var8.getVec3DPool().c();
                 }
 
                 ++var3;
             }
         }
 
-        this.b[this.c++ & 255] = (int)(this.func_79015_a(this.field_79017_e.g) * 100.0D / 12500.0D);
+        this.b[this.c++ & 255] = (int)(this.a(this.e.g) * 100.0D / 12500.0D);
         this.repaint();
     }
 
-    private double func_79015_a(long[] var1)
+    private double a(long[] var1)
     {
         long var2 = 0L;
         long[] var4 = var1;

@@ -103,7 +103,7 @@ public class EntityVillager extends EntityAgeable implements NPC, IMerchant
                 if (this.field_82190_bM)
                 {
                     this.field_82190_bM = false;
-                    this.village.func_82683_b(5);
+                    this.village.b(5);
                 }
             }
         }
@@ -124,9 +124,9 @@ public class EntityVillager extends EntityAgeable implements NPC, IMerchant
                         {
                             MerchantRecipe var2 = (MerchantRecipe)var3.next();
 
-                            if (var2.func_82784_g())
+                            if (var2.g())
                             {
-                                var2.func_82783_a(this.random.nextInt(6) + this.random.nextInt(6) + 2);
+                                var2.a(this.random.nextInt(6) + this.random.nextInt(6) + 2);
                             }
                         }
                     }
@@ -211,30 +211,6 @@ public class EntityVillager extends EntityAgeable implements NPC, IMerchant
         }
     }
 
-    @SideOnly(Side.CLIENT)
-    public String O()
-    {
-        switch (this.getProfession())
-        {
-            case 0:
-                return "/mob/villager/farmer.png";
-
-            case 1:
-                return "/mob/villager/librarian.png";
-
-            case 2:
-                return "/mob/villager/priest.png";
-
-            case 3:
-                return "/mob/villager/smith.png";
-
-            case 4:
-                return "/mob/villager/butcher.png";
-
-            default:
-                return VillagerRegistry.getVillagerSkin(this.getProfession(), super.O());
-        }
-    }
 
     /**
      * Determines if an entity can be despawned, used on idle far away entities
@@ -342,7 +318,7 @@ public class EntityVillager extends EntityAgeable implements NPC, IMerchant
                 }
                 else if (var2 instanceof IMonster)
                 {
-                    this.village.func_82692_h();
+                    this.village.h();
                 }
             }
             else if (var2 == null)
@@ -351,7 +327,7 @@ public class EntityVillager extends EntityAgeable implements NPC, IMerchant
 
                 if (var3 != null)
                 {
-                    this.village.func_82692_h();
+                    this.village.h();
                 }
             }
         }
@@ -555,9 +531,6 @@ public class EntityVillager extends EntityAgeable implements NPC, IMerchant
         }
     }
 
-    @SideOnly(Side.CLIENT)
-    public void a(MerchantRecipeList var1) {}
-
     /**
      * each recipie takes a random stack from villagerStockList and offers it for 1 emerald
      */
@@ -610,39 +583,6 @@ public class EntityVillager extends EntityAgeable implements NPC, IMerchant
     {
         Tuple var2 = (Tuple)bQ.get(Integer.valueOf(var0));
         return var2 == null ? 1 : (((Integer)var2.a()).intValue() >= ((Integer)var2.b()).intValue() ? ((Integer)var2.a()).intValue() : ((Integer)var2.a()).intValue() + var1.nextInt(((Integer)var2.b()).intValue() - ((Integer)var2.a()).intValue()));
-    }
-
-    @SideOnly(Side.CLIENT)
-    public void a(byte var1)
-    {
-        if (var1 == 12)
-        {
-            this.a("heart");
-        }
-        else if (var1 == 13)
-        {
-            this.a("angryVillager");
-        }
-        else if (var1 == 14)
-        {
-            this.a("happyVillager");
-        }
-        else
-        {
-            super.a(var1);
-        }
-    }
-
-    @SideOnly(Side.CLIENT)
-    private void a(String var1)
-    {
-        for (int var2 = 0; var2 < 5; ++var2)
-        {
-            double var3 = this.random.nextGaussian() * 0.02D;
-            double var5 = this.random.nextGaussian() * 0.02D;
-            double var7 = this.random.nextGaussian() * 0.02D;
-            this.world.addParticle(var1, this.locX + (double)(this.random.nextFloat() * this.width * 2.0F) - (double)this.width, this.locY + 1.0D + (double)(this.random.nextFloat() * this.length), this.locZ + (double)(this.random.nextFloat() * this.width * 2.0F) - (double)this.width, var3, var5, var7);
-        }
     }
 
     /**
