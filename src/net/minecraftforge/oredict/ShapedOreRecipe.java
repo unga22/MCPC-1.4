@@ -3,6 +3,9 @@ package net.minecraftforge.oredict;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+
+import org.bukkit.inventory.Recipe;
+
 import net.minecraft.server.Block;
 import net.minecraft.server.IRecipe;
 import net.minecraft.server.InventoryCrafting;
@@ -269,4 +272,10 @@ public class ShapedOreRecipe implements IRecipe
         this.mirrored = var1;
         return this;
     }
+
+	@Override
+	public Recipe toBukkitRecipe() {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }

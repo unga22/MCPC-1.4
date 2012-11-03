@@ -2,6 +2,9 @@ package net.minecraftforge.oredict;
 
 import java.util.ArrayList;
 import java.util.Iterator;
+
+import org.bukkit.inventory.Recipe;
+
 import net.minecraft.server.Block;
 import net.minecraft.server.IRecipe;
 import net.minecraft.server.InventoryCrafting;
@@ -152,4 +155,10 @@ public class ShapelessOreRecipe implements IRecipe
     {
         return var1.id == var2.id && (var1.getData() == -1 || var1.getData() == var2.getData());
     }
+
+	@Override
+	public Recipe toBukkitRecipe() {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }

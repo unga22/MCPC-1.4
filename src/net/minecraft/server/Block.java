@@ -204,7 +204,7 @@ public class Block {
     public float frictionFactor;
     private String name;
 
-    protected Block(int i, Material material) {
+    public Block(int i, Material material) {
         this.currentTexture = "/terrain.png";
         this.isDefaultTexture = true;
         

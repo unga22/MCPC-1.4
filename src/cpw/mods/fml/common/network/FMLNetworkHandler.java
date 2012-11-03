@@ -88,7 +88,7 @@ public class FMLNetworkHandler
         }
         else
         {
-            EntityHuman var6 = var3.getPlayer();
+            EntityHuman var6 = var3.getPlayerH();
 
             if (var6 != null)
             {
@@ -154,7 +154,7 @@ public class FMLNetworkHandler
                         return;
                     }
 
-                    NetLoginHandler.func_72531_a(var1, false);
+                    NetLoginHandler.a(var1, false);
                     var1.networkManager.queue(this.getModListRequestPacket());
                     this.loginStates.put(var1, Integer.valueOf(2));
                     break;
@@ -169,11 +169,11 @@ public class FMLNetworkHandler
     private boolean handleVanillaLoginKick(NetLoginHandler var1, MinecraftServer var2, SocketAddress var3, String var4)
     {
         ServerConfigurationManagerAbstract var5 = var2.getServerConfigurationManager();
-        String var6 = var5.attemptLogin(var3, var4);
+        EntityPlayer var6 = var5.attemptLogin(var1, var4, var1.hostname); // bukkit sig - handler, name, hostname
 
         if (var6 != null)
         {
-            var1.completeConnection(var6);
+            var1.completeConnection(var6.name); // arg unused in bukkit
         }
 
         return var6 == null;
@@ -216,7 +216,7 @@ public class FMLNetworkHandler
         Packet1Login var0 = new Packet1Login();
         var0.a = FML_HASH;
         var0.e = 1;
-        var0.d = EnumGamemode.NOT_SET;
+        var0.d = EnumGamemode.NONE;
         var0.b = WorldType.types[0];
         return var0;
     }

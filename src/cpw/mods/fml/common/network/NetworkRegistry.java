@@ -177,7 +177,7 @@ public class NetworkRegistry
 
     void clientLoggedIn(NetHandler var1, INetworkManager var2, Packet1Login var3)
     {
-        this.generateChannelRegistration(var1.getPlayer(), var1, var2);
+        this.generateChannelRegistration(var1.getPlayerH(), var1, var2);
         Iterator var4 = this.connectionHandlers.iterator();
 
         while (var4.hasNext())
@@ -213,15 +213,15 @@ public class NetworkRegistry
     {
         if ("REGISTER".equals(var1.tag))
         {
-            this.handleRegistrationPacket(var1, (Player)var3.getPlayer());
+            this.handleRegistrationPacket(var1, (Player)var3.getPlayerH());
         }
         else if ("UNREGISTER".equals(var1.tag))
         {
-            this.handleUnregistrationPacket(var1, (Player)var3.getPlayer());
+            this.handleUnregistrationPacket(var1, (Player)var3.getPlayerH());
         }
         else
         {
-            this.handlePacket(var1, var2, (Player)var3.getPlayer());
+            this.handlePacket(var1, var2, (Player)var3.getPlayerH());
         }
     }
 

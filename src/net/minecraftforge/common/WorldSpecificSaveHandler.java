@@ -1,6 +1,8 @@
 package net.minecraftforge.common;
 
 import java.io.File;
+import java.util.UUID;
+
 import net.minecraft.server.ExceptionWorldConflict;
 import net.minecraft.server.IChunkLoader;
 import net.minecraft.server.IDataManager;
@@ -37,7 +39,12 @@ public class WorldSpecificSaveHandler implements IDataManager
      */
     public void checkSession()
     {
-        this.parent.checkSession();
+        try {
+			this.parent.checkSession();
+		} catch (ExceptionWorldConflict e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
     }
 
     /**
@@ -93,4 +100,9 @@ public class WorldSpecificSaveHandler implements IDataManager
         System.out.println(new File(this.dataDir, var1 + ".dat"));
         return new File(this.dataDir, var1 + ".dat");
     }
+
+	@Override
+	public UUID getUUID() {
+		return parent.getUUID();
+	}
 }

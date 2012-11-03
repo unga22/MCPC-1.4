@@ -137,6 +137,6 @@ public class ModListResponsePacket extends FMLPacket
 
         var12.length = var12.data.length;
         var1.queue(var12);
-        NetLoginHandler.func_72531_a((NetLoginHandler)var3, true);
+        NetLoginHandler.a((NetLoginHandler)var3, true);
     }
 }

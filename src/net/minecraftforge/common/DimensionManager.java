@@ -10,6 +10,9 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.logging.Level;
+
+import org.bukkit.World.Environment;
+
 import net.minecraft.server.ExceptionWorldConflict;
 import net.minecraft.server.IDataManager;
 import net.minecraft.server.IProgressUpdate;
@@ -165,11 +168,15 @@ public class DimensionManager
             }
         }
 
-        MinecraftServer.getServer().worldServer = (WorldServer[])var2.toArray(new WorldServer[0]);
+        // TODO: Add support for forge to add new worlds
+        //MinecraftServer.getServer().worldServer = (WorldServer[])var2.toArray(new WorldServer[0]);
     }
 
-    public static void initDimension(int var0)
+ // TODO: Add support for forge to add new worlds
+    public static void initDimension(int var0) throws Exception
     {
+    	throw new Exception("Cannot make worlds thru forge");
+    	/*
         WorldServer var1 = getWorld(0);
 
         if (var1 == null)
@@ -187,11 +194,15 @@ public class DimensionManager
                 System.err.println("Cannot Hotload Dim: " + var6.getMessage());
                 return;
             }
+            
+            var1.
+            String name = (dimension == 0) ? s : s + "_" + worldType;
+            org.bukkit.generator.ChunkGenerator gen = this.server.getGenerator(name);
 
             MinecraftServer var2 = var1.getMinecraftServer();
             IDataManager var3 = var1.getDataManager();
             WorldSettings var4 = new WorldSettings(var1.getWorldData());
-            Object var5 = var0 == 0 ? var1 : new SecondaryWorldServer(var2, var3, var1.getWorldData().getName(), var0, var4, var1, var2.methodProfiler);
+            Object var5 = var0 == 0 ? var1 : new SecondaryWorldServer(var2, var3, var1.getWorldData().getName(), var0, var4, var1, var2.methodProfiler, Environment.getEnvironment(dimension), gen);
             ((WorldServer)var5).addIWorldAccess(new WorldManager(var2, (WorldServer)var5));
             MinecraftForge.EVENT_BUS.post(new WorldEvent$Load((World)var5));
 
@@ -201,7 +212,7 @@ public class DimensionManager
             }
 
             var2.c(var2.getDifficulty());
-        }
+        }*/
     }
 
     public static WorldServer getWorld(int var0)

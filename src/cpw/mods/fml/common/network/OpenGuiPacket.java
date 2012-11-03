@@ -48,7 +48,7 @@ public class OpenGuiPacket extends FMLPacket
 
     public void execute(INetworkManager var1, FMLNetworkHandler var2, NetHandler var3, String var4)
     {
-        EntityHuman var5 = var3.getPlayer();
+        EntityHuman var5 = var3.getPlayerH();
         var5.openGui(Integer.valueOf(this.networkId), this.modGuiId, var5.world, this.x, this.y, this.z);
         var5.activeContainer.windowId = this.windowId;
     }
