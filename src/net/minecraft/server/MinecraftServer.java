@@ -634,6 +634,10 @@ public abstract class MinecraftServer implements Runnable, IMojangStatistics, IC
     	
     	log.severe(var1.args.getClass().getName());
     	OptionSet options = Main.loadOptions(var1.args);
+    	
+    	if (options == null) // error or console help
+    		return;
+    	
     	StatisticList.a();
 
         try {

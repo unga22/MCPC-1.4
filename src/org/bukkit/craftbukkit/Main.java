@@ -159,10 +159,11 @@ public class Main
 				if (options.has("noconsole")) {
 					useConsole = false;
 				}
+				return options;
 		} catch (Throwable t) {
 			t.printStackTrace();
 		}
-		return options;
+		return null;
 	}
 	
 	// disabled, cant link objects over app domains thru the new FML
