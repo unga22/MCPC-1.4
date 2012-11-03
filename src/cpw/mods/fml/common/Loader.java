@@ -1,5 +1,22 @@
 package cpw.mods.fml.common;
 
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+import java.util.logging.Level;
+
+import net.minecraft.server.CrashReport;
+import net.minecraft.server.CrashReportVersion;
+
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
@@ -11,17 +28,14 @@ import com.google.common.collect.ImmutableMultiset;
 import com.google.common.collect.LinkedHashMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Multiset.Entry;
 import com.google.common.collect.Multisets;
 import com.google.common.collect.Ordering;
+import com.google.common.collect.SetMultimap;
 import com.google.common.collect.Sets;
-import com.google.common.collect.TreeMultimap;
-import com.google.common.collect.Multiset.Entry;
 import com.google.common.collect.Sets.SetView;
-import cpw.mods.fml.common.Loader$1;
-import cpw.mods.fml.common.Loader$2;
-import cpw.mods.fml.common.Loader$3;
-import cpw.mods.fml.common.Loader$ModIdComparator;
-import cpw.mods.fml.common.LoaderState$ModState;
+import com.google.common.collect.TreeMultimap;
+
 import cpw.mods.fml.common.discovery.ModDiscoverer;
 import cpw.mods.fml.common.event.FMLInterModComms$IMCEvent;
 import cpw.mods.fml.common.event.FMLLoadEvent;
@@ -30,27 +44,6 @@ import cpw.mods.fml.common.toposort.ModSorter;
 import cpw.mods.fml.common.toposort.ModSortingException;
 import cpw.mods.fml.common.versioning.ArtifactVersion;
 import cpw.mods.fml.common.versioning.VersionParser;
-import cpw.mods.fml.relauncher.RelaunchClassLoader;
-
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-import java.util.logging.Level;
-import net.minecraft.server.CrashReport;
-import net.minecraft.server.CrashReportVersion;
 
 public class Loader
 {
@@ -75,6 +68,7 @@ public class Loader
     private MCPDummyContainer mcp;
     private static File minecraftDir;
     private static List injectedContainers;
+
 
     public static Loader instance()
     {
@@ -292,39 +286,30 @@ public class Loader
         return var7;
     }
 
-    private void identifyDuplicates(List var1)
+    private void identifyDuplicates(List<ModContainer> mods)
     {
-        TreeMultimap var2 = TreeMultimap.create(new Loader$ModIdComparator(this, (Loader$1)null), Ordering.arbitrary());
-        Iterator var3 = var1.iterator();
-
-        while (var3.hasNext())
+        TreeMultimap<ModContainer, File> dupsearch = TreeMultimap.create(new Loader$ModIdComparator(this, null), Ordering.arbitrary());
+        for (ModContainer mc : mods)
         {
-            ModContainer var4 = (ModContainer)var3.next();
-
-            if (var4.getSource() != null)
+            if (mc.getSource() != null)
             {
-                var2.put(var4, var4.getSource());
+                dupsearch.put(mc, mc.getSource());
             }
         }
 
-        ImmutableMultiset var7 = Multisets.copyHighestCountFirst(var2.keys());
-        LinkedHashMultimap var8 = LinkedHashMultimap.create();
-        Iterator var5 = var7.entrySet().iterator();
-
-        while (var5.hasNext())
+        ImmutableMultiset<ModContainer> duplist = Multisets.copyHighestCountFirst(dupsearch.keys());
+        SetMultimap<ModContainer, File> dupes = LinkedHashMultimap.create();
+        for (Entry<ModContainer> e : duplist.entrySet())
         {
-            Entry var6 = (Entry)var5.next();
-
-            if (var6.getCount() > 1)
+            if (e.getCount() > 1)
             {
-                FMLLog.severe("Found a duplicate mod %s at %s", new Object[] {((ModContainer)var6.getElement()).getModId(), var2.get(var6.getElement())});
-                var8.putAll(var6.getElement(), var2.get(var6.getElement()));
+                FMLLog.severe("Found a duplicate mod %s at %s", e.getElement().getModId(), dupsearch.get(e.getElement()));
+                dupes.putAll(e.getElement(),dupsearch.get(e.getElement()));
             }
         }
-
-        if (!var8.isEmpty())
+        if (!dupes.isEmpty())
         {
-            throw new DuplicateModsFoundException(var8);
+        	throw new DuplicateModsFoundException(dupes);
         }
     }
 

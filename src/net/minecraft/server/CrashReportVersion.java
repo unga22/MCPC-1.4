@@ -3,7 +3,7 @@ package net.minecraft.server;
 import java.util.concurrent.Callable;
 
 public class CrashReportVersion
-implements Callable
+implements Callable<String>
 {
 	public CrashReportVersion(CrashReport paramCrashReport)
 	{
@@ -15,7 +15,7 @@ implements Callable
 	}
 
 	@Override
-	public Object call() throws Exception {
-		throw new Exception("CrashReportVersion callable? - the fuck?");
+	public String call() throws Exception {
+		return a();
 	}
 }

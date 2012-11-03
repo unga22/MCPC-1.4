@@ -353,7 +353,7 @@ public class FMLCommonHandler
         this.tickEnd(EnumSet.of(TickType.PLAYER), var2, new Object[] {var1});
     }
 
-    public void registerCrashCallable(ICrashCallable var1)
+	public void registerCrashCallable(ICrashCallable var1)
     {
         this.crashCallables.add(var1);
     }
