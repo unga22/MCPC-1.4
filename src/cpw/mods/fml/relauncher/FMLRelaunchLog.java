@@ -110,6 +110,9 @@ public class FMLRelaunchLog
 
     public Logger getLogger()
     {
+    	if (this.myLog == null)
+    		configureLogging();
+    	
         return this.myLog;
     }
 

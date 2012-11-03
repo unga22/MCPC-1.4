@@ -19,6 +19,8 @@ import cpw.mods.fml.relauncher.FMLRelauncher;
 
 // CraftBukkit start
 import java.util.concurrent.ExecutionException;
+
+import org.bukkit.craftbukkit.Main;
 import org.bukkit.craftbukkit.libs.jline.console.ConsoleReader;
 import org.bukkit.craftbukkit.libs.joptsimple.OptionSet;
 
@@ -616,10 +618,18 @@ public abstract class MinecraftServer implements Runnable, IMojangStatistics, IC
     public void a(IUpdatePlayerListBox iupdateplayerlistbox) {
         this.p.add(iupdateplayerlistbox);
     }
+    
+    public static void main(String[] opt)
+    {
+    	FMLRelauncher.handleServerRelaunch(new ArgsWrapper(opt));
+    }
 
- // TODO: Disabled in forge
-    public static void main(final OptionSet options) { // CraftBukkit - replaces main(String[] astring)
-        StatisticList.a();
+    
+    public static void fmlReentry(ArgsWrapper var1) { // CraftBukkit - replaces main(String[] astring)
+    	
+    	log.severe(var1.args.getClass().getName());
+    	OptionSet options = Main.loadOptions(var1.args);
+    	StatisticList.a();
 
         try {
             /* CraftBukkit start - replace everything

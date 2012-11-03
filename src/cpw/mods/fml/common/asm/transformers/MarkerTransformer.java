@@ -1,11 +1,5 @@
 package cpw.mods.fml.common.asm.transformers;
 
-import com.google.common.base.Charsets;
-import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.ListMultimap;
-import com.google.common.io.Resources;
-import cpw.mods.fml.common.asm.transformers.MarkerTransformer$1;
-import cpw.mods.fml.relauncher.IClassTransformer;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
@@ -15,242 +9,269 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URL;
-import java.util.Iterator;
+import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
+
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.tree.ClassNode;
 
+import com.google.common.base.Charsets;
+import com.google.common.base.Splitter;
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.ListMultimap;
+import com.google.common.collect.Lists;
+import com.google.common.io.LineProcessor;
+import com.google.common.io.Resources;
+
+import cpw.mods.fml.relauncher.IClassTransformer;
+
 public class MarkerTransformer implements IClassTransformer
 {
-    private ListMultimap markers;
+    private ListMultimap<String, String> markers = ArrayListMultimap.create();
 
     public MarkerTransformer() throws IOException
     {
         this("fml_marker.cfg");
     }
-
-    protected MarkerTransformer(String var1) throws IOException
+    protected MarkerTransformer(String rulesFile) throws IOException
     {
-        this.markers = ArrayListMultimap.create();
-        this.readMapFile(var1);
+        readMapFile(rulesFile);
     }
 
-    private void readMapFile(String var1) throws IOException
+    private void readMapFile(String rulesFile) throws IOException
     {
-        File var2 = new File(var1);
-        URL var3;
-
-        if (var2.exists())
+        File file = new File(rulesFile);
+        URL rulesResource;
+        if (file.exists())
         {
-            var3 = var2.toURI().toURL();
+            rulesResource = file.toURI().toURL();
         }
         else
         {
-            var3 = Resources.getResource(var1);
+            rulesResource = Resources.getResource(rulesFile);
         }
-
-        Resources.readLines(var3, Charsets.UTF_8, new MarkerTransformer$1(this));
-    }
-
-    public byte[] transform(String var1, byte[] var2)
-    {
-        if (var2 == null)
+        Resources.readLines(rulesResource, Charsets.UTF_8, new LineProcessor<Void>()
         {
-            return null;
-        }
-        else if (!this.markers.containsKey(var1))
-        {
-            return var2;
-        }
-        else
-        {
-            ClassNode var3 = new ClassNode();
-            ClassReader var4 = new ClassReader(var2);
-            var4.accept(var3, 0);
-            Iterator var5 = this.markers.get(var1).iterator();
-
-            while (var5.hasNext())
+            @Override
+            public Void getResult()
             {
-                String var6 = (String)var5.next();
-                var3.interfaces.add(var6);
+                return null;
             }
 
-            ClassWriter var7 = new ClassWriter(1);
-            var3.accept(var7);
-            return var7.toByteArray();
-        }
+            @Override
+            public boolean processLine(String input) throws IOException
+            {
+                String line = Iterables.getFirst(Splitter.on('#').limit(2).split(input), "").trim();
+                if (line.length()==0)
+                {
+                    return true;
+                }
+                List<String> parts = Lists.newArrayList(Splitter.on(" ").trimResults().split(line));
+                if (parts.size()!=2)
+                {
+                    throw new RuntimeException("Invalid config file line "+ input);
+                }
+                List<String> markerInterfaces = Lists.newArrayList(Splitter.on(",").trimResults().split(parts.get(1)));
+                for (String marker : markerInterfaces)
+                {
+                    markers.put(parts.get(0), marker);
+                }
+                return true;
+            }
+        });
     }
 
-    public static void main(String[] var0)
+    @SuppressWarnings("unchecked")
+    @Override
+    public byte[] transform(String name, byte[] bytes)
     {
-        if (var0.length < 2)
+    	if (bytes == null) { return null; }
+        if (!markers.containsKey(name)) { return bytes; }
+
+        ClassNode classNode = new ClassNode();
+        ClassReader classReader = new ClassReader(bytes);
+        classReader.accept(classNode, 0);
+
+        for (String marker : markers.get(name))
+        {
+            classNode.interfaces.add(marker);
+        }
+
+        ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+        classNode.accept(writer);
+        return writer.toByteArray();
+    }
+
+    public static void main(String[] args)
+    {
+        if (args.length < 2)
         {
             System.out.println("Usage: MarkerTransformer <JarPath> <MapFile> [MapFile2]... ");
+            return;
         }
-        else
+
+        boolean hasTransformer = false;
+        MarkerTransformer[] trans = new MarkerTransformer[args.length - 1];
+        for (int x = 1; x < args.length; x++)
         {
-            boolean var1 = false;
-            MarkerTransformer[] var2 = new MarkerTransformer[var0.length - 1];
-
-            for (int var3 = 1; var3 < var0.length; ++var3)
+            try
             {
-                try
-                {
-                    var2[var3 - 1] = new MarkerTransformer(var0[var3]);
-                    var1 = true;
-                }
-                catch (IOException var7)
-                {
-                    System.out.println("Could not read Transformer Map: " + var0[var3]);
-                    var7.printStackTrace();
-                }
+                trans[x - 1] = new MarkerTransformer(args[x]);
+                hasTransformer = true;
             }
-
-            if (!var1)
+            catch (IOException e)
             {
-                System.out.println("Culd not find a valid transformer to perform");
+                System.out.println("Could not read Transformer Map: " + args[x]);
+                e.printStackTrace();
             }
-            else
+        }
+
+        if (!hasTransformer)
+        {
+            System.out.println("Culd not find a valid transformer to perform");
+            return;
+        }
+
+        File orig = new File(args[0]);
+        File temp = new File(args[0] + ".ATBack");
+        if (!orig.exists() && !temp.exists())
+        {
+            System.out.println("Could not find target jar: " + orig);
+            return;
+        }
+/*
+        if (temp.exists())
+        {
+            if (orig.exists() && !orig.renameTo(new File(args[0] + (new SimpleDateFormat(".yyyy.MM.dd.HHmmss")).format(new Date()))))
             {
-                File var8 = new File(var0[0]);
-                File var4 = new File(var0[0] + ".ATBack");
-
-                if (!var8.exists() && !var4.exists())
-                {
-                    System.out.println("Could not find target jar: " + var8);
-                }
-                else if (!var8.renameTo(var4))
-                {
-                    System.out.println("Could not rename file: " + var8 + " -> " + var4);
-                }
-                else
-                {
-                    try
-                    {
-                        processJar(var4, var8, var2);
-                    }
-                    catch (IOException var6)
-                    {
-                        var6.printStackTrace();
-                    }
-
-                    if (!var4.delete())
-                    {
-                        System.out.println("Could not delete temp file: " + var4);
-                    }
-                }
+                System.out.println("Could not backup existing file: " + orig);
+                return;
             }
+            if (!temp.renameTo(orig))
+            {
+                System.out.println("Could not restore backup from previous run: " + temp);
+                return;
+            }
+        }
+*/
+        if (!orig.renameTo(temp))
+        {
+            System.out.println("Could not rename file: " + orig + " -> " + temp);
+            return;
+        }
+
+        try
+        {
+            processJar(temp, orig, trans);
+        }
+        catch (IOException e)
+        {
+            e.printStackTrace();
+        }
+
+        if (!temp.delete())
+        {
+            System.out.println("Could not delete temp file: " + temp);
         }
     }
 
-    private static void processJar(File var0, File var1, MarkerTransformer[] var2) throws IOException
+    private static void processJar(File inFile, File outFile, MarkerTransformer[] transformers) throws IOException
     {
-        ZipInputStream var3 = null;
-        ZipOutputStream var4 = null;
+        ZipInputStream inJar = null;
+        ZipOutputStream outJar = null;
 
         try
         {
             try
             {
-                var3 = new ZipInputStream(new BufferedInputStream(new FileInputStream(var0)));
+                inJar = new ZipInputStream(new BufferedInputStream(new FileInputStream(inFile)));
             }
-            catch (FileNotFoundException var30)
+            catch (FileNotFoundException e)
             {
-                throw new FileNotFoundException("Could not open input file: " + var30.getMessage());
+                throw new FileNotFoundException("Could not open input file: " + e.getMessage());
             }
 
             try
             {
-                var4 = new ZipOutputStream(new BufferedOutputStream(new FileOutputStream(var1)));
+                outJar = new ZipOutputStream(new BufferedOutputStream(new FileOutputStream(outFile)));
             }
-            catch (FileNotFoundException var29)
+            catch (FileNotFoundException e)
             {
-                throw new FileNotFoundException("Could not open output file: " + var29.getMessage());
+                throw new FileNotFoundException("Could not open output file: " + e.getMessage());
             }
 
-            ZipEntry var5;
-
-            while ((var5 = var3.getNextEntry()) != null)
+            ZipEntry entry;
+            while ((entry = inJar.getNextEntry()) != null)
             {
-                if (var5.isDirectory())
+                if (entry.isDirectory())
                 {
-                    var4.putNextEntry(var5);
+                    outJar.putNextEntry(entry);
+                    continue;
                 }
-                else
+
+                byte[] data = new byte[4096];
+                ByteArrayOutputStream entryBuffer = new ByteArrayOutputStream();
+
+                int len;
+                do
                 {
-                    byte[] var6 = new byte[4096];
-                    ByteArrayOutputStream var7 = new ByteArrayOutputStream();
-                    int var8;
-
-                    do
+                    len = inJar.read(data);
+                    if (len > 0)
                     {
-                        var8 = var3.read(var6);
-
-                        if (var8 > 0)
-                        {
-                            var7.write(var6, 0, var8);
-                        }
+                        entryBuffer.write(data, 0, len);
                     }
-                    while (var8 != -1);
-
-                    byte[] var9 = var7.toByteArray();
-                    String var10 = var5.getName();
-
-                    if (var10.endsWith(".class") && !var10.startsWith("."))
-                    {
-                        ClassNode var11 = new ClassNode();
-                        ClassReader var12 = new ClassReader(var9);
-                        var12.accept(var11, 0);
-                        String var13 = var11.name.replace('/', '.').replace('\\', '.');
-                        MarkerTransformer[] var14 = var2;
-                        int var15 = var2.length;
-
-                        for (int var16 = 0; var16 < var15; ++var16)
-                        {
-                            MarkerTransformer var17 = var14[var16];
-                            var9 = var17.transform(var13, var9);
-                        }
-                    }
-
-                    ZipEntry var32 = new ZipEntry(var10);
-                    var4.putNextEntry(var32);
-                    var4.write(var9);
                 }
+                while (len != -1);
+
+                byte[] entryData = entryBuffer.toByteArray();
+
+                String entryName = entry.getName();
+
+                if (entryName.endsWith(".class") && !entryName.startsWith("."))
+                {
+                    ClassNode cls = new ClassNode();
+                    ClassReader rdr = new ClassReader(entryData);
+                    rdr.accept(cls, 0);
+                    String name = cls.name.replace('/', '.').replace('\\', '.');
+
+                    for (MarkerTransformer trans : transformers)
+                    {
+                        entryData = trans.transform(name, entryData);
+                    }
+                }
+
+                ZipEntry newEntry = new ZipEntry(entryName);
+                outJar.putNextEntry(newEntry);
+                outJar.write(entryData);
             }
         }
         finally
         {
-            if (var4 != null)
+            if (outJar != null)
             {
                 try
                 {
-                    var4.close();
+                    outJar.close();
                 }
-                catch (IOException var28)
+                catch (IOException e)
                 {
-                    ;
                 }
             }
 
-            if (var3 != null)
+            if (inJar != null)
             {
                 try
                 {
-                    var3.close();
+                    inJar.close();
                 }
-                catch (IOException var27)
+                catch (IOException e)
                 {
-                    ;
                 }
             }
         }
-    }
-
-    static ListMultimap access$000(MarkerTransformer var0)
-    {
-        return var0.markers;
     }
 }
