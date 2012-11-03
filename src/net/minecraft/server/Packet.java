@@ -9,6 +9,10 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import sun.util.logging.resources.logging;
 
 public abstract class Packet {
 
@@ -22,6 +26,8 @@ public abstract class Packet {
     public static long p;
     public static long q;
     public boolean lowPriority = false;
+    public static Logger debugLog = null; //Logger.getLogger("Minecraft"); // set to null to disable
+    
     // CraftBukkit start - calculate packet ID once - used a bunch of times
     private int packetID;
 
@@ -135,14 +141,22 @@ public abstract class Packet {
     }
 
     public static void a(Packet packet, DataOutputStream dataoutputstream) throws IOException { // CraftBukkit - throws IOException
-        dataoutputstream.write(packet.k());
+     
+    	if (debugLog != null)
+    		debugLog.log(Level.INFO, String.format("Data [%s] %s Len: %s",  packet.k(), packet.getClass().getSimpleName(), packet.a()));
+    	
+    	dataoutputstream.write(packet.k());
         packet.a(dataoutputstream);
         ++p;
         q += (long) packet.a();
     }
 
     public static void a(String s, DataOutputStream dataoutputstream) throws IOException { // CraftBukkit - throws IOException
-        if (s.length() > 32767) {
+    	
+    	if (debugLog != null)
+    		debugLog.log(Level.INFO, String.format("String Len: %s, %s", s.length(), s));
+    	
+    	if (s.length() > 32767) {
             throw new IOException("String too big");
         } else {
             dataoutputstream.writeShort(s.length());
@@ -210,9 +224,17 @@ public abstract class Packet {
     }
 
     public static void a(ItemStack itemstack, DataOutputStream dataoutputstream) throws IOException { // CraftBukkit - throws IOException
-        if (itemstack == null) {
+    	
+
+    	if (itemstack == null) {
+        	if (debugLog != null)
+        		debugLog.log(Level.INFO, String.format("Item NULL"));
+
             dataoutputstream.writeShort(-1);
         } else {
+        	if (debugLog != null)
+        		debugLog.log(Level.INFO, String.format("Item %s Cont: %s", itemstack.getClass().getSimpleName(), itemstack.toString()));
+
             dataoutputstream.writeShort(itemstack.id);
             dataoutputstream.writeByte(itemstack.count);
             dataoutputstream.writeShort(itemstack.getData());
@@ -241,9 +263,15 @@ public abstract class Packet {
 
     protected static void a(NBTTagCompound nbttagcompound, DataOutputStream dataoutputstream) throws IOException { // CraftBukkit - throws IOException
         if (nbttagcompound == null) {
+        	if (debugLog != null)
+        		debugLog.log(Level.INFO, String.format("NBT NULL"));
+
             dataoutputstream.writeShort(-1);
         } else {
-            byte[] abyte = NBTCompressedStreamTools.a(nbttagcompound);
+        	byte[] abyte = NBTCompressedStreamTools.a(nbttagcompound);
+        	
+        	if (debugLog != null)
+        		debugLog.log(Level.INFO, String.format("NBT %s Len: %s", nbttagcompound.getClass().getSimpleName(), abyte.length));
 
             dataoutputstream.writeShort((short) abyte.length);
             dataoutputstream.write(abyte);

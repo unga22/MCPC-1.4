@@ -132,11 +132,19 @@ public class ModListResponsePacket extends FMLPacket
             var12.data = FMLPacket.makePacket(FMLPacket$Type.MOD_MISSING, new Object[] {var6, var7});
             Logger.getLogger("Minecraft").info(String.format("User %s connection failed: missing %s, bad versions %s", new Object[] {var4, var6, var7}));
             FMLLog.info("User %s connection failed: missing %s, bad versions %s", new Object[] {var4, var6, var7});
-            FMLNetworkHandler.setHandlerState((NetLoginHandler)var3, -2);
+            
+            if (var3 instanceof NetLoginHandler)
+            	FMLNetworkHandler.setHandlerState((NetLoginHandler)var3, -2);
         }
 
         var12.length = var12.data.length;
         var1.queue(var12);
-        NetLoginHandler.a((NetLoginHandler)var3, true);
+        
+        // TODO: FML mess?
+        // The user can be connected to the server handler already if the key confirmation was successful against mc auth
+        // then that one calls this method and the user will be logged in and switched
+        
+        if (var3 instanceof NetLoginHandler)
+        	NetLoginHandler.a((NetLoginHandler)var3, true);
     }
 }

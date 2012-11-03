@@ -169,14 +169,11 @@ public class FMLNetworkHandler
     private boolean handleVanillaLoginKick(NetLoginHandler var1, MinecraftServer var2, SocketAddress var3, String var4)
     {
         ServerConfigurationManagerAbstract var5 = var2.getServerConfigurationManager();
-        EntityPlayer var6 = var5.attemptLogin(var1, var4, var1.hostname); // bukkit sig - handler, name, hostname
+        EntityPlayer var6 = var5.attemptLogin(var1, var1.h, var1.hostname);
 
-        if (var6 != null)
-        {
-            var1.completeConnection(var6.name); // arg unused in bukkit
-        }
+        var1.completeConnection(var6);
 
-        return var6 == null;
+        return var6 != null;
     }
 
     public static void handleLoginPacketOnServer(NetLoginHandler var0, Packet1Login var1)

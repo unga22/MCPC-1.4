@@ -333,12 +333,12 @@ public class ItemInWorldManager {
 
             this.world.a(this.player, 2001, i, j, k, l + (this.world.getData(i, j, k) << 12));
             boolean flag = false;
-
+            boolean flag1 = false;
             if (this.isCreative()) {
             	flag = this.d(i, j, k);
                 this.player.netServerHandler.sendPacket(new Packet53BlockChange(i, j, k, this.world));
             } else {
-                boolean flag1 = this.player.b(Block.byId[l]);
+                flag1 = this.player.b(Block.byId[l]);
                 Block var10 = Block.byId[l];
                 
                 if (var10 != null)
@@ -351,13 +351,13 @@ public class ItemInWorldManager {
                         MinecraftForge.EVENT_BUS.post(new PlayerDestroyItemEvent(this.player, itemstack));
                     }
                 }
-
-                if (flag && flag1) {
-                    Block.byId[l].a(this.world, this.player, i, j, k, i1);
-                }
             }
             
             flag = this.d(i, j, k);
+            
+            if (flag && flag1) {
+                Block.byId[l].a(this.world, this.player, i, j, k, i1);
+            }
 
             // CraftBukkit start - drop event experience
             if (flag && event != null) {

@@ -132,17 +132,31 @@ public class NetLoginHandler extends NetHandler {
     {
         FMLNetworkHandler.onConnectionReceivedFromClient(this, this.server, this.networkManager.getSocketAddress(), this.h);
     }
-
-    public void completeConnection(String var1)
+    
+    public void completeConnection(String kickReason)
     {
-        // CraftBukkit start
-        EntityPlayer s = this.server.getServerConfigurationManager().attemptLogin(this, this.h, this.hostname);
+        if (kickReason != null)
+        	this.disconnect(kickReason);
+		else
+			try {
+				throw new Exception("reason is null");
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+        
+        // TODO: what happens on FMLNetworkHandler state 2 when its null?
+        
+        this.c = true;
+    }
 
-        if (s == null) {
-            return;
-            // CraftBukkit end
-        } else {
-            EntityPlayer entityplayer = this.server.getServerConfigurationManager().processLogin(s); // CraftBukkit - this.h -> s
+    public void completeConnection(EntityPlayer a)
+    {
+        if (a == null)
+        	return;
+        else
+        {
+            EntityPlayer entityplayer = this.server.getServerConfigurationManager().processLogin(a); // CraftBukkit - this.h -> s
 
             if (entityplayer != null) {
                 this.server.getServerConfigurationManager().a((INetworkManager) this.networkManager, entityplayer);

@@ -1,5 +1,25 @@
+/*
+ * The FML Forge Mod Loader suite. Copyright (C) 2012 cpw
+ *
+ * This library is free software; you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free
+ * Software Foundation; either version 2.1 of the License, or any later version.
+ *
+ * This library is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+ * A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License along with this library; if not, write to the Free Software Foundation, Inc., 51
+ * Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ */
 package cpw.mods.fml.server;
 
+import java.util.List;
+
+import net.minecraft.server.Entity;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.NetHandler;
+import net.minecraft.server.Packet;
+import net.minecraft.server.Packet131ItemData;
+import net.minecraft.server.World;
 import cpw.mods.fml.common.FMLCommonHandler;
 import cpw.mods.fml.common.IFMLSidedHandler;
 import cpw.mods.fml.common.Loader;
@@ -10,84 +30,145 @@ import cpw.mods.fml.common.network.EntitySpawnPacket;
 import cpw.mods.fml.common.network.ModMissingPacket;
 import cpw.mods.fml.common.registry.EntityRegistry$EntityRegistration;
 import cpw.mods.fml.common.registry.LanguageRegistry;
-import java.util.List;
-import net.minecraft.server.Entity;
-import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.NetHandler;
-import net.minecraft.server.Packet;
-import net.minecraft.server.Packet131ItemData;
-import net.minecraft.server.World;
 
+/**
+ * Handles primary communication from hooked code into the system
+ *
+ * The FML entry point is {@link #beginServerLoading(MinecraftServer)} called from
+ * {@link net.minecraft.src.DedicatedServer}
+ *
+ * Obfuscated code should focus on this class and other members of the "server"
+ * (or "client") code
+ *
+ * The actual mod loading is handled at arms length by {@link Loader}
+ *
+ * It is expected that a similar class will exist for each target environment:
+ * Bukkit and Client side.
+ *
+ * It should not be directly modified.
+ *
+ * @author cpw
+ *
+ */
 public class FMLServerHandler implements IFMLSidedHandler
 {
+    /**
+     * The singleton
+     */
     private static final FMLServerHandler INSTANCE = new FMLServerHandler();
+
+    /**
+     * A reference to the server itself
+     */
     private MinecraftServer server;
 
     private FMLServerHandler()
     {
         FMLCommonHandler.instance().beginLoading(this);
     }
-
-    public void beginServerLoading(MinecraftServer var1)
+    /**
+     * Called to start the whole game off from
+     * {@link MinecraftServer#startServer}
+     *
+     * @param minecraftServer
+     */
+    public void beginServerLoading(MinecraftServer minecraftServer)
     {
-        this.server = var1;
+        server = minecraftServer;
         ObfuscationReflectionHelper.detectObfuscation(World.class);
         Loader.instance().loadMods();
     }
 
+    /**
+     * Called a bit later on during server initialization to finish loading mods
+     */
     public void finishServerLoading()
     {
         Loader.instance().initializeMods();
         LanguageRegistry.reloadLanguageTable();
     }
 
-    public void haltGame(String var1, Throwable var2)
+    @Override
+    public void haltGame(String message, Throwable exception)
     {
-        throw new RuntimeException(var1, var2);
+        throw new RuntimeException(message, exception);
     }
 
+    /**
+     * Get the server instance
+     */
     public MinecraftServer getServer()
     {
-        return this.server;
+        return server;
     }
 
+    /**
+     * @return the instance
+     */
     public static FMLServerHandler instance()
     {
         return INSTANCE;
     }
 
-    public List getAdditionalBrandingInformation()
+    /* (non-Javadoc)
+     * @see cpw.mods.fml.common.IFMLSidedHandler#getAdditionalBrandingInformation()
+     */
+    @Override
+    public List<String> getAdditionalBrandingInformation()
     {
         return null;
     }
 
+    /* (non-Javadoc)
+     * @see cpw.mods.fml.common.IFMLSidedHandler#getSide()
+     */
+    @Override
     public Side getSide()
     {
         return Side.SERVER;
     }
 
-    public void showGuiScreen(Object var1) {}
-
-    public Entity spawnEntityIntoClientWorld(EntityRegistry$EntityRegistration var1, EntitySpawnPacket var2)
+    @Override
+    public void showGuiScreen(Object clientGuiElement)
     {
+
+    }
+
+    @Override
+    public Entity spawnEntityIntoClientWorld(EntityRegistry$EntityRegistration er, EntitySpawnPacket packet)
+    {
+        // NOOP
         return null;
     }
 
-    public void adjustEntityLocationOnClient(EntitySpawnAdjustmentPacket var1) {}
-
-    public void sendPacket(Packet var1)
+    @Override
+    public void adjustEntityLocationOnClient(EntitySpawnAdjustmentPacket entitySpawnAdjustmentPacket)
+    {
+        // NOOP
+    }
+    @Override
+    public void sendPacket(Packet packet)
     {
         throw new RuntimeException("You cannot send a bare packet without a target on the server!");
     }
-
-    public void displayMissingMods(ModMissingPacket var1) {}
-
-    public void handleTinyPacket(NetHandler var1, Packet131ItemData var2) {}
-
-    public void setClientCompatibilityLevel(byte var1) {}
-
+    @Override
+    public void displayMissingMods(ModMissingPacket modMissingPacket)
+    {
+        // NOOP on server
+    }
+    @Override
+    public void handleTinyPacket(NetHandler handler, Packet131ItemData mapData)
+    {
+        // NOOP on server
+    }
+    @Override
+    public void setClientCompatibilityLevel(byte compatibilityLevel)
+    {
+        // NOOP on server
+    }
+    @Override
     public byte getClientCompatibilityLevel()
     {
-        return (byte)0;
+        return 0;
     }
 }

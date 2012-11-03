@@ -10,7 +10,7 @@ public class Packet1Login extends Packet
     /** The player's entity ID */
     public int a = 0;
     public WorldType b;
-    public boolean field_73560_c;
+    public boolean c;
     public EnumGamemode d;
 
     /** -1: The Nether, 0: The Overworld, 1: The End */
@@ -40,8 +40,8 @@ public class Packet1Login extends Packet
         this.d = var3;
         this.g = (byte)var7;
         this.h = (byte)var8;
-        this.field_73560_c = var4;
-        this.vanillaCompatible = false;
+        this.c = var4;
+        this.vanillaCompatible = true;
     }
 
     /**
@@ -59,7 +59,7 @@ public class Packet1Login extends Packet
         }
 
         byte var3 = var1.readByte();
-        this.field_73560_c = (var3 & 8) == 8;
+        this.c = (var3 & 8) == 8;
         int var4 = var3 & -9;
         this.d = EnumGamemode.a(var4);
 
@@ -84,14 +84,11 @@ public class Packet1Login extends Packet
     {
         var1.writeInt(this.a);
         a(this.b == null ? "" : this.b.name(), var1);
-        int var2 = this.d.a();
+        int i = this.d.a();
 
-        if (this.field_73560_c)
-        {
-            var2 |= 8;
-        }
+        if (this.c)  i |= 8;
 
-        var1.writeByte(var2);
+        var1.writeByte(i);
 
         if (this.vanillaCompatible)
         {

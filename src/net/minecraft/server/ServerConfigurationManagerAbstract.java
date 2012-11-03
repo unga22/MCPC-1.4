@@ -285,7 +285,7 @@ public abstract class ServerConfigurationManagerAbstract {
         // CraftBukkit end
     }
 
-    public EntityPlayer processLogin(EntityPlayer player) { // CraftBukkit - String -> EntityPlayer
+    public EntityPlayer processLogin(EntityPlayer player) {
         String s = player.name; // CraftBukkit
         ArrayList arraylist = new ArrayList();
         Iterator iterator = this.players.iterator();
