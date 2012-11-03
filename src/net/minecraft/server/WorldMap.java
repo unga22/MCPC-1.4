@@ -18,7 +18,7 @@ public class WorldMap extends WorldMapBase {
 
     public int centerX;
     public int centerZ;
-    public byte map;
+    public int map;
     public byte scale;
     public byte[] colors = new byte[16384];
     public List f = new ArrayList();
@@ -41,9 +41,15 @@ public class WorldMap extends WorldMapBase {
 
     public void a(NBTTagCompound nbttagcompound) {
         // CraftBukkit start
-        byte dimension = nbttagcompound.getByte("dimension");
+    	
+        int dimension;
+        NBTBase var2 = nbttagcompound.get("dimension");
+        if (var2 instanceof NBTTagByte)
+        	dimension = ((NBTTagByte)var2).data;
+        else
+        	dimension = ((NBTTagInt)var2).data;
 
-        if (dimension >= 10) {
+        if (this.map >= 10) {
             long least = nbttagcompound.getLong("UUIDLeast");
             long most = nbttagcompound.getLong("UUIDMost");
 
@@ -55,7 +61,7 @@ public class WorldMap extends WorldMapBase {
                 if (world == null) {
                     /* All Maps which do not have their valid world loaded are set to a dimension which hopefully won't be reached.
                        This is to prevent them being corrupted with the wrong map data. */
-                    dimension = 127;
+                    dimension = Integer.MAX_VALUE;
                 } else {
                     dimension = (byte) world.getHandle().dimension;
                 }
@@ -123,7 +129,7 @@ public class WorldMap extends WorldMapBase {
             }
         }
         // CraftBukkit end
-        nbttagcompound.setByte("dimension", this.map);
+        nbttagcompound.setInt("dimension", this.map);
         nbttagcompound.setInt("xCenter", this.centerX);
         nbttagcompound.setInt("zCenter", this.centerZ);
         nbttagcompound.setByte("scale", this.scale);

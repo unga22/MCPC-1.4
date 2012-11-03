@@ -25,7 +25,7 @@ public class ItemWorldMap extends ItemWorldMapBase {
 
             worldmap.centerX = Math.round((float) world.getWorldData().c() / (float) i) * i;
             worldmap.centerZ = Math.round((float) (world.getWorldData().e() / i)) * i;
-            worldmap.map = (byte) ((WorldServer) world).dimension; // CraftBukkit - fixes Bukkit multiworld maps
+            worldmap.map = ((WorldServer) world).dimension; // CraftBukkit - fixes Bukkit multiworld maps
             worldmap.c();
             world.a(s, (WorldMapBase) worldmap);
 
@@ -71,7 +71,7 @@ public class ItemWorldMap extends ItemWorldMapBase {
                             boolean flag = k2 * k2 + l2 * l2 > (j1 - 2) * (j1 - 2);
                             int i3 = (j / i + k1 - short1 / 2) * i;
                             int j3 = (k / i + j2 - short2 / 2) * i;
-                            int[] aint = new int[256];
+                            int[] aint = new int[Block.byId.length];
                             Chunk chunk = world.getChunkAtWorldCoords(i3, j3);
 
                             if (!chunk.isEmpty()) {
@@ -145,7 +145,7 @@ public class ItemWorldMap extends ItemWorldMapBase {
                                 j4 = 0;
                                 k4 = 0;
 
-                                for (l4 = 0; l4 < 256; ++l4) {
+                                for (l4 = 0; l4 < Block.byId.length; ++l4) {
                                     if (aint[l4] > j4) {
                                         k4 = l4;
                                         j4 = aint[l4];

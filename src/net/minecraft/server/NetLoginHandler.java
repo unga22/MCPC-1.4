@@ -1,5 +1,7 @@
 package net.minecraft.server;
 
+import cpw.mods.fml.common.network.FMLNetworkHandler;
+import java.io.IOException;
 import java.io.Serializable;
 import java.net.InetAddress;
 import java.net.Socket;
@@ -30,7 +32,7 @@ public class NetLoginHandler extends NetHandler {
     public String hostname = ""; // CraftBukkit - add field
     private boolean login = false; // CraftBukkit
 
-    public NetLoginHandler(MinecraftServer minecraftserver, Socket socket, String s) throws java.io.IOException { // CraftBukkit - throws IOException
+    public NetLoginHandler(MinecraftServer minecraftserver, Socket socket, String s) throws IOException { // CraftBukkit - throws IOException
         this.server = minecraftserver;
         this.networkManager = new NetworkManager(socket, s, this, minecraftserver.F().getPrivate());
         this.networkManager.e = 0;
@@ -239,7 +241,7 @@ public class NetLoginHandler extends NetHandler {
 
     public void handleVanilla250Packet(Packet250CustomPayload var1) {}
 
-    public EntityHuman getPlayer()
+    public EntityHuman getPlayerH()
     {
         return null;
     }

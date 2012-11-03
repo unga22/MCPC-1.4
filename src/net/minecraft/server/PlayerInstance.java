@@ -106,7 +106,7 @@ class PlayerInstance {
                     for (k = 0; k < 16; ++k) {
                         if ((this.f & 1 << k) != 0) {
                             l = k << 4;
-                            List list = PlayerManager.a(this.playerManager).getTileEntities(i, l, j, i + 16, l + 16, j + 16);
+                            List list = PlayerManager.a(this.playerManager).getTileEntities(i, l, j, i + 15, l + 16, j + 15);
                             Iterator iterator = list.iterator();
 
                             while (iterator.hasNext()) {

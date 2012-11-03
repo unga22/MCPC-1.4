@@ -111,7 +111,7 @@ public class PathfinderGoalMakeLove extends PathfinderGoal
 
     private boolean f()
     {
-        if (!this.a.func_82686_i())
+        if (!this.a.i())
         {
             return false;
         }

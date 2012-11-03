@@ -110,8 +110,17 @@ public class Packet56MapChunkBulk extends Packet {
             for (l = 0; l < 16; ++l) {
                 k += this.a[j] >> l & 1;
             }
+            
+            int var9 = 0;
 
-            l = 2048 * 5 * k + 256;
+            for (int var10 = 0; var10 < 16; ++var10)
+            {
+                var9 += this.b[j] >> var10 & 1;
+            }
+
+            l = 10240 * k + 2048 * var9 + 256;
+            //l = 2048 * 5 * k + 256;
+            
             this.inflatedBuffers[j] = new byte[l];
             System.arraycopy(abyte, i, this.inflatedBuffers[j], 0, l);
             i += l;

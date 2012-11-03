@@ -1,5 +1,10 @@
 package net.minecraft.server;
 
+import cpw.mods.fml.common.network.FMLNetworkHandler;
+import net.minecraftforge.event.Event$Result;
+import net.minecraftforge.event.ForgeEventFactory;
+import net.minecraftforge.event.entity.player.PlayerInteractEvent;
+import net.minecraftforge.event.entity.player.PlayerInteractEvent$Action;
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
@@ -53,7 +58,7 @@ public class NetServerHandler extends NetHandler {
     private MinecraftServer minecraftServer;
     public EntityPlayer player; // CraftBukkit - private -> public
     private int f;
-    private int g;
+    public int g;
     private boolean h;
     private int i;
     private long j;
@@ -97,10 +102,15 @@ public class NetServerHandler extends NetHandler {
 
     // Store the last block right clicked and what type it was
     private int lastMaterial;
-
+    
+    public EntityHuman getPlayerH() {
+        return this.player;
+    }
+    
     public CraftPlayer getPlayer() {
         return (this.player == null) ? null : (CraftPlayer) this.player.getBukkitEntity();
     }
+
     private final static HashSet<Integer> invalidItems = new HashSet<Integer>(java.util.Arrays.asList(8, 9, 10, 11, 26, 34, 36, 51, 52, 55, 59, 60, 63, 64, 68, 71, 75, 78, 83, 90, 92, 93, 94, 95));
     // CraftBukkit end
 
@@ -294,6 +304,9 @@ public class NetServerHandler extends NetHandler {
                     if (this.player.vehicle != null) {
                         this.player.vehicle.V();
                     }
+                    
+                    if (!this.checkMovement)
+                        return;
 
                     this.minecraftServer.getServerConfigurationManager().d(this.player);
                     this.y = this.player.locX;
@@ -375,6 +388,9 @@ public class NetServerHandler extends NetHandler {
                 if (this.player.onGround && !packet10flying.g && d6 > 0.0D) {
                     this.player.j(0.2F);
                 }
+                
+                if (!this.checkMovement)
+                    return;
 
                 this.player.move(d4, d6, d7);
                 this.player.onGround = packet10flying.g;
@@ -396,6 +412,9 @@ public class NetServerHandler extends NetHandler {
                     logger.warning(this.player.name + " moved wrongly!");
                 }
 
+                if (!this.checkMovement)
+                    return;
+                
                 this.player.setLocation(d1, d2, d3, f2, f3);
                 boolean flag2 = worldserver.getCubes(this.player, this.player.boundingBox.clone().shrink((double) f4, (double) f4, (double) f4)).isEmpty();
 
@@ -418,6 +437,9 @@ public class NetServerHandler extends NetHandler {
                 } else {
                     this.g = 0;
                 }
+                
+                if (!this.checkMovement)
+                    return;
 
                 this.player.onGround = packet10flying.g;
                 this.minecraftServer.getServerConfigurationManager().d(this.player);
@@ -521,8 +543,10 @@ public class NetServerHandler extends NetHandler {
                 double d1 = this.player.locY - ((double) j + 0.5D) + 1.5D;
                 double d2 = this.player.locZ - ((double) k + 0.5D);
                 double d3 = d0 * d0 + d1 * d1 + d2 * d2;
-
-                if (d3 > 36.0D) {
+                double var16 = this.player.itemInWorldManager.getBlockReachDistance() + 1.0D;
+                var16 *= var16;
+                
+                if (d3 > var16) {
                     return;
                 }
 
@@ -544,6 +568,7 @@ public class NetServerHandler extends NetHandler {
                 if (i1 < this.server.getSpawnRadius() && !flag) {
                     CraftEventFactory.callPlayerInteractEvent(this.player, Action.LEFT_CLICK_BLOCK, i, j, k, l, this.player.inventory.getItemInHand());
                     // CraftBukkit end
+                    ForgeEventFactory.onPlayerInteract(this.player, PlayerInteractEvent$Action.LEFT_CLICK_BLOCK, i, j, k, 0);
                     this.player.netServerHandler.sendPacket(new Packet53BlockChange(i, j, k, worldserver));
                 } else {
                     this.player.itemInWorldManager.dig(i, j, k, packet14blockdig.face);
@@ -618,7 +643,8 @@ public class NetServerHandler extends NetHandler {
             // CraftBukkit start
             int itemstackAmount = itemstack.count;
             org.bukkit.event.player.PlayerInteractEvent event = CraftEventFactory.callPlayerInteractEvent(this.player, Action.RIGHT_CLICK_AIR, itemstack);
-            if (event.useItemInHand() != Event.Result.DENY) {
+            PlayerInteractEvent var10 = ForgeEventFactory.onPlayerInteract(this.player, PlayerInteractEvent$Action.RIGHT_CLICK_AIR, 0, 0, 0, -1);
+           if (event.useItemInHand() != Event.Result.DENY && var10.useItem != Event$Result.DENY) {
                 this.player.itemInWorldManager.useItem(this.player, this.player.world, itemstack);
             }
 
@@ -645,6 +671,7 @@ public class NetServerHandler extends NetHandler {
                 return;
             }
             flag1 = true; // spawn protection moved to ItemBlock!!!
+
             if (j1 > this.minecraftServer.getSpawnProtection() || flag1) {
                 // CraftBukkit end
                 this.player.itemInWorldManager.interact(this.player, worldserver, itemstack, i, j, k, l, packet15place.j(), packet15place.l(), packet15place.m());
@@ -780,6 +807,8 @@ public class NetServerHandler extends NetHandler {
     }
 
     public void a(Packet3Chat packet3chat) {
+    	packet3chat = FMLNetworkHandler.handleChatMessage(this, packet3chat);
+    	
         if (this.player.getChatFlags() == 2) {
             this.sendPacket(new Packet3Chat("Cannot send chat message."));
         } else {
@@ -1097,7 +1126,7 @@ public class NetServerHandler extends NetHandler {
                     return;
                 }
 
-                this.player = this.minecraftServer.getServerConfigurationManager().moveToWorld(this.player, 0, false);
+                this.player = this.minecraftServer.getServerConfigurationManager().moveToWorld(this.player, this.player.dimension, false);
             }
         }
     }
@@ -1391,8 +1420,13 @@ public class NetServerHandler extends NetHandler {
     public void a(Packet204LocaleAndViewDistance packet204localeandviewdistance) {
         this.player.a(packet204localeandviewdistance);
     }
+    public void a(Packet250CustomPayload var1)
+    {
+        FMLNetworkHandler.handlePacket250Packet(var1, this.networkManager, this);
+    }
 
-    public void a(Packet250CustomPayload packet250custompayload) {
+    public void handleVanilla250Packet(Packet250CustomPayload packet250custompayload)
+    {
         DataInputStream datainputstream;
         ItemStack itemstack;
         ItemStack itemstack1;
@@ -1534,5 +1568,14 @@ public class NetServerHandler extends NetHandler {
                 // CraftBukkit end
             }
         }
+    }
+    
+
+    /**
+     * Contains logic for handling packets containing arbitrary unique item data. Currently this is only for maps.
+     */
+    public void a(Packet131ItemData var1)
+    {
+        FMLNetworkHandler.handlePacket131Packet(this, var1);
     }
 }

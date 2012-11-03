@@ -13,6 +13,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import cpw.mods.fml.common.FMLCommonHandler;
+import cpw.mods.fml.common.Side;
 import cpw.mods.fml.relauncher.ArgsWrapper;
 import cpw.mods.fml.relauncher.FMLRelauncher;
 
@@ -26,6 +27,14 @@ import org.bukkit.craftbukkit.util.Waitable;
 import org.bukkit.event.server.RemoteServerCommandEvent;
 import org.bukkit.event.world.WorldSaveEvent;
 // CraftBukkit end
+import cpw.mods.fml.relauncher.ArgsWrapper;
+import cpw.mods.fml.relauncher.FMLRelauncher;
+import cpw.mods.fml.common.FMLCommonHandler;
+import net.minecraftforge.common.DimensionManager;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.world.WorldEvent$Load;
+import net.minecraftforge.event.world.WorldEvent$Unload;
+import java.util.Hashtable;
 
 public abstract class MinecraftServer implements Runnable, IMojangStatistics, ICommandListener {
 
@@ -87,6 +96,7 @@ public abstract class MinecraftServer implements Runnable, IMojangStatistics, IC
     public java.util.Queue<Runnable> processQueue = new java.util.concurrent.ConcurrentLinkedQueue<Runnable>();
     public int autosavePeriod;
     // CraftBukkit end
+    public Hashtable worldTickTimes = new Hashtable();
 
     public MinecraftServer(OptionSet options) { // CraftBukkit - signature file -> OptionSet
         l = this;
@@ -162,27 +172,14 @@ public abstract class MinecraftServer implements Runnable, IMojangStatistics, IC
         IDataManager idatamanager = this.convertable.a(s, true);
         WorldData worlddata = idatamanager.getWorldData();
         // CraftBukkit start - removed worldsettings
-        int worldCount = 3;
+
+        Integer[] var11 = DimensionManager.getStaticDimensionIDs();
+        int worldCount = var11.length;
+        World mainw = null;
 
         for (int j = 0; j < worldCount; ++j) {
             WorldServer world;
-            int dimension = 0;
-
-            if (j == 1) {
-                if (this.getAllowNether()) {
-                    dimension = -1;
-                } else {
-                    continue;
-                }
-            }
-
-            if (j == 2) {
-                if (this.server.getAllowEnd()) {
-                    dimension = 1;
-                } else {
-                    continue;
-                }
-            }
+            int dimension = var11[j];
 
             String worldType = Environment.getEnvironment(dimension).toString().toLowerCase();
             String name = (dimension == 0) ? s : s + "_" + worldType;
@@ -199,7 +196,9 @@ public abstract class MinecraftServer implements Runnable, IMojangStatistics, IC
                     // CraftBukkit
                     world = new WorldServer(this, new ServerNBTManager(server.getWorldContainer(), s1, true), s1, dimension, worldsettings, this.methodProfiler, Environment.getEnvironment(dimension), gen);
                 }
+                mainw = world;
             } else {
+ /*
                 String dim = "DIM" + dimension;
 
                 File newWorld = new File(new File(name), dim);
@@ -229,7 +228,7 @@ public abstract class MinecraftServer implements Runnable, IMojangStatistics, IC
                 }
 
                 this.c(name);
-
+*/
                 // CraftBukkit
                 world = new SecondaryWorldServer(this, new ServerNBTManager(server.getWorldContainer(), name, true), name, dimension, worldsettings, this.worlds.get(0), this.methodProfiler, Environment.getEnvironment(dimension), gen);
             }
@@ -247,8 +246,10 @@ public abstract class MinecraftServer implements Runnable, IMojangStatistics, IC
             this.worlds.add(world);
             this.t.setPlayerFileData(this.worlds.toArray(new WorldServer[this.worlds.size()]));
             // CraftBukkit end
+            MinecraftForge.EVENT_BUS.post(new WorldEvent$Load(world));
         }
 
+        this.t.setPlayerFileData(new WorldServer[] {(WorldServer)mainw});
         this.c(this.getDifficulty());
         this.e();
     }
@@ -368,6 +369,13 @@ public abstract class MinecraftServer implements Runnable, IMojangStatistics, IC
                 worldserver.saveLevel();
             }
             // CraftBukkit end */
+            
+            for (int j = 0; j < this.worlds.size(); ++j) 
+            {
+                WorldServer worldserver = this.worlds.get(j);
+                MinecraftForge.EVENT_BUS.post(new WorldEvent$Unload(worldserver));
+                DimensionManager.setWorld(worldserver.worldProvider.dimension, (WorldServer)null);
+            }
             if (this.n != null && this.n.d()) {
                 this.n.e();
             }
@@ -393,7 +401,9 @@ public abstract class MinecraftServer implements Runnable, IMojangStatistics, IC
     public void run() {
         try {
             if (this.init()) {
+            	FMLCommonHandler.instance().handleServerStarted();
                 long i = System.currentTimeMillis();
+                FMLCommonHandler.instance().onWorldLoadTick(this.worlds.toArray(new WorldServer[this.worlds.size()]));
 
                 for (long j = 0L; this.isRunning; this.Q = true) {
                     long k = System.currentTimeMillis();
@@ -426,6 +436,7 @@ public abstract class MinecraftServer implements Runnable, IMojangStatistics, IC
 
                     Thread.sleep(1L);
                 }
+                FMLCommonHandler.instance().handleServerStopping();
             } else {
                 this.a((CrashReport) null);
             }
@@ -475,10 +486,16 @@ public abstract class MinecraftServer implements Runnable, IMojangStatistics, IC
 
     protected void p() {}
 
+    /**
+     * Main function called by run() every loop.
+     */
     protected void q() throws ExceptionWorldConflict { // CraftBukkit - added throws
-        long i = System.nanoTime();
+    	FMLCommonHandler.instance().rescheduleTicks(Side.SERVER);
+    	long i = System.nanoTime();
 
         AxisAlignedBB.a().a();
+        FMLCommonHandler.instance().onPreServerTick();
+        
         ++this.ticks;
         if (this.T) {
             this.T = false;
@@ -517,6 +534,7 @@ public abstract class MinecraftServer implements Runnable, IMojangStatistics, IC
 
         this.methodProfiler.b();
         this.methodProfiler.b();
+        FMLCommonHandler.instance().onPostServerTick();
     }
 
     public void r() {
@@ -557,8 +575,10 @@ public abstract class MinecraftServer implements Runnable, IMojangStatistics, IC
                 // CraftBukkit end */
 
                 this.methodProfiler.a("tick");
+                FMLCommonHandler.instance().onPreWorldTick(worldserver);
                 worldserver.doTick();
                 worldserver.tickEntities();
+                FMLCommonHandler.instance().onPostWorldTick(worldserver);
                 this.methodProfiler.b();
                 this.methodProfiler.a("tracker");
                 worldserver.getTracker().updatePlayers();
@@ -567,8 +587,11 @@ public abstract class MinecraftServer implements Runnable, IMojangStatistics, IC
             // } // CraftBukkit
 
             // this.k[i][this.ticks % 100] = System.nanoTime() - j; // CraftBukkit
+                ((long[])this.worldTickTimes.get(i))[this.ticks % 100] = System.nanoTime() - j;
         }
-
+        this.methodProfiler.c("dim_unloading");
+        DimensionManager.unloadWorlds(this.worldTickTimes);
+        
         this.methodProfiler.c("connection");
         this.ae().b();
         this.methodProfiler.c("players");
@@ -589,10 +612,12 @@ public abstract class MinecraftServer implements Runnable, IMojangStatistics, IC
         return true;
     }
 
+    // TODO: Disabled in forge
     public void a(IUpdatePlayerListBox iupdateplayerlistbox) {
         this.p.add(iupdateplayerlistbox);
     }
 
+ // TODO: Disabled in forge
     public static void main(final OptionSet options) { // CraftBukkit - replaces main(String[] astring)
         StatisticList.a();
 
@@ -820,7 +845,7 @@ public abstract class MinecraftServer implements Runnable, IMojangStatistics, IC
     }
 
     public String getServerModName() {
-        return "craftbukkit"; // CraftBukkit - cb > vanilla!
+        return "craftbukkit,forge,fml"; // CraftBukkit - cb > vanilla!
     }
 
     public CrashReport b(CrashReport crashreport) {
@@ -992,6 +1017,10 @@ public abstract class MinecraftServer implements Runnable, IMojangStatistics, IC
         return this.convertable;
     }
 
+    /**
+     * WARNING : directly calls
+     * getActiveAnvilConverter().deleteWorldDirectory(theWorldServer[0].getSaveHandler().getSaveDirectoryName());
+     */
     public void P() {
         this.O = true;
         this.getConvertable().d();
@@ -1002,6 +1031,7 @@ public abstract class MinecraftServer implements Runnable, IMojangStatistics, IC
             // CraftBukkit end
 
             if (worldserver != null) {
+            	MinecraftForge.EVENT_BUS.post(new WorldEvent$Unload(worldserver));
                 worldserver.saveLevel();
             }
         }

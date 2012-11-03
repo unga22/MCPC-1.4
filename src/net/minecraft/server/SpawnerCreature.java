@@ -1,6 +1,11 @@
 package net.minecraft.server;
 
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.entity.living.LivingSpecialSpawnEvent;
+
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -92,7 +97,10 @@ public final class SpawnerCreature {
 
                 if ((!enumcreaturetype.d() || flag1) && (enumcreaturetype.d() || flag) && (!enumcreaturetype.e() || flag2) && worldserver.a(enumcreaturetype.a()) <= limit * b.size() / 256) { // CraftBukkit - use per-world limits
                     Iterator iterator = b.keySet().iterator();
-
+                    ArrayList var39 = new ArrayList(b.keySet());
+                    Collections.shuffle(var39);
+                    iterator = var39.iterator();
+                    
                     label110:
                     while (iterator.hasNext()) {
                         // CraftBukkit start
@@ -186,21 +194,37 @@ public final class SpawnerCreature {
         }
     }
 
-    public static boolean a(EnumCreatureType enumcreaturetype, World world, int i, int j, int k) {
-        if (enumcreaturetype.c() == Material.WATER) {
-            return world.getMaterial(i, j, k).isLiquid() && !world.s(i, j + 1, k);
-        } else if (!world.t(i, j - 1, k)) {
+    /**
+     * Returns whether or not the specified creature type can spawn at the specified location.
+     */
+    public static boolean a(EnumCreatureType var0, World var1, int var2, int var3, int var4)
+    {
+        if (var0.c() == Material.WATER)
+        {
+            return var1.getMaterial(var2, var3, var4).isLiquid() && !var1.s(var2, var3 + 1, var4);
+        }
+        else if (!var1.t(var2, var3 - 1, var4))
+        {
             return false;
-        } else {
-            int l = world.getTypeId(i, j - 1, k);
-
-            return l != Block.BEDROCK.id && !world.s(i, j, k) && !world.getMaterial(i, j, k).isLiquid() && !world.s(i, j + 1, k);
+        }
+        else
+        {
+            int var5 = var1.getTypeId(var2, var3 - 1, var4);
+            boolean var6 = Block.byId[var5] != null && Block.byId[var5].canCreatureSpawn(var0, var1, var2, var3 - 1, var4);
+            return var6 && var5 != Block.BEDROCK.id && !var1.s(var2, var3, var4) && !var1.getMaterial(var2, var3, var4).isLiquid() && !var1.s(var2, var3 + 1, var4);
         }
     }
-
-    private static void a(EntityLiving entityliving, World world, float f, float f1, float f2) {
-        if (entityliving.dead) return; // CraftBukkit
-        entityliving.bD();
+    
+    /**
+     * determines if a skeleton spawns on a spider, and if a sheep is a different color
+     */
+    private static void a(EntityLiving var0, World var1, float var2, float var3, float var4)
+    {
+    	if (var0.dead) return; // CraftBukkit
+        if (!MinecraftForge.EVENT_BUS.post(new LivingSpecialSpawnEvent(var0, var1, var2, var3, var4)))
+        {
+            var0.bD();
+        }
     }
 
     public static void a(World world, BiomeBase biomebase, int i, int j, int k, int l, Random random) {

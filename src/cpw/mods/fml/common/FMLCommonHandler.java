@@ -35,6 +35,7 @@ import net.minecraft.server.ThreadServerApplication;
 import net.minecraft.server.World;
 import net.minecraft.server.WorldData;
 import net.minecraft.server.WorldNBTStorage;
+import net.minecraft.server.WorldServer;
 
 public class FMLCommonHandler
 {
@@ -257,6 +258,19 @@ public class FMLCommonHandler
         for (int var4 = 0; var4 < var3; ++var4)
         {
             World var5 = var2[var4];
+            this.tickStart(EnumSet.of(TickType.WORLDLOAD), Side.SERVER, new Object[] {var5});
+        }
+    }
+    
+    // added an override; AlphA
+    public void onWorldLoadTick(WorldServer[] var1)
+    {
+        this.rescheduleTicks(Side.SERVER);
+        int var3 = var1.length;
+
+        for (int var4 = 0; var4 < var3; ++var4)
+        {
+            World var5 = var1[var4];
             this.tickStart(EnumSet.of(TickType.WORLDLOAD), Side.SERVER, new Object[] {var5});
         }
     }

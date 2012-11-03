@@ -99,7 +99,7 @@ public class StatisticList
     private static boolean G;
     private static boolean H;
 
-    public static void func_75919_a() {}
+    public static void a() {}
 
     /**
      * Initializes statistic fields related to breakable items and blocks.
@@ -271,12 +271,6 @@ public class StatisticList
             c.remove(var0[var1]);
             var0[var1] = var0[var2];
         }
-    }
-
-    @SideOnly(Side.CLIENT)
-    public static Statistic a(int var0)
-    {
-        return (Statistic)a.get(Integer.valueOf(var0));
     }
 
     static

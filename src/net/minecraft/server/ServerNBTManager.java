@@ -42,14 +42,7 @@ public class ServerNBTManager extends WorldNBTStorage
      */
     public void a()
     {
-        try
-        {
-            FileIOThread.a.a();
-        }
-        catch (InterruptedException var2)
-        {
-            var2.printStackTrace();
-        }
+        FileIOThread.a.a();
 
         RegionFileCache.a();
     }

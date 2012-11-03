@@ -313,7 +313,7 @@ public abstract class Packet {
         a(107, true, true, Packet107SetCreativeSlot.class);
         a(108, false, true, Packet108ButtonClick.class);
         a(130, true, true, Packet130UpdateSign.class);
-        a(131, true, false, Packet131ItemData.class);
+        a(131, true, true, Packet131ItemData.class); // forge - true
         a(132, true, false, Packet132TileEntityData.class);
         a(200, true, false, Packet200Statistic.class);
         a(201, true, false, Packet201PlayerInfo.class);

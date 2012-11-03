@@ -72,6 +72,15 @@ public class Packet51MapChunk extends Packet {
         }
 
         j = 12288 * i;
+        int var4 = 0;
+
+        for (int var5 = 0; var5 < 16; ++var5)
+        {
+            var4 += this.d >> var5 & 1;
+        }
+
+        j += 2048 * var4;
+        
         if (this.e) {
             j += 256;
         }

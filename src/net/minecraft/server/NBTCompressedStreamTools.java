@@ -26,18 +26,15 @@ public class NBTCompressedStreamTools
     public static NBTTagCompound a(InputStream var0) throws IOException
     {
         DataInputStream var1 = new DataInputStream(new BufferedInputStream(new GZIPInputStream(var0)));
-        NBTTagCompound var2;
 
         try
         {
-            var2 = a(var1);
+            return a(var1);
         }
         finally
         {
             var1.close();
         }
-
-        return var2;
     }
 
     /**
@@ -91,37 +88,10 @@ public class NBTCompressedStreamTools
         return var1.toByteArray();
     }
 
-    @SideOnly(Side.CLIENT)
-    public static void a(NBTTagCompound var0, File var1) throws IOException
-    {
-        File var2 = new File(var1.getAbsolutePath() + "_tmp");
-
-        if (var2.exists())
-        {
-            var2.delete();
-        }
-
-        b(var0, var2);
-
-        if (var1.exists())
-        {
-            var1.delete();
-        }
-
-        if (var1.exists())
-        {
-            throw new IOException("Failed to delete " + var1);
-        }
-        else
-        {
-            var2.renameTo(var1);
-        }
-    }
-
     /**
      * Reads from a CompressedStream.
      */
-    public static NBTTagCompound a(DataInput var0) throws IOException
+    public static NBTTagCompound a(DataInputStream var0) throws IOException
     {
         NBTBase var1 = NBTBase.b(var0);
 
@@ -135,7 +105,7 @@ public class NBTCompressedStreamTools
         }
     }
 
-    public static void a(NBTTagCompound var0, DataOutput var1) throws IOException
+    public static void a(NBTTagCompound var0, DataOutputStream var1) throws IOException
     {
         NBTBase.a(var0, var1);
     }

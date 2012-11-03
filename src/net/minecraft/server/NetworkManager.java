@@ -1,5 +1,6 @@
 package net.minecraft.server;
 
+import cpw.mods.fml.common.network.FMLNetworkHandler;
 import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -285,6 +286,7 @@ public class NetworkManager implements INetworkManager {
         this.a();
         if (this.n && this.inboundQueue.isEmpty()) {
             this.packetListener.a(this.v, this.w);
+            FMLNetworkHandler.onConnectionClosed(this, this.packetListener.getPlayerH());
         }
     }
 

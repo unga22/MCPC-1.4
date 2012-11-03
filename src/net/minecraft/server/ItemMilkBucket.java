@@ -37,7 +37,7 @@ public class ItemMilkBucket extends Item
      */
     public EnumAnimation d_(ItemStack var1)
     {
-        return EnumAnimation.drink;
+        return EnumAnimation.c;
     }
 
     /**
