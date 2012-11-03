@@ -1,5 +1,11 @@
 package net.minecraft.server;
 
+import net.minecraftforge.common.ChestGenHooks;
+import net.minecraftforge.common.DimensionManager;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.world.WorldEvent$Save;
+import java.io.File;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -32,8 +38,9 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
     private int emptyTime = 0;
     private NoteDataList[] Q = new NoteDataList[] { new NoteDataList((EmptyClass2) null), new NoteDataList((EmptyClass2) null)};
     private int R = 0;
-    private static final StructurePieceTreasure[] S = new StructurePieceTreasure[] { new StructurePieceTreasure(Item.STICK.id, 0, 1, 3, 10), new StructurePieceTreasure(Block.WOOD.id, 0, 1, 3, 10), new StructurePieceTreasure(Block.LOG.id, 0, 1, 3, 10), new StructurePieceTreasure(Item.STONE_AXE.id, 0, 1, 1, 3), new StructurePieceTreasure(Item.WOOD_AXE.id, 0, 1, 1, 5), new StructurePieceTreasure(Item.STONE_PICKAXE.id, 0, 1, 1, 3), new StructurePieceTreasure(Item.WOOD_PICKAXE.id, 0, 1, 1, 5), new StructurePieceTreasure(Item.APPLE.id, 0, 2, 3, 5), new StructurePieceTreasure(Item.BREAD.id, 0, 2, 3, 3)};
+    public static final StructurePieceTreasure[] S = new StructurePieceTreasure[] { new StructurePieceTreasure(Item.STICK.id, 0, 1, 3, 10), new StructurePieceTreasure(Block.WOOD.id, 0, 1, 3, 10), new StructurePieceTreasure(Block.LOG.id, 0, 1, 3, 10), new StructurePieceTreasure(Item.STONE_AXE.id, 0, 1, 1, 3), new StructurePieceTreasure(Item.WOOD_AXE.id, 0, 1, 1, 5), new StructurePieceTreasure(Item.STONE_PICKAXE.id, 0, 1, 1, 3), new StructurePieceTreasure(Item.WOOD_PICKAXE.id, 0, 1, 1, 5), new StructurePieceTreasure(Item.APPLE.id, 0, 2, 3, 5), new StructurePieceTreasure(Item.BREAD.id, 0, 2, 3, 3)};
     private IntHashMap entitiesById;
+    protected Set doneChunks = new HashSet();
 
     // CraftBukkit start
     public final int dimension;
@@ -57,6 +64,7 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
         if (this.N == null) {
             this.N = new TreeSet();
         }
+        DimensionManager.setWorld(i, this);
     }
 
     // CraftBukkit start
@@ -214,6 +222,8 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
     }
 
     private void T() {
+    	// this.worldProvider.resetRainAndThunder(); -- forge
+    	
         // CraftBukkit start
         WeatherChangeEvent weather = new WeatherChangeEvent(this.getWorld(), false);
         this.getServer().getPluginManager().callEvent(weather);
@@ -286,7 +296,7 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
             int k1;
             int l1;
 
-            if (this.random.nextInt(100000) == 0 && this.M() && this.L()) {
+            if (this.worldProvider.canDoLightning(chunk) && this.random.nextInt(100000) == 0 && this.M() && this.L()) {
                 this.k = this.k * 3 + 1013904223;
                 i1 = this.k >> 2;
                 j1 = k + (i1 & 15);
@@ -301,7 +311,7 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
             this.methodProfiler.c("iceandsnow");
             int i2;
 
-            if (this.random.nextInt(16) == 0) {
+            if (this.worldProvider.canDoRainSnowIce(chunk) && this.random.nextInt(16) == 0) {
                 this.k = this.k * 3 + 1013904223;
                 i1 = this.k >> 2;
                 j1 = i1 & 15;
@@ -383,7 +393,8 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
 
     public void a(int i, int j, int k, int l, int i1, int j1) {
         NextTickListEntry nextticklistentry = new NextTickListEntry(i, j, k, l);
-        byte b0 = 8;
+        boolean var8 = this.getPersistentChunks().containsKey(new ChunkCoordIntPair(nextticklistentry.a >> 4, nextticklistentry.c >> 4));
+         int b0 = var8 ? 0 : 8;
 
         if (this.d && l > 0) {
             if (Block.byId[l].l()) {
@@ -428,8 +439,8 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
     }
 
     public void tickEntities() {
-        if (false && this.players.isEmpty()) { // CraftBukkit - this prevents entity cleanup, other issues on servers with no players
-            if (this.emptyTime++ >= 1200) {
+        if (this.players.isEmpty() && this.getPersistentChunks().isEmpty()) { // CraftBukkit - this prevents entity cleanup, other issues on servers with no players
+            if (this.emptyTime++ >= 1200) { // forge - enabled again with the extra check
                 return;
             }
         } else {
@@ -468,7 +479,9 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
 
                 this.N.remove(nextticklistentry);
                 this.M.remove(nextticklistentry);
-                byte b0 = 8;
+                
+                boolean var5 = this.getPersistentChunks().containsKey(new ChunkCoordIntPair(nextticklistentry.a >> 4, nextticklistentry.c >> 4));
+                int b0 = var5 ? 0 : 8;
 
                 if (this.d(nextticklistentry.a - b0, nextticklistentry.b - b0, nextticklistentry.c - b0, nextticklistentry.a + b0, nextticklistentry.b + b0, nextticklistentry.c + b0)) {
                     int k = this.getTypeId(nextticklistentry.a, nextticklistentry.b, nextticklistentry.c);
@@ -553,22 +566,46 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
         return this.chunkProviderServer;
     }
 
-    public List getTileEntities(int i, int j, int k, int l, int i1, int j1) {
-        ArrayList arraylist = new ArrayList();
-        Iterator iterator = this.tileEntityList.iterator();
+    /**
+     * get a list of tileEntity's
+     */
+    public List getTileEntities(int var1, int var2, int var3, int var4, int var5, int var6)
+    {
+        ArrayList var7 = new ArrayList();
 
-        while (iterator.hasNext()) {
-            TileEntity tileentity = (TileEntity) iterator.next();
+        for (int var8 = var1 >> 4; var8 <= var4 >> 4; ++var8)
+        {
+            for (int var9 = var3 >> 4; var9 <= var6 >> 4; ++var9)
+            {
+                Chunk var10 = this.getChunkAt(var8, var9);
 
-            if (tileentity.x >= i && tileentity.y >= j && tileentity.z >= k && tileentity.x < l && tileentity.y < i1 && tileentity.z < j1) {
-                arraylist.add(tileentity);
+                if (var10 != null)
+                {
+                    Iterator var11 = var10.tileEntities.values().iterator();
+
+                    while (var11.hasNext())
+                    {
+                        Object var12 = var11.next();
+                        TileEntity var13 = (TileEntity)var12;
+
+                        if (!var13.r() && var13.x >= var1 && var13.y >= var2 && var13.z >= var3 && var13.x <= var4 && var13.y <= var5 && var13.z <= var6)
+                        {
+                            var7.add(var13);
+                        }
+                    }
+                }
             }
         }
 
-        return arraylist;
+        return var7;
     }
 
     public boolean a(EntityHuman entityhuman, int i, int j, int k) {
+        return super.a(entityhuman, i, j, k);
+    }
+
+    public boolean canMineBlockBody(EntityHuman entityhuman, int i, int j, int k)
+    {
         int l = MathHelper.a(i - this.worldData.c());
         int i1 = MathHelper.a(k - this.worldData.e());
 
@@ -654,7 +691,7 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
     }
 
     protected void k() {
-        WorldGenBonusChest worldgenbonuschest = new WorldGenBonusChest(S, 10);
+        WorldGenBonusChest worldgenbonuschest = new WorldGenBonusChest(ChestGenHooks.getItems("bonusChest"), ChestGenHooks.getCount("bonusChest", this.random));
 
         for (int i = 0; i < 10; ++i) {
             int j = this.worldData.c() + this.random.nextInt(6) - this.random.nextInt(6);
@@ -683,6 +720,7 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
             }
 
             this.chunkProvider.saveChunks(flag, iprogressupdate);
+            MinecraftForge.EVENT_BUS.post(new WorldEvent$Save(this));
         }
     }
 
@@ -690,6 +728,7 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
         this.C();
         this.dataManager.saveWorldData(this.worldData, this.server.getServerConfigurationManager().q());
         this.worldMaps.a();
+        this.perWorldStorage.a();
     }
 
     protected void a(Entity entity) {
@@ -864,5 +903,10 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
 
     public PlayerManager getPlayerManager() {
         return this.manager;
+    }
+    
+    public File getChunkSaveLocation()
+    {
+        return ((ChunkRegionLoader)this.chunkProviderServer.e).d;
     }
 }

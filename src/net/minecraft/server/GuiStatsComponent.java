@@ -51,7 +51,7 @@ public class GuiStatsComponent extends JComponent
         this.d[3] = "Avg sent: " + (int)this.a(this.e.f) + ", Avg size: " + (int)this.a(this.e.g);
         this.d[4] = "Avg rec: " + (int)this.a(this.e.h) + ", Avg size: " + (int)this.a(this.e.i);
 
-        if (this.e.worldServer != null)
+        if (this.e.worlds.size() > 0)
         {
             int var3 = 0;
             Integer[] var4 = DimensionManager.getIDs();

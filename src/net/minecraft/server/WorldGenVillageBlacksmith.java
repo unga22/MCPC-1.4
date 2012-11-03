@@ -18,7 +18,7 @@ public class WorldGenVillageBlacksmith extends WorldGenVillagePiece
         this.e = var4;
     }
 
-    public static WorldGenVillageBlacksmith func_74915_a(WorldGenVillageStartPiece var0, List var1, Random var2, int var3, int var4, int var5, int var6, int var7)
+    public static WorldGenVillageBlacksmith a(WorldGenVillageStartPiece var0, List var1, Random var2, int var3, int var4, int var5, int var6, int var7)
     {
         StructureBoundingBox var8 = StructureBoundingBox.a(var3, var4, var5, 0, 0, 0, 10, 6, 7, var6);
         return a(var8) && StructurePiece.a(var1, var8) == null ? new WorldGenVillageBlacksmith(var0, var7, var2, var8, var6) : null;

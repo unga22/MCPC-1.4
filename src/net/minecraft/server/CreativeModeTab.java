@@ -57,52 +57,10 @@ public class CreativeModeTab
         a[var1] = this;
     }
 
-    @SideOnly(Side.CLIENT)
-    public int a()
-    {
-        return this.n;
-    }
-
     public CreativeModeTab a(String var1)
     {
         this.p = var1;
         return this;
-    }
-
-    @SideOnly(Side.CLIENT)
-    public String b()
-    {
-        return this.o;
-    }
-
-    @SideOnly(Side.CLIENT)
-    public String c()
-    {
-        return LocaleLanguage.a().b("itemGroup." + this.b());
-    }
-
-    @SideOnly(Side.CLIENT)
-    public Item d()
-    {
-        return Item.byId[this.e()];
-    }
-
-    @SideOnly(Side.CLIENT)
-    public int e()
-    {
-        return 1;
-    }
-
-    @SideOnly(Side.CLIENT)
-    public String f()
-    {
-        return this.p;
-    }
-
-    @SideOnly(Side.CLIENT)
-    public boolean g()
-    {
-        return this.r;
     }
 
     public CreativeModeTab h()
@@ -111,45 +69,10 @@ public class CreativeModeTab
         return this;
     }
 
-    @SideOnly(Side.CLIENT)
-    public boolean i()
-    {
-        return this.q;
-    }
-
     public CreativeModeTab j()
     {
         this.q = false;
         return this;
-    }
-
-    @SideOnly(Side.CLIENT)
-    public int k()
-    {
-        return this.n > 11 ? (this.n - 12) % 10 % 5 : this.n % 6;
-    }
-
-    @SideOnly(Side.CLIENT)
-    public boolean l()
-    {
-        return this.n > 11 ? (this.n - 12) % 10 < 5 : this.n < 6;
-    }
-
-    @SideOnly(Side.CLIENT)
-    public void a(List var1)
-    {
-        Item[] var2 = Item.byId;
-        int var3 = var2.length;
-
-        for (int var4 = 0; var4 < var3; ++var4)
-        {
-            Item var5 = var2[var4];
-
-            if (var5 != null && var5.w() == this)
-            {
-                var5.a(var5.id, this, var1);
-            }
-        }
     }
 
     public int getTabPage()
@@ -160,6 +83,16 @@ public class CreativeModeTab
     public static int getNextID()
     {
         return a.length;
+    }
+
+    public Item d()
+    {
+        return Item.byId[this.e()];
+    }
+
+    public int e()
+    {
+        return 1;
     }
 
     public ItemStack getIconItemStack()

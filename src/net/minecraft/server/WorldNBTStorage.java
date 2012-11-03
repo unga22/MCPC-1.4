@@ -1,5 +1,6 @@
 package net.minecraft.server;
 
+import cpw.mods.fml.common.FMLCommonHandler;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
@@ -81,29 +82,47 @@ public class WorldNBTStorage implements IDataManager, PlayerFileData {
         throw new RuntimeException("Old Chunk Storage is no longer supported.");
     }
 
-    public WorldData getWorldData() {
-        File file1 = new File(this.baseDir, "level.dat");
-        NBTTagCompound nbttagcompound;
-        NBTTagCompound nbttagcompound1;
+    /**
+     * Loads and returns the world info
+     */
+    public WorldData getWorldData()
+    {
+        File var1 = new File(this.baseDir, "level.dat");
+        WorldData var4 = null;
+        NBTTagCompound var2;
+        NBTTagCompound var3;
 
-        if (file1.exists()) {
-            try {
-                nbttagcompound = NBTCompressedStreamTools.a((InputStream) (new FileInputStream(file1)));
-                nbttagcompound1 = nbttagcompound.getCompound("Data");
-                return new WorldData(nbttagcompound1);
-            } catch (Exception exception) {
-                exception.printStackTrace();
+        if (var1.exists())
+        {
+            try
+            {
+                var2 = NBTCompressedStreamTools.a(new FileInputStream(var1));
+                var3 = var2.getCompound("Data");
+                var4 = new WorldData(var3);
+                FMLCommonHandler.instance().handleWorldDataLoad(this, var4, var2);
+                return var4;
+            }
+            catch (Exception var7)
+            {
+                var7.printStackTrace();
             }
         }
 
-        file1 = new File(this.baseDir, "level.dat_old");
-        if (file1.exists()) {
-            try {
-                nbttagcompound = NBTCompressedStreamTools.a((InputStream) (new FileInputStream(file1)));
-                nbttagcompound1 = nbttagcompound.getCompound("Data");
-                return new WorldData(nbttagcompound1);
-            } catch (Exception exception1) {
-                exception1.printStackTrace();
+        var1 = new File(this.baseDir, "level.dat_old");
+
+        if (var1.exists())
+        {
+            try
+            {
+                var2 = NBTCompressedStreamTools.a(new FileInputStream(var1));
+                var3 = var2.getCompound("Data");
+                var4 = new WorldData(var3);
+                FMLCommonHandler.instance().handleWorldDataLoad(this, var4, var2);
+                return var4;
+            }
+            catch (Exception var6)
+            {
+                var6.printStackTrace();
             }
         }
 
@@ -115,6 +134,7 @@ public class WorldNBTStorage implements IDataManager, PlayerFileData {
         NBTTagCompound nbttagcompound2 = new NBTTagCompound();
 
         nbttagcompound2.set("Data", nbttagcompound1);
+        FMLCommonHandler.instance().handleWorldDataSave(this, worlddata, nbttagcompound2);
 
         try {
             File file1 = new File(this.baseDir, "level.dat_new");
@@ -145,6 +165,7 @@ public class WorldNBTStorage implements IDataManager, PlayerFileData {
         NBTTagCompound nbttagcompound1 = new NBTTagCompound();
 
         nbttagcompound1.set("Data", nbttagcompound);
+        FMLCommonHandler.instance().handleWorldDataSave(this, worlddata, nbttagcompound1);
 
         try {
             File file1 = new File(this.baseDir, "level.dat_new");

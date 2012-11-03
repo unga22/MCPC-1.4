@@ -47,7 +47,7 @@ public class WorldGenStrongholdChestCorridor extends WorldGenStrongholdPiece
         {
             this.a(var1, var3, 0, 0, 0, 4, 4, 6, true, var2, WorldGenStrongholdPieces.b());
             this.a(var1, var2, var3, this.b, 1, 1, 0);
-            this.a(var1, var2, var3, WorldGenStrongholdDoorType.OPENING, 1, 1, 6);
+            this.a(var1, var2, var3, WorldGenStrongholdDoorType.a, 1, 1, 6);
             this.a(var1, var3, 3, 1, 2, 3, 1, 4, Block.SMOOTH_BRICK.id, Block.SMOOTH_BRICK.id, false);
             this.a(var1, Block.STEP.id, 5, 3, 1, 1, var3);
             this.a(var1, Block.STEP.id, 5, 3, 1, 5, var3);

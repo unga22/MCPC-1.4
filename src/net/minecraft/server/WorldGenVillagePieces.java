@@ -60,39 +60,39 @@ public class WorldGenVillagePieces
 
         if (var9 == WorldGenVillageHouse.class)
         {
-            var10 = WorldGenVillageHouse.func_74912_a(var0, var2, var3, var4, var5, var6, var7, var8);
+            var10 = WorldGenVillageHouse.a(var0, var2, var3, var4, var5, var6, var7, var8);
         }
         else if (var9 == WorldGenVillageTemple.class)
         {
-            var10 = WorldGenVillageTemple.func_74919_a(var0, var2, var3, var4, var5, var6, var7, var8);
+            var10 = WorldGenVillageTemple.a(var0, var2, var3, var4, var5, var6, var7, var8);
         }
         else if (var9 == WorldGenVillageLibrary.class)
         {
-            var10 = WorldGenVillageLibrary.func_74898_a(var0, var2, var3, var4, var5, var6, var7, var8);
+            var10 = WorldGenVillageLibrary.a(var0, var2, var3, var4, var5, var6, var7, var8);
         }
         else if (var9 == WorldGenVillageHut.class)
         {
-            var10 = WorldGenVillageHut.func_74908_a(var0, var2, var3, var4, var5, var6, var7, var8);
+            var10 = WorldGenVillageHut.a(var0, var2, var3, var4, var5, var6, var7, var8);
         }
         else if (var9 == WorldGenVillageButcher.class)
         {
-            var10 = WorldGenVillageButcher.func_74906_a(var0, var2, var3, var4, var5, var6, var7, var8);
+            var10 = WorldGenVillageButcher.a(var0, var2, var3, var4, var5, var6, var7, var8);
         }
         else if (var9 == WorldGenVillageFarm2.class)
         {
-            var10 = WorldGenVillageFarm2.func_74900_a(var0, var2, var3, var4, var5, var6, var7, var8);
+            var10 = WorldGenVillageFarm2.a(var0, var2, var3, var4, var5, var6, var7, var8);
         }
         else if (var9 == WorldGenVillageFarm.class)
         {
-            var10 = WorldGenVillageFarm.func_74902_a(var0, var2, var3, var4, var5, var6, var7, var8);
+            var10 = WorldGenVillageFarm.a(var0, var2, var3, var4, var5, var6, var7, var8);
         }
         else if (var9 == WorldGenVillageBlacksmith.class)
         {
-            var10 = WorldGenVillageBlacksmith.func_74915_a(var0, var2, var3, var4, var5, var6, var7, var8);
+            var10 = WorldGenVillageBlacksmith.a(var0, var2, var3, var4, var5, var6, var7, var8);
         }
         else if (var9 == WorldGenVillageHouse2.class)
         {
-            var10 = WorldGenVillageHouse2.func_74921_a(var0, var2, var3, var4, var5, var6, var7, var8);
+            var10 = WorldGenVillageHouse2.a(var0, var2, var3, var4, var5, var6, var7, var8);
         }
         else
         {
@@ -153,7 +153,7 @@ public class WorldGenVillagePieces
                 }
             }
 
-            StructureBoundingBox var14 = WorldGenVillageLight.func_74904_a(var0, var1, var2, var3, var4, var5, var6);
+            StructureBoundingBox var14 = WorldGenVillageLight.a(var0, var1, var2, var3, var4, var5, var6);
 
             if (var14 != null)
             {
@@ -190,7 +190,7 @@ public class WorldGenVillagePieces
                 if (var0.d().a(var9, var10, var13 / 2 + 4, WorldGenVillage.e))
                 {
                     var1.add(var8);
-                    var0.field_74932_i.add(var8);
+                    var0.i.add(var8);
                     return var8;
                 }
             }
@@ -211,7 +211,7 @@ public class WorldGenVillagePieces
         }
         else if (Math.abs(var3 - var0.b().a) <= 112 && Math.abs(var5 - var0.b().c) <= 112)
         {
-            StructureBoundingBox var8 = WorldGenVillageRoad.func_74933_a(var0, var1, var2, var3, var4, var5, var6);
+            StructureBoundingBox var8 = WorldGenVillageRoad.a(var0, var1, var2, var3, var4, var5, var6);
 
             if (var8 != null && var8.b > 10)
             {
@@ -225,7 +225,7 @@ public class WorldGenVillagePieces
                 if (var0.d().a(var10, var11, var14 / 2 + 4, WorldGenVillage.e))
                 {
                     var1.add(var9);
-                    var0.field_74930_j.add(var9);
+                    var0.j.add(var9);
                     return var9;
                 }
             }

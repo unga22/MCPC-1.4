@@ -15,6 +15,8 @@ public class WorldGenTaiga1 extends WorldGenerator implements BlockSapling.TreeG
 
     public boolean generate(BlockChangeDelegate world, Random random, int i, int j, int k) {
         // CraftBukkit end
+    	World w = world instanceof World ? (World)world : null;
+    	
         int l = random.nextInt(5) + 7;
         int i1 = l - random.nextInt(2) - 3;
         int j1 = l - i1;
@@ -41,7 +43,9 @@ public class WorldGenTaiga1 extends WorldGenerator implements BlockSapling.TreeG
                     for (j2 = k - l2; j2 <= k + l2 && flag; ++j2) {
                         if (l1 >= 0 && l1 < 128) {
                             k2 = world.getTypeId(i2, l1, j2);
-                            if (k2 != 0 && k2 != Block.LEAVES.id) {
+                            Block var17 = Block.byId[k2];
+                            
+                            if (k2 != 0 && (var17 == null || !var17.isLeaves(w, i2, l1, j2))) {
                                 flag = false;
                             }
                         } else {
@@ -65,8 +69,10 @@ public class WorldGenTaiga1 extends WorldGenerator implements BlockSapling.TreeG
 
                             for (int i3 = k - l2; i3 <= k + l2; ++i3) {
                                 int j3 = i3 - k;
+                                
+                                Block var17 = Block.byId[world.getTypeId(j2, i2, i3)];
 
-                                if ((Math.abs(k2) != l2 || Math.abs(j3) != l2 || l2 <= 0) && !Block.q[world.getTypeId(j2, i2, i3)]) {
+                                if ((Math.abs(k2) != l2 || Math.abs(j3) != l2 || l2 <= 0) && (var17 == null || !var17.canBeReplacedByLeaves(w, j2, i2, i3))) {
                                     this.setTypeAndData(world, j2, i2, i3, Block.LEAVES.id, 1);
                                 }
                             }
@@ -81,7 +87,10 @@ public class WorldGenTaiga1 extends WorldGenerator implements BlockSapling.TreeG
 
                     for (i2 = 0; i2 < l - 1; ++i2) {
                         j2 = world.getTypeId(i, j + i2, k);
-                        if (j2 == 0 || j2 == Block.LEAVES.id) {
+                        Block var21 = Block.byId[j2];
+
+                        if (j2 == 0 || var21 == null || var21.isLeaves(w, i, j + i2, k))
+                        {
                             this.setTypeAndData(world, i, j + i2, k, Block.LOG.id, 1);
                         }
                     }

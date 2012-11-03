@@ -17,6 +17,9 @@ public class WorldGenForest extends WorldGenerator implements BlockSapling.TreeG
 
     public boolean generate(BlockChangeDelegate world, Random random, int i, int j, int k) {
         // CraftBukkit end
+    	
+    	World w = world instanceof World ? (World)world : null;
+    	
         int l = random.nextInt(3) + 5;
         boolean flag = true;
 
@@ -25,6 +28,7 @@ public class WorldGenForest extends WorldGenerator implements BlockSapling.TreeG
             int j1;
             int k1;
             int l1;
+            Block var13;
 
             for (i1 = j; i1 <= j + 1 + l; ++i1) {
                 byte b0 = 1;
@@ -41,7 +45,9 @@ public class WorldGenForest extends WorldGenerator implements BlockSapling.TreeG
                     for (k1 = k - b0; k1 <= k + b0 && flag; ++k1) {
                         if (i1 >= 0 && i1 < 256) {
                             l1 = world.getTypeId(j1, i1, k1);
-                            if (l1 != 0 && l1 != Block.LEAVES.id) {
+                            var13 = Block.byId[l1];
+                            
+                            if (l1 != 0 && var13 != null && !var13.isLeaves(w, j1, i1, k1)) {
                                 flag = false;
                             }
                         } else {
@@ -69,8 +75,9 @@ public class WorldGenForest extends WorldGenerator implements BlockSapling.TreeG
 
                             for (int k2 = k - k1; k2 <= k + k1; ++k2) {
                                 int l2 = k2 - k;
+                                Block var16 = Block.byId[world.getTypeId(l1, i2, k2)];
 
-                                if ((Math.abs(j2) != k1 || Math.abs(l2) != k1 || random.nextInt(2) != 0 && j1 != 0) && !Block.q[world.getTypeId(l1, i2, k2)]) {
+                                if ((Math.abs(j2) != k1 || Math.abs(l2) != k1 || random.nextInt(2) != 0 && j1 != 0) && (var16 == null || var16.canBeReplacedByLeaves(w, l1, i2, k2))) {
                                     this.setTypeAndData(world, l1, i2, k2, Block.LEAVES.id, 2);
                                 }
                             }
@@ -79,7 +86,9 @@ public class WorldGenForest extends WorldGenerator implements BlockSapling.TreeG
 
                     for (i2 = 0; i2 < l; ++i2) {
                         j1 = world.getTypeId(i, j + i2, k);
-                        if (j1 == 0 || j1 == Block.LEAVES.id) {
+                        var13 = Block.byId[j1];
+                        
+                        if (j1 == 0 || var13 == null || var13.isLeaves(w, i, j + i2, k)) {
                             this.setTypeAndData(world, i, j + i2, k, Block.LOG.id, 2);
                         }
                     }

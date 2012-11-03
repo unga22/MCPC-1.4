@@ -32,7 +32,7 @@ public class WorldGenJungleTemple extends WorldGenScatteredPiece
      */
     public boolean a(World var1, Random var2, StructureBoundingBox var3)
     {
-        if (!this.func_74935_a(var1, var3, 0))
+        if (!this.a(var1, var3, 0))
         {
             return false;
         }

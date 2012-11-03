@@ -26,7 +26,7 @@ public class ChunkRegionLoader implements IAsyncChunkSaver, IChunkLoader {
         this.d = file1;
     }
 
-    public Chunk a(World world, int i, int j) throws IOException {
+    public Chunk a(World world, int i, int j) {
         NBTTagCompound nbttagcompound = null;
         ChunkCoordIntPair chunkcoordintpair = new ChunkCoordIntPair(i, j);
         Object object = this.c;
@@ -53,7 +53,12 @@ public class ChunkRegionLoader implements IAsyncChunkSaver, IChunkLoader {
                 return null;
             }
 
-            nbttagcompound = NBTCompressedStreamTools.a((DataInput) datainputstream);
+            try {
+				nbttagcompound = NBTCompressedStreamTools.a((DataInputStream) datainputstream);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
         }
 
         return this.a(world, i, j, nbttagcompound);
@@ -81,9 +86,14 @@ public class ChunkRegionLoader implements IAsyncChunkSaver, IChunkLoader {
         }
     }
 
-    public void a(World world, Chunk chunk) throws ExceptionWorldConflict, IOException {
+    public void a(World world, Chunk chunk) {
         
-    	world.C();
+    	try {
+			world.C();
+		} catch (ExceptionWorldConflict e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 
         try {
             NBTTagCompound nbttagcompound = new NBTTagCompound();
@@ -144,7 +154,7 @@ public class ChunkRegionLoader implements IAsyncChunkSaver, IChunkLoader {
     public void a(PendingChunkToSave pendingchunktosave) throws java.io.IOException { // CraftBukkit - public -> private, added throws
         DataOutputStream dataoutputstream = RegionFileCache.d(this.d, pendingchunktosave.a.x, pendingchunktosave.a.z);
 
-        NBTCompressedStreamTools.a(pendingchunktosave.b, (DataOutput) dataoutputstream);
+        NBTCompressedStreamTools.a(pendingchunktosave.b, (DataOutputStream) dataoutputstream);
         dataoutputstream.close();
     }
 

@@ -42,15 +42,15 @@ public class WorldGenStronghold extends StructureGenerator
 
             if (((String)var3.getKey()).equals("distance"))
             {
-                this.field_82671_h = MathHelper.func_82713_a((String)var3.getValue(), this.field_82671_h, 1.0D);
+                this.field_82671_h = MathHelper.a((String)var3.getValue(), this.field_82671_h, 1.0D);
             }
             else if (((String)var3.getKey()).equals("count"))
             {
-                this.g = new ChunkCoordIntPair[MathHelper.func_82714_a((String)var3.getValue(), this.g.length, 1)];
+                this.g = new ChunkCoordIntPair[MathHelper.a((String)var3.getValue(), this.g.length, 1)];
             }
             else if (((String)var3.getKey()).equals("spread"))
             {
-                this.field_82672_i = MathHelper.func_82714_a((String)var3.getValue(), this.field_82672_i, 1);
+                this.field_82672_i = MathHelper.a((String)var3.getValue(), this.field_82672_i, 1);
             }
         }
     }

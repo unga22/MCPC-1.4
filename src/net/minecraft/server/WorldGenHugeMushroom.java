@@ -33,6 +33,8 @@ public class WorldGenHugeMushroom extends WorldGenerator implements BlockSapling
     public boolean grow(BlockChangeDelegate world, Random random, int i, int j, int k, org.bukkit.event.world.StructureGrowEvent event, ItemStack itemstack, org.bukkit.craftbukkit.CraftWorld bukkitWorld) {
         // CraftBukkit end
         int l = random.nextInt(2);
+        
+        World w = world instanceof World ? (World)world : null;
 
         if (this.a >= 0) {
             l = this.a;
@@ -46,6 +48,7 @@ public class WorldGenHugeMushroom extends WorldGenerator implements BlockSapling
             int k1;
             int l1;
             int i2;
+            Block var14;
 
             for (j1 = j; j1 <= j + 1 + i1; ++j1) {
                 byte b0 = 3;
@@ -54,14 +57,20 @@ public class WorldGenHugeMushroom extends WorldGenerator implements BlockSapling
                     b0 = 0;
                 }
 
-                for (k1 = i - b0; k1 <= i + b0 && flag; ++k1) {
-                    for (l1 = k - b0; l1 <= k + b0 && flag; ++l1) {
-                        if (j1 >= 0 && j1 < 256) {
+                for (k1 = i - b0; k1 <= i + b0 && flag; ++k1) 
+                {
+                    for (l1 = k - b0; l1 <= k + b0 && flag; ++l1) 
+                    {
+                        if (j1 >= 0 && j1 < 256) 
+                        {
                             i2 = world.getTypeId(k1, j1, l1);
-                            if (i2 != 0 && i2 != Block.LEAVES.id) {
-                                flag = false;
-                            }
-                        } else {
+                            var14 = Block.byId[i2];
+                            
+                            if (i2 != 0 && var14 != null && !var14.isLeaves(w, k1, j1, l1))
+                            	flag = false;
+                        } 
+                        else 
+                        {
                             flag = false;
                         }
                     }
@@ -161,8 +170,10 @@ public class WorldGenHugeMushroom extends WorldGenerator implements BlockSapling
                                 if (l2 == 5 && k1 < j + i1) {
                                     l2 = 0;
                                 }
+                                
+                                Block var16 = Block.byId[world.getTypeId(i2, k1, k2)];
 
-                                if ((l2 != 0 || j >= j + i1 - 1) && !Block.q[world.getTypeId(i2, k1, k2)]) {
+                                if ((l2 != 0 || j >= j + i1 - 1) && (var16 == null || var16.canBeReplacedByLeaves(w, i2, k1, k2))) {
                                     // CraftBukkit start
                                     if (event == null) {
                                        this.setTypeAndData(world, i2, k1, k2, Block.BIG_MUSHROOM_1.id + l, l2);
@@ -180,7 +191,9 @@ public class WorldGenHugeMushroom extends WorldGenerator implements BlockSapling
 
                     for (k1 = 0; k1 < i1; ++k1) {
                         l1 = world.getTypeId(i, j + k1, k);
-                        if (!Block.q[l1]) {
+                        var14 = Block.byId[l1];
+
+                        if (var14 == null || var14.canBeReplacedByLeaves(w, i, j + k1, k)) {
                             // CraftBukkit start
                             if (event == null) {
                                 this.setTypeAndData(world, i, j + k1, k, Block.BIG_MUSHROOM_1.id + l, 10);

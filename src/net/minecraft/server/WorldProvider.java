@@ -2,7 +2,6 @@ package net.minecraft.server;
 
 import cpw.mods.fml.common.Side;
 import cpw.mods.fml.common.asm.SideOnly;
-import net.minecraftforge.client.SkyProvider;
 import net.minecraftforge.common.DimensionManager;
 
 public abstract class WorldProvider
@@ -10,7 +9,7 @@ public abstract class WorldProvider
     /** world object being used */
     public World a;
     public WorldType type;
-    public String field_82913_c;
+    public String c;
 
     /** World chunk manager being used to generate chunks */
     public WorldChunkManager d;
@@ -33,7 +32,6 @@ public abstract class WorldProvider
 
     /** Array for sunrise/sunset colors (RGBA) */
     private float[] i = new float[4];
-    private SkyProvider skyProvider = null;
 
     /**
      * associate an existing world with a World provider, and setup its lightbrightness table
@@ -42,7 +40,7 @@ public abstract class WorldProvider
     {
         this.a = var1;
         this.type = var1.getWorldData().getType();
-        this.field_82913_c = var1.getWorldData().func_82571_y();
+        this.c = var1.getWorldData().getGeneratorOptions();
         this.b();
         this.a();
     }
@@ -74,7 +72,7 @@ public abstract class WorldProvider
      */
     public IChunkProvider getChunkProvider()
     {
-        return this.type.getChunkGenerator(this.a, this.field_82913_c);
+        return this.type.getChunkGenerator(this.a, this.c);
     }
 
     /**
@@ -185,18 +183,6 @@ public abstract class WorldProvider
         return DimensionManager.createProviderFor(var0);
     }
 
-    @SideOnly(Side.CLIENT)
-    public float f()
-    {
-        return 128.0F;
-    }
-
-    @SideOnly(Side.CLIENT)
-    public boolean g()
-    {
-        return true;
-    }
-
     /**
      * Gets the hard-coded portal location to use when entering this dimension.
      */
@@ -208,24 +194,6 @@ public abstract class WorldProvider
     public int getSeaLevel()
     {
         return this.type.getMinimumSpawnHeight(this.a);
-    }
-
-    @SideOnly(Side.CLIENT)
-    public boolean j()
-    {
-        return this.type.hasVoidParticles(this.f);
-    }
-
-    @SideOnly(Side.CLIENT)
-    public double k()
-    {
-        return this.type.voidFadeMagnitude();
-    }
-
-    @SideOnly(Side.CLIENT)
-    public boolean b(int var1, int var2)
-    {
-        return false;
     }
 
     /**
@@ -258,17 +226,6 @@ public abstract class WorldProvider
         return this instanceof WorldProviderHell ? 8.0D : 1.0D;
     }
 
-    @SideOnly(Side.CLIENT)
-    public SkyProvider getSkyProvider()
-    {
-        return this.skyProvider;
-    }
-
-    @SideOnly(Side.CLIENT)
-    public void setSkyProvider(SkyProvider var1)
-    {
-        this.skyProvider = var1;
-    }
 
     public ChunkCoordinates getRandomizedSpawnPoint()
     {
@@ -297,23 +254,6 @@ public abstract class WorldProvider
         return this.a.j < 4;
     }
 
-    @SideOnly(Side.CLIENT)
-    public Vec3D getSkyColor(Entity var1, float var2)
-    {
-        return this.a.getSkyColorBody(var1, var2);
-    }
-
-    @SideOnly(Side.CLIENT)
-    public Vec3D drawClouds(float var1)
-    {
-        return this.a.drawCloudsBody(var1);
-    }
-
-    @SideOnly(Side.CLIENT)
-    public float getStarBrightness(float var1)
-    {
-        return this.a.getStarBrightnessBody(var1);
-    }
 
     public void setAllowedSpawnTypes(boolean var1, boolean var2)
     {

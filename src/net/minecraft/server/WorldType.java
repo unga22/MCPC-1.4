@@ -73,12 +73,6 @@ public class WorldType
         return this.name;
     }
 
-    @SideOnly(Side.CLIENT)
-    public String b()
-    {
-        return "generator." + this.name;
-    }
-
     /**
      * Returns generatorVersion.
      */
@@ -99,12 +93,6 @@ public class WorldType
     {
         this.i = var1;
         return this;
-    }
-
-    @SideOnly(Side.CLIENT)
-    public boolean d()
-    {
-        return this.i;
     }
 
     /**
@@ -142,18 +130,12 @@ public class WorldType
         return null;
     }
 
-    @SideOnly(Side.CLIENT)
-    public int f()
-    {
-        return this.f;
-    }
-
     public WorldChunkManager getChunkManager(World var1)
     {
         if (this == FLAT)
         {
-            WorldGenFlatInfo var2 = WorldGenFlatInfo.func_82651_a(var1.getWorldData().func_82571_y());
-            return new WorldChunkManagerHell(BiomeBase.biomes[var2.func_82648_a()], 0.5F, 0.5F);
+            WorldGenFlatInfo var2 = WorldGenFlatInfo.a(var1.getWorldData().getGeneratorOptions());
+            return new WorldChunkManagerHell(BiomeBase.biomes[var2.a()], 0.5F, 0.5F);
         }
         else
         {
