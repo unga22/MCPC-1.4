@@ -20,7 +20,7 @@ public class ChunkRegionLoader implements IAsyncChunkSaver, IChunkLoader {
     private List a = new ArrayList();
     private Set b = new HashSet();
     private Object c = new Object();
-    final File d;
+    public final File d;
 
     public ChunkRegionLoader(File file1) {
         this.d = file1;

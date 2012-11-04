@@ -405,7 +405,7 @@ public class Item
         return this;
     }
 
-    public String func_77657_g(ItemStack var1)
+    public String j(ItemStack var1)
     {
         String var2 = this.c_(var1);
         return var2 == null ? "" : LocaleI18n.get(var2);
