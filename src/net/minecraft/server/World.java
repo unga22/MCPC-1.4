@@ -52,10 +52,10 @@ public abstract class World implements IBlockAccess {
 	public int j = 0;
 	protected int k = (new Random()).nextInt();
 	protected final int l = 1013904223;
-	protected float m;
-	protected float n;
-	protected float o;
-	protected float p;
+	public float m;
+	public float n;
+	public float o;
+	public float p;
 	protected int q = 0;
 	public int r = 0;
 	public boolean suppressPhysics = false;

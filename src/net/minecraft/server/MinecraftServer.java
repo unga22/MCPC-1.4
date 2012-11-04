@@ -168,101 +168,55 @@ public abstract class MinecraftServer implements Runnable, IMojangStatistics, IC
     protected synchronized void c(String s) {
         this.S = s;
     }
-
-    protected void a(String s, String s1, long i, WorldType worldtype, String s2) {
-        this.b(s);
+    
+    protected void a(String worldName, String dataDir, long uuid, WorldType type, String genSettings)
+    {
+        this.b(worldName);
         this.c("menu.loadingLevel");
-        // CraftBukkit - removed world and ticktime arrays
-        IDataManager idatamanager = this.convertable.a(s, true);
-        WorldData worlddata = idatamanager.getWorldData();
-        // CraftBukkit start - removed worldsettings
+        IDataManager nbtManager = this.convertable.a(worldName, true);
+        WorldData var8 = nbtManager.getWorldData();
+        WorldSettings settings;
 
-        Integer[] var11 = DimensionManager.getStaticDimensionIDs();
-        int worldCount = var11.length;
-        WorldServer mainw = null;
-        
-        org.bukkit.generator.ChunkGenerator gen = this.server.getGenerator(s);
-        WorldSettings worldsettings = new WorldSettings(i, this.getGamemode(), this.getGenerateStructures(), this.isHardcore(), worldtype);
-        worldsettings.a(s2);
-        
-        if (this.M()) { // Strip out DEMO?
-            // CraftBukkit
-        	mainw = new DemoWorldServer(this, new ServerNBTManager(server.getWorldContainer(), s1, true), s1, 0, this.methodProfiler);
-        } else {
-            // CraftBukkit
-        	mainw = new WorldServer(this, new ServerNBTManager(server.getWorldContainer(), s1, true), s1, 0, worldsettings, this.methodProfiler, Environment.getEnvironment(0), gen);
+        if (var8 == null)
+        {
+            settings = new WorldSettings(uuid, this.getGamemode(), this.getGenerateStructures(), this.isHardcore(), type);
+            settings.a(genSettings);
         }
+        else
+            settings = new WorldSettings(var8);
 
-        for (int j = 0; j < worldCount; ++j) {
-            WorldServer world;
-            int dimension = var11[j];
+        if (this.N)
+            settings.a();
+        
+        org.bukkit.generator.ChunkGenerator gen = this.server.getGenerator(dataDir);
 
-            String worldType = Environment.getEnvironment(dimension).toString().toLowerCase();
-            String name = (dimension == 0) ? s : s + "_" + worldType;
+        //dimension 0
+        WorldServer mainWorld = this.M() ? new DemoWorldServer(this, nbtManager, dataDir, 0, this.methodProfiler) : new WorldServer(this, nbtManager, dataDir, 0, settings, this.methodProfiler, Environment.getEnvironment(0), gen);
+        Integer[] dimensions = DimensionManager.getStaticDimensionIDs();
 
-            gen = this.server.getGenerator(name);
-            worldsettings = new WorldSettings(i, this.getGamemode(), this.getGenerateStructures(), this.isHardcore(), worldtype);
-            worldsettings.a(s2);
-
-            if (dimension == 0) {
-                world = mainw;
-            } else {
- /*
-                String dim = "DIM" + dimension;
-
-                File newWorld = new File(new File(name), dim);
-                File oldWorld = new File(new File(s), dim);
-
-                if ((!newWorld.isDirectory()) && (oldWorld.isDirectory())) {
-                    log.info("---- Migration of old " + worldType + " folder required ----");
-                    log.info("Unfortunately due to the way that Minecraft implemented multiworld support in 1.6, Bukkit requires that you move your " + worldType + " folder to a new location in order to operate correctly.");
-                    log.info("We will move this folder for you, but it will mean that you need to move it back should you wish to stop using Bukkit in the future.");
-                    log.info("Attempting to move " + oldWorld + " to " + newWorld + "...");
-
-                    if (newWorld.exists()) {
-                        log.severe("A file or folder already exists at " + newWorld + "!");
-                        log.info("---- Migration of old " + worldType + " folder failed ----");
-                    } else if (newWorld.getParentFile().mkdirs()) {
-                        if (oldWorld.renameTo(newWorld)) {
-                            log.info("Success! To restore " + worldType + " in the future, simply move " + newWorld + " to " + oldWorld);
-                            log.info("---- Migration of old " + worldType + " folder complete ----");
-                        } else {
-                            log.severe("Could not move folder " + oldWorld + " to " + newWorld + "!");
-                            log.info("---- Migration of old " + worldType + " folder failed ----");
-                        }
-                    } else {
-                        log.severe("Could not create path for " + newWorld + "!");
-                        log.info("---- Migration of old " + worldType + " folder failed ----");
-                    }
-                }
-
-                this.c(name);
-*/
-                // CraftBukkit
-                world = new SecondaryWorldServer(this, new ServerNBTManager(server.getWorldContainer(), name, true), name, dimension, worldsettings, mainw, this.methodProfiler, Environment.getEnvironment(dimension), gen);
-            }
-
-            if (gen != null) {
-                world.getWorld().getPopulators().addAll(gen.getDefaultPopulators(world.getWorld()));
-            }
-
+        for (int i = 0; i < dimensions.length; ++i)
+        {
+            int dimension = dimensions[i].intValue();
+            WorldServer world = dimension == 0 ? mainWorld : new SecondaryWorldServer(this, nbtManager, dataDir, dimension, settings, (WorldServer)mainWorld, this.methodProfiler, Environment.getEnvironment(dimension), gen);
+            world.worldProvider.setDimension(dimension);
+            
             this.server.getPluginManager().callEvent(new org.bukkit.event.world.WorldInitEvent(world.getWorld()));
+            
+            world.addIWorldAccess(new WorldManager(this, (WorldServer)world));
+            if (!this.I())
+            	world.getWorldData().setGameType(this.getGamemode());
 
-            world.addIWorldAccess(new WorldManager(this, world));
-            if (!this.I()) {
-                world.getWorldData().setGameType(this.getGamemode());
-            }
+            this.t.setPlayerFileData(new WorldServer[] { world });
             this.worlds.add(world);
-            this.t.setPlayerFileData(this.worlds.toArray(new WorldServer[this.worlds.size()]));
-            // CraftBukkit end
-            MinecraftForge.EVENT_BUS.post(new WorldEvent$Load(world));
+            
+            MinecraftForge.EVENT_BUS.post(new WorldEvent$Load((World)world));
         }
 
-        this.t.setPlayerFileData(new WorldServer[] {(WorldServer)mainw});
+        this.t.setPlayerFileData(new WorldServer[] { mainWorld });
         this.c(this.getDifficulty());
         this.e();
     }
-
+    
     protected void e() {
         short short1 = 196;
         long i = System.currentTimeMillis();
@@ -383,7 +337,7 @@ public abstract class MinecraftServer implements Runnable, IMojangStatistics, IC
             {
                 WorldServer worldserver = this.worlds.get(j);
                 MinecraftForge.EVENT_BUS.post(new WorldEvent$Unload(worldserver));
-                DimensionManager.setWorld(worldserver.worldProvider.dimension, (WorldServer)null);
+                DimensionManager.setWorld(worldserver.dimension, (WorldServer)null);
             }
             if (this.n != null && this.n.d()) {
                 this.n.e();
@@ -621,7 +575,6 @@ public abstract class MinecraftServer implements Runnable, IMojangStatistics, IC
         return true;
     }
 
-    // TODO: Disabled in forge
     public void a(IUpdatePlayerListBox iupdateplayerlistbox) {
         this.p.add(iupdateplayerlistbox);
     }
@@ -686,16 +639,17 @@ public abstract class MinecraftServer implements Runnable, IMojangStatistics, IC
         log.warning(s);
     }
 
-    public WorldServer getWorldServer(int i) {
-        // CraftBukkit start
-        for (WorldServer world : this.worlds) {
-            if (world.dimension == i) {
-                return world;
-            }
+    public WorldServer getWorldServer(int var1)
+    {
+        WorldServer var2 = DimensionManager.getWorld(var1);
+
+        if (var2 == null)
+        {
+            DimensionManager.initDimension(var1);
+            var2 = DimensionManager.getWorld(var1);
         }
 
-        return this.worlds.get(0);
-        // CraftBukkit end
+        return var2;
     }
 
     public String u() {
@@ -1020,7 +974,7 @@ public abstract class MinecraftServer implements Runnable, IMojangStatistics, IC
                 // CraftBukkit end
                 WorldData worlddata = worldserver.getWorldData();
 
-                mojangstatisticsgenerator.a("world[" + i + "][dimension]", Integer.valueOf(worldserver.worldProvider.dimension));
+                mojangstatisticsgenerator.a("world[" + i + "][dimension]", Integer.valueOf(worldserver.dimension));
                 mojangstatisticsgenerator.a("world[" + i + "][mode]", worlddata.getGameType());
                 mojangstatisticsgenerator.a("world[" + i + "][difficulty]", Integer.valueOf(worldserver.difficulty));
                 mojangstatisticsgenerator.a("world[" + i + "][hardcore]", Boolean.valueOf(worlddata.isHardcore()));

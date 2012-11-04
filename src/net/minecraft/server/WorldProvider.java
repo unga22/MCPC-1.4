@@ -122,54 +122,6 @@ public abstract class WorldProvider
         return true;
     }
 
-    @SideOnly(Side.CLIENT)
-    public float[] a(float var1, float var2)
-    {
-        float var3 = 0.4F;
-        float var4 = MathHelper.cos(var1 * (float)Math.PI * 2.0F) - 0.0F;
-        float var5 = -0.0F;
-
-        if (var4 >= var5 - var3 && var4 <= var5 + var3)
-        {
-            float var6 = (var4 - var5) / var3 * 0.5F + 0.5F;
-            float var7 = 1.0F - (1.0F - MathHelper.sin(var6 * (float)Math.PI)) * 0.99F;
-            var7 *= var7;
-            this.i[0] = var6 * 0.3F + 0.7F;
-            this.i[1] = var6 * var6 * 0.7F + 0.2F;
-            this.i[2] = var6 * var6 * 0.0F + 0.2F;
-            this.i[3] = var7;
-            return this.i;
-        }
-        else
-        {
-            return null;
-        }
-    }
-
-    @SideOnly(Side.CLIENT)
-    public Vec3D b(float var1, float var2)
-    {
-        float var3 = MathHelper.cos(var1 * (float)Math.PI * 2.0F) * 2.0F + 0.5F;
-
-        if (var3 < 0.0F)
-        {
-            var3 = 0.0F;
-        }
-
-        if (var3 > 1.0F)
-        {
-            var3 = 1.0F;
-        }
-
-        float var4 = 0.7529412F;
-        float var5 = 0.84705883F;
-        float var6 = 1.0F;
-        var4 *= var3 * 0.94F + 0.06F;
-        var5 *= var3 * 0.94F + 0.06F;
-        var6 *= var3 * 0.91F + 0.09F;
-        return this.a.getVec3DPool().create((double)var4, (double)var5, (double)var6);
-    }
-
     /**
      * True if the player can respawn in this dimension (true = overworld, false = nether).
      */
@@ -208,7 +160,7 @@ public abstract class WorldProvider
 
     public String getSaveFolder()
     {
-        return this.dimension == 0 ? null : "DIM" + this.dimension;
+        return this.a instanceof SecondaryWorldServer ? "DIM" + this.dimension : null;
     }
 
     public String getWelcomeMessage()

@@ -141,7 +141,7 @@ public abstract class Entity {
         this.world = world;
         this.setPosition(0.0D, 0.0D, 0.0D);
         if (world != null) {
-            this.dimension = world.worldProvider.dimension;
+            this.dimension = world.worldProvider.dimension; // TODO: should be provider?
         }
 
         this.datawatcher.a(0, Byte.valueOf((byte) 0));

@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Hashtable;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.logging.Level;
@@ -168,52 +169,44 @@ public class DimensionManager
             }
         }
 
-        // TODO: Add support for forge to add new worlds
-        //MinecraftServer.getServer().worldServer = (WorldServer[])var2.toArray(new WorldServer[0]);
+        MinecraftServer.getServer().worlds = var2;
     }
 
- // TODO: Add support for forge to add new worlds
-    public static void initDimension(int var0) throws Exception
+    /**
+     * Only used for sub-world loading.
+     */
+    public static void initDimension(int dim) 
     {
-    	throw new Exception("Cannot make worlds thru forge");
-    	/*
-        WorldServer var1 = getWorld(0);
+    	WorldServer overworld = getWorld(0);
+    	if (overworld == null) {
+    		throw new RuntimeException("Cannot Hotload Dim: Overworld is not Loaded!");
+    	}
+    	try {
+    		DimensionManager.getProviderType(dim);
+    	} catch (Exception e) {
+    		System.err.println("Cannot Hotload Dim: " + e.getMessage());
+    		return; //If a provider hasn't been registered then we can't hotload the dim
+    	}
+    	MinecraftServer mcServer = overworld.getMinecraftServer();
+    	IDataManager savehandler = overworld.getDataManager();
+    	
+    	WorldSettings worldSettings = new WorldSettings(overworld.getWorldData());
 
-        if (var1 == null)
-        {
-            throw new RuntimeException("Cannot Hotload Dim: Overworld is not Loaded!");
-        }
-        else
-        {
-            try
-            {
-                getProviderType(var0);
-            }
-            catch (Exception var6)
-            {
-                System.err.println("Cannot Hotload Dim: " + var6.getMessage());
-                return;
-            }
-            
-            var1.
-            String name = (dimension == 0) ? s : s + "_" + worldType;
-            org.bukkit.generator.ChunkGenerator gen = this.server.getGenerator(name);
+    	WorldServer world = (dim == 0 ? overworld : new SecondaryWorldServer(mcServer, savehandler, overworld.getWorldData().getName(), dim, worldSettings, overworld, mcServer.methodProfiler, Environment.getEnvironment(0), null));
+    	world.addIWorldAccess(new WorldManager(mcServer, world));
+    	world.worldProvider.setDimension(dim);
+    	
+    	mcServer.server.getPluginManager().callEvent(new org.bukkit.event.world.WorldInitEvent(world.getWorld()));
+    	MinecraftForge.EVENT_BUS.post(new WorldEvent$Load(world));
+    	
+    	if (!mcServer.I())
+    		world.getWorldData().setGameType(mcServer.getGamemode());
 
-            MinecraftServer var2 = var1.getMinecraftServer();
-            IDataManager var3 = var1.getDataManager();
-            WorldSettings var4 = new WorldSettings(var1.getWorldData());
-            Object var5 = var0 == 0 ? var1 : new SecondaryWorldServer(var2, var3, var1.getWorldData().getName(), var0, var4, var1, var2.methodProfiler, Environment.getEnvironment(dimension), gen);
-            ((WorldServer)var5).addIWorldAccess(new WorldManager(var2, (WorldServer)var5));
-            MinecraftForge.EVENT_BUS.post(new WorldEvent$Load((World)var5));
-
-            if (!var2.I())
-            {
-                ((WorldServer)var5).getWorldData().setGameType(var2.getGamemode());
-            }
-
-            var2.c(var2.getDifficulty());
-        }*/
+    	mcServer.c(mcServer.getDifficulty());
+    	
+    	mcServer.worlds.add(world);
     }
+
 
     public static WorldServer getWorld(int var0)
     {

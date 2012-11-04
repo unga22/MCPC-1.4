@@ -14,8 +14,8 @@ public class MobEffect
 
     /** The amplifier of the potion effect */
     private int amplification;
-    private boolean field_82723_d;
-    private boolean field_82724_e;
+    private boolean splash;
+    private boolean ambient;
     private List curativeItems;
 
     public MobEffect(int var1, int var2)
@@ -33,7 +33,7 @@ public class MobEffect
         this.effectId = var1;
         this.duration = var2;
         this.amplification = var3;
-        this.field_82724_e = var4;
+        this.ambient = var4;
         this.curativeItems = new ArrayList();
         this.curativeItems.add(new ItemStack(Item.MILK_BUCKET));
     }
@@ -66,9 +66,9 @@ public class MobEffect
         {
             this.duration = var1.duration;
         }
-        else if (!var1.field_82724_e && this.field_82724_e)
+        else if (!var1.ambient && this.ambient)
         {
-            this.field_82724_e = var1.field_82724_e;
+            this.ambient = var1.ambient;
         }
     }
 
@@ -144,12 +144,12 @@ public class MobEffect
      */
     public void setSplash(boolean var1)
     {
-        this.field_82723_d = var1;
+        this.splash = var1;
     }
 
-    public boolean func_82720_e()
+    public boolean isAmbient()
     {
-        return this.field_82724_e;
+        return this.ambient;
     }
 
     public boolean tick(EntityLiving var1)
@@ -203,7 +203,7 @@ public class MobEffect
             var1 = this.f() + ", Duration: " + this.getDuration();
         }
 
-        if (this.field_82723_d)
+        if (this.splash)
         {
             var1 = var1 + ", Splash: true";
         }
@@ -220,7 +220,7 @@ public class MobEffect
         else
         {
             MobEffect var2 = (MobEffect)var1;
-            return this.effectId == var2.effectId && this.amplification == var2.amplification && this.duration == var2.duration && this.field_82723_d == var2.field_82723_d && this.field_82724_e == var2.field_82724_e;
+            return this.effectId == var2.effectId && this.amplification == var2.amplification && this.duration == var2.duration && this.splash == var2.splash && this.ambient == var2.ambient;
         }
     }
 
@@ -232,7 +232,7 @@ public class MobEffect
         var1.setByte("Id", (byte)this.getEffectId());
         var1.setByte("Amplifier", (byte)this.getAmplifier());
         var1.setInt("Duration", this.getDuration());
-        var1.setBoolean("Ambient", this.func_82720_e());
+        var1.setBoolean("Ambient", this.isAmbient());
         return var1;
     }
 

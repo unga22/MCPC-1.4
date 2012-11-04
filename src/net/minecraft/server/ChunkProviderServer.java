@@ -45,7 +45,7 @@ public class ChunkProviderServer implements IChunkProvider {
     }
 
     public void queueUnload(int i, int j) {
-        if (this.world.worldProvider.e() && DimensionManager.shouldLoadSpawn(this.world.worldProvider.dimension)) {
+        if (this.world.worldProvider.e() && DimensionManager.shouldLoadSpawn(this.world.dimension)) {
             ChunkCoordinates chunkcoordinates = this.world.getSpawn();
             int k = i * 16 + 8 - chunkcoordinates.x;
             int l = j * 16 + 8 - chunkcoordinates.z;
@@ -288,10 +288,16 @@ public class ChunkProviderServer implements IChunkProvider {
                     
                     ForgeChunkManager.putDormantChunk(ChunkCoordIntPair.a(chunk.x, chunk.z), chunk);
 
+                    // Multiverse worlds don't wake up anymore
+                    
                     if (this.chunks.size() == 0 && ForgeChunkManager.getPersistentChunksFor(this.world).size() == 0 && !DimensionManager.shouldLoadSpawn(this.world.worldProvider.dimension))
                     {
-                        DimensionManager.unloadWorld(this.world.worldProvider.dimension);
-                        return this.chunkProvider.unloadChunks();
+                    	// unly unload forge worlds under the first data folder
+                    	if (this.chunkProvider.getName().equals(MinecraftServer.getServer().worlds.get(0).chunkProvider.getName()))
+                    	{
+                    		DimensionManager.unloadWorld(this.world.dimension);
+                        	return this.chunkProvider.unloadChunks();
+                    	}
                     }
                 }
             }

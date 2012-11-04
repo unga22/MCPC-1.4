@@ -46,7 +46,11 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
     public final int dimension;
 
     public WorldServer(MinecraftServer minecraftserver, IDataManager idatamanager, String s, int i, WorldSettings worldsettings, MethodProfiler methodprofiler, org.bukkit.World.Environment env, org.bukkit.generator.ChunkGenerator gen) {
-        super(idatamanager, s, worldsettings, WorldProvider.byDimension(env.getId()), methodprofiler, gen, env);
+        this(minecraftserver, idatamanager, s, i, worldsettings, methodprofiler, WorldProvider.byDimension(i), env, gen);
+    }
+    
+    public WorldServer(MinecraftServer minecraftserver, IDataManager idatamanager, String s, int i, WorldSettings worldsettings, MethodProfiler methodprofiler, WorldProvider wprovider, org.bukkit.World.Environment env, org.bukkit.generator.ChunkGenerator gen) {
+        super(idatamanager, s, worldsettings, wprovider, methodprofiler, gen, env);
         this.dimension = i;
         this.pvpMode = minecraftserver.getPvP();
         // CraftBukkit end
@@ -557,7 +561,7 @@ public class WorldServer extends World implements org.bukkit.BlockChangeDelegate
         } else if (this.worldProvider instanceof WorldProviderTheEnd) {
             gen = new org.bukkit.craftbukkit.generator.SkyLandsChunkGenerator(this, this.getSeed());
         } else {
-            gen = new org.bukkit.craftbukkit.generator.NormalChunkGenerator(this, this.getSeed());
+        	gen = new org.bukkit.craftbukkit.generator.NormalChunkGenerator(this, this.getSeed());
         }
 
         this.chunkProviderServer = new ChunkProviderServer(this, ichunkloader, gen);
