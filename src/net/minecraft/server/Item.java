@@ -225,6 +225,7 @@ public class Item
         }
 
         byId[256 + var1] = this;
+        org.bukkit.Material.addMaterial(256 + var1);
 
         if (!(this instanceof ItemBlock))
         {
@@ -398,6 +399,9 @@ public class Item
     public Item b(String var1)
     {
         this.name = "item." + var1;
+        
+        org.bukkit.Material.setMaterialName(this.id, t());
+        
         return this;
     }
 
