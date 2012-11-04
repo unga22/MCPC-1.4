@@ -41,7 +41,7 @@ import java.util.Hashtable;
 public abstract class MinecraftServer implements Runnable, IMojangStatistics, ICommandListener {
 
     public static Logger log = Logger.getLogger("Minecraft");
-    private static MinecraftServer l = null;
+    private static MinecraftServer l;
     public Convertable convertable; // CraftBukkit - private final -> public
     private final MojangStatisticsGenerator n = new MojangStatisticsGenerator("server", this);
     public File universe; // CraftBukkit - private final -> public
@@ -90,9 +90,11 @@ public abstract class MinecraftServer implements Runnable, IMojangStatistics, IC
     public List<WorldServer> worlds = new ArrayList<WorldServer>();
     public org.bukkit.craftbukkit.CraftServer server;
     public OptionSet options;
+    public static OptionSet optionsStatic;
     public org.bukkit.command.ConsoleCommandSender console;
     public org.bukkit.command.RemoteConsoleCommandSender remoteConsole;
     public ConsoleReader reader;
+    public static ConsoleReader readerStatic;
     public static int currentTick;
     public final Thread primaryThread;
     public java.util.Queue<Runnable> processQueue = new java.util.concurrent.ConcurrentLinkedQueue<Runnable>();
@@ -108,9 +110,10 @@ public abstract class MinecraftServer implements Runnable, IMojangStatistics, IC
         this.al();
 
         // CraftBukkit start
-        this.options = options;
+        this.optionsStatic = this.options = options;
+        
         try {
-            this.reader = new ConsoleReader(System.in, System.out);
+        	this.readerStatic = this.reader = new ConsoleReader(System.in, System.out);
             this.reader.setExpandEvents(false); // Avoid parsing exceptions for uncommonly used event designators
         } catch (Exception e) {
             try {
@@ -638,56 +641,12 @@ public abstract class MinecraftServer implements Runnable, IMojangStatistics, IC
     	if (options == null) // error or console help
     		return;
     	
+    	cpw.mods.fml.relauncher.FMLLogFormatter.setFormat(options.has("nojline"), options.has("date-format") ? (SimpleDateFormat)options.valueOf("date-format") : null);
+    	
     	StatisticList.a();
 
         try {
-            /* CraftBukkit start - replace everything
-            boolean flag = false;
-            String s = null;
-            String s1 = ".";
-            String s2 = null;
-            boolean flag1 = false;
-            boolean flag2 = false;
-            int i = -1;
-
-            for (int j = 0; j < astring.length; ++j) {
-                String s3 = astring[j];
-                String s4 = j == astring.length - 1 ? null : astring[j + 1];
-                boolean flag3 = false;
-
-                if (!s3.equals("nogui") && !s3.equals("--nogui")) {
-                    if (s3.equals("--port") && s4 != null) {
-                        flag3 = true;
-
-                        try {
-                            i = Integer.parseInt(s4);
-                        } catch (NumberFormatException numberformatexception) {
-                            ;
-                        }
-                    } else if (s3.equals("--singleplayer") && s4 != null) {
-                        flag3 = true;
-                        s = s4;
-                    } else if (s3.equals("--universe") && s4 != null) {
-                        flag3 = true;
-                        s1 = s4;
-                    } else if (s3.equals("--world") && s4 != null) {
-                        flag3 = true;
-                        s2 = s4;
-                    } else if (s3.equals("--demo")) {
-                        flag1 = true;
-                    } else if (s3.equals("--bonusChest")) {
-                        flag2 = true;
-                    }
-                } else {
-                    flag = false;
-                }
-
-                if (flag3) {
-                    ++j;
-                }
-            }
-            // */
-
+        	// CraftBukkit start
             DedicatedServer dedicatedserver = new DedicatedServer(options);
 
             if (options.has("port")) {
@@ -705,34 +664,7 @@ public abstract class MinecraftServer implements Runnable, IMojangStatistics, IC
                 dedicatedserver.l((String) options.valueOf("world"));
             }
 
-            /*
-            if (s != null) {
-                dedicatedserver.k(s);
-            }
-
-            if (s2 != null) {
-                dedicatedserver.l(s2);
-            }
-
-            if (i >= 0) {
-                dedicatedserver.setPort(i);
-            }
-
-            if (flag1) {
-                dedicatedserver.b(true);
-            }
-
-            if (flag2) {
-                dedicatedserver.c(true);
-            }
-
-            if (flag) {
-                dedicatedserver.an();
-            }
-            */
-
             dedicatedserver.primaryThread.start();
-            // Runtime.getRuntime().addShutdownHook(new ThreadShutdown(dedicatedserver));
             // CraftBukkit end
         } catch (Exception exception) {
             log.log(Level.SEVERE, "Failed to start the minecraft server", exception);

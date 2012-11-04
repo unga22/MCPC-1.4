@@ -7,7 +7,7 @@ import java.util.logging.LogRecord;
 
 class FMLRelaunchLog$ConsoleLogThread implements Runnable
 {
-    static ConsoleHandler wrappedHandler = new ConsoleHandler();
+    static ConsoleHandler wrappedHandler = new FMLRelaunchLogConsoleHandler();
     static LinkedBlockingQueue recordQueue = new LinkedBlockingQueue();
 
     private FMLRelaunchLog$ConsoleLogThread() {}

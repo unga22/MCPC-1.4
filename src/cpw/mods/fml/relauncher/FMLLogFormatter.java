@@ -7,15 +7,28 @@ import java.util.logging.Formatter;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 
-final class FMLLogFormatter extends Formatter
+import net.minecraft.server.MinecraftServer;
+
+import org.bukkit.craftbukkit.libs.joptsimple.OptionException;
+import org.bukkit.craftbukkit.libs.joptsimple.OptionSet;
+
+public class FMLLogFormatter extends Formatter
 {
     static final String LINE_SEPARATOR = System.getProperty("line.separator");
-    private SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    private static SimpleDateFormat dateFormat = new SimpleDateFormat("HH:mm:ss");
 
-    public String format(LogRecord var1)
+    public static void setFormat(boolean nojline, SimpleDateFormat date_format)
+    {
+    	if (date_format != null)
+    		dateFormat = date_format;
+    	else if (nojline)
+    		dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    }
+
+    public synchronized String format(LogRecord var1)
     {
         StringBuilder var2 = new StringBuilder();
-        var2.append(this.dateFormat.format(Long.valueOf(var1.getMillis())));
+        var2.append(dateFormat.format(Long.valueOf(var1.getMillis())));
         Level var3 = var1.getLevel();
 
         if (var3 == Level.FINEST)
@@ -42,7 +55,7 @@ final class FMLLogFormatter extends Formatter
         {
             var2.append(" [SEVERE] ");
         }
-        else if (var3 == Level.SEVERE)
+        else
         {
             var2.append(" [" + var3.getLocalizedName() + "] ");
         }

@@ -13,6 +13,11 @@ import java.util.logging.Logger;
 
 public class FMLRelaunchLog
 {
+	/**
+	 * Disables J-Line but makes the log nicer for eclipse
+	 */
+	public static boolean useOnlyThisLogger = false;
+	
     public static FMLRelaunchLog log = new FMLRelaunchLog();
     static File minecraftHome;
     private static boolean configured;
@@ -26,10 +31,14 @@ public class FMLRelaunchLog
         Logger var0 = Logger.getLogger("global");
         var0.setLevel(Level.OFF);
         log.myLog = Logger.getLogger("ForgeModLoader");
+        
         Logger var1 = Logger.getLogger("STDOUT");
-        var1.setParent(log.myLog);
         Logger var2 = Logger.getLogger("STDERR");
-        var2.setParent(log.myLog);
+        if (useOnlyThisLogger)
+        {
+	        var1.setParent(log.myLog);
+	        var2.setParent(log.myLog);
+        }
         FMLLogFormatter var3 = new FMLLogFormatter();
         log.myLog.setUseParentHandlers(false);
         log.myLog.addHandler(new FMLRelaunchLog$ConsoleLogWrapper((FMLRelaunchLog$1)null));
@@ -53,8 +62,11 @@ public class FMLRelaunchLog
         }
 
         errCache = System.err;
-        System.setOut(new PrintStream(new FMLRelaunchLog$LoggingOutStream(var1), true));
-        System.setErr(new PrintStream(new FMLRelaunchLog$LoggingOutStream(var2), true));
+        if (useOnlyThisLogger)
+        {
+	        System.setOut(new PrintStream(new FMLRelaunchLog$LoggingOutStream(var1), true));
+	        System.setErr(new PrintStream(new FMLRelaunchLog$LoggingOutStream(var2), true));
+        }
         configured = true;
     }
 
