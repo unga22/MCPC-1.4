@@ -2,6 +2,8 @@ package net.minecraft.server;
 
 import cpw.mods.fml.common.Side;
 import cpw.mods.fml.common.asm.SideOnly;
+import cpw.mods.fml.common.registry.BlockProxy;
+
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -13,7 +15,7 @@ import net.minecraftforge.common.ForgeHooks;
 import net.minecraftforge.common.IPlantable;
 import net.minecraftforge.common.MinecraftForge;
 
-public class Block {
+public class Block implements BlockProxy {
     protected static int[] blockFireSpreadSpeed = new int[4096];
     protected static int[] blockFlammability = new int[4096];
     protected String currentTexture;
