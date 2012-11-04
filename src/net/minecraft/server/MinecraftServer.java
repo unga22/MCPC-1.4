@@ -29,9 +29,7 @@ import org.bukkit.craftbukkit.util.Waitable;
 import org.bukkit.event.server.RemoteServerCommandEvent;
 import org.bukkit.event.world.WorldSaveEvent;
 // CraftBukkit end
-import cpw.mods.fml.relauncher.ArgsWrapper;
-import cpw.mods.fml.relauncher.FMLRelauncher;
-import cpw.mods.fml.common.FMLCommonHandler;
+
 import net.minecraftforge.common.DimensionManager;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.world.WorldEvent$Load;
@@ -90,11 +88,9 @@ public abstract class MinecraftServer implements Runnable, IMojangStatistics, IC
     public List<WorldServer> worlds = new ArrayList<WorldServer>();
     public org.bukkit.craftbukkit.CraftServer server;
     public OptionSet options;
-    public static OptionSet optionsStatic;
     public org.bukkit.command.ConsoleCommandSender console;
     public org.bukkit.command.RemoteConsoleCommandSender remoteConsole;
     public ConsoleReader reader;
-    public static ConsoleReader readerStatic;
     public static int currentTick;
     public final Thread primaryThread;
     public java.util.Queue<Runnable> processQueue = new java.util.concurrent.ConcurrentLinkedQueue<Runnable>();
@@ -110,10 +106,10 @@ public abstract class MinecraftServer implements Runnable, IMojangStatistics, IC
         this.al();
 
         // CraftBukkit start
-        this.optionsStatic = this.options = options;
+        this.options = options;
         
         try {
-        	this.readerStatic = this.reader = new ConsoleReader(System.in, System.out);
+        	this.reader = new ConsoleReader(System.in, System.out);
             this.reader.setExpandEvents(false); // Avoid parsing exceptions for uncommonly used event designators
         } catch (Exception e) {
             try {
@@ -127,6 +123,9 @@ public abstract class MinecraftServer implements Runnable, IMojangStatistics, IC
                 Logger.getLogger(MinecraftServer.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
+        // doesn't work from this "appdomain"
+        //cpw.mods.fml.relauncher.FMLRelaunchLog$ConsoleHandler.reader = this.reader;
+        
         Runtime.getRuntime().addShutdownHook(new org.bukkit.craftbukkit.util.ServerShutdownThread(this));
 
         primaryThread = new ThreadServerApplication(this, "Server thread"); // Moved from main

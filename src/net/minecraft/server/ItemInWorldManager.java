@@ -427,8 +427,8 @@ public class ItemInWorldManager {
             }
             else
             {
-                int var13 = var2.getTypeId(var4, var5, var6);
-                Block var14 = Block.byId[var13];
+                int i1 = var2.getTypeId(var4, var5, var6);
+                Block var14 = Block.byId[i1];
                 boolean result = false;
 
                 if (var14 != null)
@@ -445,10 +445,8 @@ public class ItemInWorldManager {
                     }
                 }
 
-                if (var3 != null && !result)
+                if (!result)
                 {
-                	int i1 = world.getTypeId(var4, var5, var6);
-
                     // CraftBukkit start - Interact
                     
                     if (i1 > 0) {
@@ -483,7 +481,7 @@ public class ItemInWorldManager {
                         }
                     }
                  // CraftBukkit end
-                    if (var3.count <= 0)
+                    if (var3 != null && var3.count <= 0)
                         ForgeEventFactory.onPlayerDestroyItem(this.player, var3);
                 }
 
