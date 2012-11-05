@@ -99,4 +99,9 @@ public class CreativeModeTab
     {
         return new ItemStack(this.d());
     }
+    
+    public String b()
+    {
+    	return o;
+    }
 }

@@ -13,7 +13,8 @@ public class WorldGenStrongholdPieces
 
   private static final WorldGenStrongholdStones e = new WorldGenStrongholdStones();
 
-  public static void a(Class cla) { a(); }
+  //public static void a(Class cla) { a(); }
+  public static Class a(Class cla) { a(); return cla; }
   public static void a() // sig from: WorldGenStrongholdStairs2.a(SourceFile:439)
   {
     c = new ArrayList<WorldGenStrongholdPieceWeight>();
