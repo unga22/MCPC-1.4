@@ -44,12 +44,6 @@ public class ChunkCache implements IBlockAccess
         }
     }
 
-    @SideOnly(Side.CLIENT)
-    public boolean P()
-    {
-        return this.d;
-    }
-
     /**
      * Returns the block ID at coords x,y,z
      */
@@ -163,4 +157,10 @@ public class ChunkCache implements IBlockAccess
         int var5 = this.getTypeId(var1, var2, var3);
         return var5 == 0 ? false : Block.byId[var5].c(this, var1, var2, var3, var4);
     }
+
+	@Override
+	public BiomeBase getBiome(int i, int j) 
+	{
+		return e.getBiome(i, j);
+	}
 }

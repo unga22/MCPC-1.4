@@ -6,6 +6,10 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
+
+import org.bukkit.World;
+import org.bukkit.block.Biome;
+
 import net.minecraft.server.EnchantmentSlotType;
 import net.minecraft.server.EnumAnimation;
 import net.minecraft.server.EnumArmorMaterial;
@@ -30,6 +34,21 @@ public class EnumHelper
     private static Method fieldAccessorSet = null;
     private static boolean isSetup = false;
     private static Class[][] commonTypes = new Class[][] {{EnumAnimation.class}, {EnumArmorMaterial.class, Integer.TYPE, int[].class, Integer.TYPE}, {EnumArt.class, String.class, Integer.TYPE, Integer.TYPE, Integer.TYPE, Integer.TYPE}, {EnumMonsterType.class}, {EnumCreatureType.class, Class.class, Integer.TYPE, Material.class, Boolean.TYPE}, {WorldGenStrongholdDoorType.class}, {EnchantmentSlotType.class}, {EnumEntitySize.class}, {EnumMobType.class}, {EnumMovingObjectType.class}, {EnumSkyBlock.class, Integer.TYPE}, {EnumBedResult.class}, {EnumToolMaterial.class, Integer.TYPE, Integer.TYPE, Float.TYPE, Integer.TYPE, Integer.TYPE}};
+
+	public static Biome addBukkitBiome(String name) 
+	{
+		return (Biome)addEnum(Biome.class, name, new Class[0], new Object[0]);
+	}
+
+	public static World.Environment addBukkitEnvironment(int id, String name)
+	{
+		if (!isSetup)
+		{
+			setup();
+		}
+
+		return (World.Environment)addEnum(World.Environment.class, name, new Class[] { Integer.TYPE }, new Object[] { Integer.valueOf(id) });
+	}
 
     public static EnumAnimation addAction(String var0)
     {
@@ -256,4 +275,5 @@ public class EnumHelper
             setup();
         }
     }
+
 }

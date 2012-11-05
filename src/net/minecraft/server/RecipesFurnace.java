@@ -58,6 +58,12 @@ public class RecipesFurnace {
         return this.c.containsKey(Integer.valueOf(i)) ? ((Float) this.c.get(Integer.valueOf(i))).floatValue() : 0.0F;
     }
     
+    public void addSmelting(int var1, int var2, ItemStack var3, float f)
+    {
+        this.metaSmeltingList.put(Arrays.asList(new Integer[] {Integer.valueOf(var1), Integer.valueOf(var2)}), var3);
+        this.c.put(Integer.valueOf(var3.id), Float.valueOf(f));
+    }
+    
 
     public void addSmelting(int var1, int var2, ItemStack var3)
     {
